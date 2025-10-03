@@ -448,6 +448,83 @@
       opacity: 0.9;
     }
     
+    /* Edit team icon button */
+    .edit-icon-btn {
+      display: none;
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      padding: 0.3rem 0.5rem;
+      background: var(--brand);
+      color: #0b0f1a;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .admin-mode .edit-icon-btn {
+      display: block;
+    }
+    .admin-mode .team-card {
+      position: relative;
+    }
+    .edit-icon-btn:hover {
+      opacity: 0.9;
+    }
+    
+    /* Edit icon modal */
+    .edit-icon-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 110;
+      padding: 2rem;
+      align-items: center;
+      justify-content: center;
+    }
+    .edit-icon-modal.active { display: flex; }
+    .edit-icon-content {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-width: 400px;
+      width: 100%;
+      padding: 2rem;
+      box-shadow: var(--shadow);
+    }
+    .edit-icon-content h3 {
+      margin: 0 0 1.5rem 0;
+      color: var(--text);
+    }
+    
+    .icon-picker {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .icon-option {
+      font-size: 2rem;
+      padding: 0.75rem;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--card);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .icon-option:hover {
+      border-color: var(--brand);
+      background: #111a2e;
+    }
+    .icon-option.selected {
+      border-color: var(--brand);
+      background: #111a2e;
+      box-shadow: 0 0 0 3px var(--ring);
+    }
+    
     /* Edit game modal */
     .edit-game-modal {
       display: none;
@@ -513,7 +590,21 @@
           <circle cx="12" cy="12" r="9" />
           <path d="M3 12h18M12 3c2.5 2.6 3.7 5.7 3.7 9S14.5 18.4 12 21M12 3c-2.5 2.6-3.7 5.7-3.7 9s1.2 6.4 3.7 9" />
         </svg>
+        <!-- Edit icon modal -->
+    <div id="editIconModal" class="edit-icon-modal">
+      <div class="edit-icon-content">
+        <h3>Change Team Icon</h3>
+        <p id="editIconTeamName" style="color: var(--muted); margin-bottom: 1rem;"></p>
+        <div class="icon-picker" id="iconPicker">
+          <!-- Icons will be populated by JavaScript -->
+        </div>
+        <div class="admin-buttons">
+          <button type="button" class="admin-cancel" id="cancelIconEdit">Cancel</button>
+          <button type="button" class="admin-submit" id="saveIcon">Save Icon</button>
+        </div>
       </div>
+    </div>
+  </div>
       <div class="title">
         <h1>IBA Tournament</h1>
         <p>Indian Basketball Association • Fall 2025</p>
@@ -616,6 +707,7 @@
       <section id="panel-teams" class="tabpanel" role="tabpanel" aria-labelledby="tab-teams">
         <div class="grid" id="teamsGrid">
           <article class="team-card" data-team="mutts">
+            <button class="edit-icon-btn" onclick="editTeamIcon('mutts')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">🏀</div>
             <div>
               <h4>Mutts and Fulls <span class="pill" title="Seed">#1</span></h4>
@@ -623,6 +715,7 @@
             </div>
           </article>
           <article class="team-card" data-team="bbb">
+            <button class="edit-icon-btn" onclick="editTeamIcon('bbb')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">🔥</div>
             <div>
               <h4>BBB <span class="pill" title="Seed">#2</span></h4>
@@ -630,6 +723,7 @@
             </div>
           </article>
           <article class="team-card" data-team="rajesh">
+            <button class="edit-icon-btn" onclick="editTeamIcon('rajesh')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">🛡️</div>
             <div>
               <h4>Rajesh's Last Dance <span class="pill" title="Seed">#3</span></h4>
@@ -637,6 +731,7 @@
             </div>
           </article>
           <article class="team-card" data-team="club">
+            <button class="edit-icon-btn" onclick="editTeamIcon('club')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">⚡</div>
             <div>
               <h4>Club ballers <span class="pill" title="Seed">#4</span></h4>
@@ -644,6 +739,7 @@
             </div>
           </article>
           <article class="team-card" data-team="navsandeep">
+            <button class="edit-icon-btn" onclick="editTeamIcon('navsandeep')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">⭐</div>
             <div>
               <h4>Nav/Sandeep <span class="pill" title="Seed">#5</span></h4>
@@ -651,6 +747,7 @@
             </div>
           </article>
           <article class="team-card" data-team="kos">
+            <button class="edit-icon-btn" onclick="editTeamIcon('kos')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">👑</div>
             <div>
               <h4>KOS <span class="pill" title="Seed">#6</span></h4>
@@ -658,6 +755,7 @@
             </div>
           </article>
           <article class="team-card" data-team="lemickey">
+            <button class="edit-icon-btn" onclick="editTeamIcon('lemickey')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">🏆</div>
             <div>
               <h4>LeMickey <span class="pill" title="Seed">#7</span></h4>
@@ -665,6 +763,7 @@
             </div>
           </article>
           <article class="team-card" data-team="bbs">
+            <button class="edit-icon-btn" onclick="editTeamIcon('bbs')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">💪</div>
             <div>
               <h4>BBS <span class="pill" title="Seed">#8</span></h4>
@@ -672,6 +771,7 @@
             </div>
           </article>
           <article class="team-card" data-team="gutti">
+            <button class="edit-icon-btn" onclick="editTeamIcon('gutti')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">🌟</div>
             <div>
               <h4>gutti boys <span class="pill" title="Seed">#9</span></h4>
@@ -679,6 +779,7 @@
             </div>
           </article>
           <article class="team-card" data-team="sap">
+            <button class="edit-icon-btn" onclick="editTeamIcon('sap')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">🏟️</div>
             <div>
               <h4>SAP Center <span class="pill" title="Seed">#10</span></h4>
@@ -686,6 +787,7 @@
             </div>
           </article>
           <article class="team-card" data-team="are">
+            <button class="edit-icon-btn" onclick="editTeamIcon('are')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">🚀</div>
             <div>
               <h4>ARE 3.0 <span class="pill" title="Seed">#11</span></h4>
@@ -693,6 +795,7 @@
             </div>
           </article>
           <article class="team-card" data-team="naujawan">
+            <button class="edit-icon-btn" onclick="editTeamIcon('naujawan')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">💎</div>
             <div>
               <h4>Naujawan <span class="pill" title="Seed">#12</span></h4>
@@ -700,6 +803,7 @@
             </div>
           </article>
           <article class="team-card" data-team="buckit">
+            <button class="edit-icon-btn" onclick="editTeamIcon('buckit')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">🪣</div>
             <div>
               <h4>Buckit <span class="pill" title="Seed">#13</span></h4>
@@ -707,6 +811,7 @@
             </div>
           </article>
           <article class="team-card" data-team="swish">
+            <button class="edit-icon-btn" onclick="editTeamIcon('swish')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">🌶️</div>
             <div>
               <h4>Swish Kebabs <span class="pill" title="Seed">#14</span></h4>
@@ -714,6 +819,7 @@
             </div>
           </article>
           <article class="team-card" data-team="diko">
+            <button class="edit-icon-btn" onclick="editTeamIcon('diko')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">🎯</div>
             <div>
               <h4>Diko & Co. <span class="pill" title="Seed">#15</span></h4>
@@ -721,6 +827,7 @@
             </div>
           </article>
           <article class="team-card" data-team="fuse">
+            <button class="edit-icon-btn" onclick="editTeamIcon('fuse')">Edit Icon</button>
             <div class="avatar" aria-hidden="true">⚡</div>
             <div>
               <h4>Fuse <span class="pill" title="Seed">#16</span></h4>
@@ -1262,6 +1369,7 @@
         adminBtn.textContent = 'Admin';
         adminBtn.style.background = 'var(--brand)';
         document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
+        quickAddSection.style.display = 'none';
       } else {
         // Show login
         adminModal.classList.add('active');
@@ -1289,6 +1397,7 @@
         adminBtn.textContent = 'Logout';
         adminBtn.style.background = 'var(--success)';
         document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
+        quickAddSection.style.display = 'block';
       } else {
         adminError.style.display = 'block';
         adminPassword.value = '';
@@ -1365,6 +1474,69 @@
       if (e.key === 'Enter') {
         quickAddBtn.click();
       }
+    });
+
+    // Team icon editing functionality
+    const editIconModal = document.getElementById('editIconModal');
+    const editIconTeamName = document.getElementById('editIconTeamName');
+    const iconPicker = document.getElementById('iconPicker');
+    const cancelIconEdit = document.getElementById('cancelIconEdit');
+    const saveIconBtn = document.getElementById('saveIcon');
+    let currentEditTeam = null;
+    let selectedIcon = null;
+
+    const availableIcons = ['🏀', '🔥', '⚡', '💪', '🏆', '👑', '⭐', '🌟', '💎', '🚀', '🛡️', '🎯', '🪣', '🌶️', '🏟️', '⚽', '🎮', '🎨', '🦁', '🐯', '🦅', '🐉', '🦈', '🐺', '🦊', '🐻', '🦄', '🔱', '⚔️', '🎪'];
+
+    window.editTeamIcon = function(teamId) {
+      if (!isAdminMode) return;
+      
+      currentEditTeam = teamId;
+      const team = teamsData[teamId];
+      editIconTeamName.textContent = team.name;
+      
+      // Get current icon
+      const teamCard = document.querySelector(`[data-team="${teamId}"]`);
+      const currentIcon = teamCard.querySelector('.avatar').textContent;
+      selectedIcon = currentIcon;
+      
+      // Populate icon picker
+      iconPicker.innerHTML = availableIcons.map(icon => 
+        `<div class="icon-option ${icon === currentIcon ? 'selected' : ''}" data-icon="${icon}">${icon}</div>`
+      ).join('');
+      
+      // Add click handlers
+      iconPicker.querySelectorAll('.icon-option').forEach(option => {
+        option.addEventListener('click', () => {
+          iconPicker.querySelectorAll('.icon-option').forEach(o => o.classList.remove('selected'));
+          option.classList.add('selected');
+          selectedIcon = option.dataset.icon;
+        });
+      });
+      
+      editIconModal.classList.add('active');
+    };
+
+    cancelIconEdit.addEventListener('click', () => {
+      editIconModal.classList.remove('active');
+    });
+
+    editIconModal.addEventListener('click', (e) => {
+      if (e.target === editIconModal) {
+        editIconModal.classList.remove('active');
+      }
+    });
+
+    saveIconBtn.addEventListener('click', () => {
+      if (!currentEditTeam || !selectedIcon) return;
+      
+      // Update the icon in the UI
+      const teamCard = document.querySelector(`[data-team="${currentEditTeam}"]`);
+      teamCard.querySelector('.avatar').textContent = selectedIcon;
+      
+      // TODO: Save to Firebase/localStorage if you want persistence
+      // For now, it only updates in the current session
+      
+      editIconModal.classList.remove('active');
     });
 
     cancelEdit.addEventListener('click', () => {
