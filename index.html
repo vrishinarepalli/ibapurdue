@@ -635,18 +635,14 @@
           </div>
         </div>
         <div class="controls">
-          <input id="search" class="input" type="search" placeholder="Search team or court…" aria-label="Search schedule" />
+          <input id="search" class="input" type="search" placeholder="Search team..." aria-label="Search schedule" />
           <select id="dayFilter" class="select" aria-label="Filter by day">
             <option value="">All days</option>
-            <option>Friday</option>
-            <option>Saturday</option>
-            <option>Sunday</option>
           </select>
           <select id="courtFilter" class="select" aria-label="Filter by court">
             <option value="">All courts</option>
-            <option>Court A</option>
-            <option>Court B</option>
           </select>
+          <button id="searchBtn" class="admin-submit" style="padding: 0.55rem 1rem; border-radius: 10px;">Search</button>
         </div>
         <div class="table-wrap">
           <table id="scheduleTable" aria-describedby="scheduleCaption">
@@ -1329,6 +1325,11 @@
 
     // Team card click handlers
     document.getElementById('teamsGrid').addEventListener('click', (e) => {
+      // Don't open modal if clicking edit icon button
+      if (e.target.classList.contains('edit-icon-btn')) {
+        return;
+      }
+      
       const card = e.target.closest('.team-card');
       if (card) {
         const teamId = card.dataset.team;
@@ -1611,6 +1612,27 @@
         
         const row = btn.closest('tr');
         const docId = row.dataset.docId;
+        const matchup = row.cells[2].textContent;
+        const day = row.cells[0].textContent;
+        
+        // Remove from upcoming games before deleting
+        const teams = matchup.split(' vs ').map(t => t.trim());
+        const team1 = teams[0];
+        const team2 = teams[1];
+        
+        const team1Id = Object.keys(teamsData).find(id => teamsData[id].name === team1);
+        const team2Id = Object.keys(teamsData).find(id => teamsData[id].name === team2);
+        
+        if (team1Id) {
+          teamsData[team1Id].upcomingGames = teamsData[team1Id].upcomingGames.filter(
+            g => g.opponent !== team2 || g.date !== day
+          );
+        }
+        if (team2Id) {
+          teamsData[team2Id].upcomingGames = teamsData[team2Id].upcomingGames.filter(
+            g => g.opponent !== team1 || g.date !== day
+          );
+        }
         
         console.log('Deleting document ID:', docId);
         const gameRef = doc(db, 'games', docId);
@@ -1627,13 +1649,15 @@
     const search = document.getElementById('search');
     const dayFilter = document.getElementById('dayFilter');
     const courtFilter = document.getElementById('courtFilter');
-    const rows = Array.from(document.querySelectorAll('#scheduleTable tbody tr'));
+    const searchBtn = document.getElementById('searchBtn');
+    const rows = document.querySelectorAll('#scheduleTable tbody tr');
 
     function applyFilters() {
       const q = (search.value || '').toLowerCase();
       const day = dayFilter.value;
       const court = courtFilter.value;
-      rows.forEach(tr => {
+      const allRows = Array.from(document.querySelectorAll('#scheduleTable tbody tr'));
+      allRows.forEach(tr => {
         const cells = tr.children;
         const matchesQuery = !q || tr.textContent.toLowerCase().includes(q);
         const matchesDay = !day || cells[0].textContent === day;
@@ -1641,7 +1665,14 @@
         tr.style.display = (matchesQuery && matchesDay && matchesCourt) ? '' : 'none';
       });
     }
-    [search, dayFilter, courtFilter].forEach(el => el.addEventListener('input', applyFilters));
+    
+    searchBtn.addEventListener('click', applyFilters);
+    search.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        applyFilters();
+      }
+    });
+    [dayFilter, courtFilter].forEach(el => el.addEventListener('change', applyFilters));
     
     }); // End of waitForFirebase
   </script>
