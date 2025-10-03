@@ -91,7 +91,7 @@
       width: 120%; height: 70%;
       background: linear-gradient(90deg, rgba(255,255,255,.06), transparent);
     }
-    .logo svg { width: 30px; height: 30px; }
+    .logo img { width: 100%; height: 100%; object-fit: contain; border-radius: 12px; }
 
     .title h1 { margin: 0; font-size: clamp(1.15rem, 1rem + 1vw, 1.6rem); letter-spacing: .3px; }
     .title p { margin: .1rem 0 0; color: var(--muted); font-size: .9rem; }
@@ -578,25 +578,11 @@
 </head>
 <body>
   <div class="wrap">
+    <!-- HEADER (fixed: only logo/title/meta inside) -->
     <header class="site" role="banner">
-      <div class="logo" aria-hidden="true">
-        <img src="./images/iba-logo.png" alt="IBA Logo" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;">
+      <div class="logo">
+        <img src="./images/iba-logo.png" alt="IBA Logo">
       </div>
-        <!-- Edit icon modal -->
-    <div id="editIconModal" class="edit-icon-modal">
-      <div class="edit-icon-content">
-        <h3>Change Team Icon</h3>
-        <p id="editIconTeamName" style="color: var(--muted); margin-bottom: 1rem;"></p>
-        <div class="icon-picker" id="iconPicker">
-          <!-- Icons will be populated by JavaScript -->
-        </div>
-        <div class="admin-buttons">
-          <button type="button" class="admin-cancel" id="cancelIconEdit">Cancel</button>
-          <button type="button" class="admin-submit" id="saveIcon">Save Icon</button>
-        </div>
-      </div>
-    </div>
-  </div>
       <div class="title">
         <h1>IBA Tournament</h1>
         <p>Indian Basketball Association • Fall 2025</p>
@@ -895,19 +881,13 @@
           </div>
 
           <h3 class="section-title">Roster</h3>
-          <ul class="roster-list" id="rosterList">
-            <!-- Roster items populated by JS -->
-          </ul>
+          <ul class="roster-list" id="rosterList"></ul>
 
           <h3 class="section-title">Completed Games</h3>
-          <div id="completedGames">
-            <!-- Game items populated by JS -->
-          </div>
+          <div id="completedGames"></div>
 
           <h3 class="section-title">Upcoming Games</h3>
-          <div id="upcomingGames">
-            <!-- Game items populated by JS -->
-          </div>
+          <div id="upcomingGames"></div>
         </div>
       </div>
     </div>
@@ -994,7 +974,21 @@
         </form>
       </div>
     </div>
-  </div>
+
+    <!-- Edit icon modal (MOVED OUT OF HEADER) -->
+    <div id="editIconModal" class="edit-icon-modal">
+      <div class="edit-icon-content">
+        <h3>Change Team Icon</h3>
+        <p id="editIconTeamName" style="color: var(--muted); margin-bottom: 1rem;"></p>
+        <div class="icon-picker" id="iconPicker"></div>
+        <div class="admin-buttons">
+          <button type="button" class="admin-cancel" id="cancelIconEdit">Cancel</button>
+          <button type="button" class="admin-submit" id="saveIcon">Save Icon</button>
+        </div>
+      </div>
+    </div>
+
+  </div> <!-- /.wrap -->
 
   <script>
     // Wait for Firebase to be available
@@ -1052,640 +1046,620 @@
 
       // Teams data
       const teamsData = {
-      'mutts': {
-        name: 'Mutts and Fulls',
-        seed: 1,
-        record: { wins: 3, losses: 0 },
-        pointDiff: 42,
-        roster: [],
-        completedGames: [
-          { opponent: 'Buckit', result: 'W', score: '21-8', date: 'Sep 22' },
-          { opponent: 'Certified Bucket Getters', result: 'W', score: '19-0', date: 'Sep 29' },
-          { opponent: 'The Blue Ballers', result: 'W', score: '22-12', date: 'Oct 1' }
-        ],
-        upcomingGames: []
-      },
-      'bbb': {
-        name: 'BBB',
-        seed: 2,
-        record: { wins: 3, losses: 0 },
-        pointDiff: 38,
-        roster: [],
-        completedGames: [
-          { opponent: 'ARE 3.0', result: 'W', score: '21-18', date: 'Sep 22' },
-          { opponent: 'Lafayette Lakers', result: 'W', score: '21-2', date: 'Oct 1' },
-          { opponent: 'Rasthuggers', result: 'W', score: '21-5', date: 'Oct 2' }
-        ],
-        upcomingGames: []
-      },
-      'rajesh': {
-        name: "Rajesh's Last Dance",
-        seed: 3,
-        record: { wins: 3, losses: 0 },
-        pointDiff: 27,
-        roster: [],
-        completedGames: [
-          { opponent: 'Buzz Ballers', result: 'W', score: '9-0', date: 'Sep 25' },
-          { opponent: 'SAP Center', result: 'W', score: '21-14', date: 'Sep 30' },
-          { opponent: 'LeBronda', result: 'W', score: '11-0', date: 'Oct 2' }
-        ],
-        upcomingGames: []
-      },
-      'club': {
-        name: 'Club ballers',
-        seed: 4,
-        record: { wins: 3, losses: 0 },
-        pointDiff: 20,
-        roster: [],
-        completedGames: [
-          { opponent: 'Ja Wick', result: 'W', score: '22-11', date: 'Sep 22' },
-          { opponent: 'RRN', result: 'W', score: '21-16', date: 'Sep 24' },
-          { opponent: 'gutti boys', result: 'W', score: '21-17', date: 'Sep 30' }
-        ],
-        upcomingGames: []
-      },
-      'navsandeep': {
-        name: 'Nav/Sandeep',
-        seed: 5,
-        record: { wins: 3, losses: 0 },
-        pointDiff: 18,
-        roster: [],
-        completedGames: [
-          { opponent: 'Diko & Co.', result: 'W', score: '22-18', date: 'Sep 22' },
-          { opponent: 'Kareem Puffs', result: 'W', score: '21-14', date: 'Sep 29' },
-          { opponent: 'Tech Support', result: 'W', score: '21-14', date: 'Oct 2' }
-        ],
-        upcomingGames: []
-      },
-      'kos': {
-        name: 'KOS',
-        seed: 6,
-        record: { wins: 3, losses: 0 },
-        pointDiff: 17,
-        roster: [],
-        completedGames: [
-          { opponent: 'Swish Kebabs', result: 'W', score: '21-18', date: 'Sep 25' },
-          { opponent: 'Tandoori Towers', result: 'W', score: '21-11', date: 'Sep 29' },
-          { opponent: '67 Elite Freaks', result: 'W', score: '21-17', date: 'Sep 30' }
-        ],
-        upcomingGames: []
-      },
-      'lemickey': {
-        name: 'LeMickey',
-        seed: 7,
-        record: { wins: 3, losses: 0 },
-        pointDiff: 13,
-        roster: [],
-        completedGames: [
-          { opponent: 'Squirt Sisters', result: 'W', score: '21-18', date: 'Sep 25' },
-          { opponent: 'Fuse', result: 'W', score: '21-13', date: 'Sep 30' },
-          { opponent: 'Hoop', result: 'W', score: '21-19', date: 'Oct 1' }
-        ],
-        upcomingGames: []
-      },
-      'bbs': {
-        name: 'BBS',
-        seed: 8,
-        record: { wins: 3, losses: 0 },
-        pointDiff: 11,
-        roster: [],
-        completedGames: [
-          { opponent: 'Walmart Oreos', result: 'W', score: '21-15', date: 'Sep 22' },
-          { opponent: 'The Baboons', result: 'W', score: '21-19', date: 'Sep 29' },
-          { opponent: 'Naujawan', result: 'W', score: '21-18', date: 'Oct 1' }
-        ],
-        upcomingGames: []
-      },
-      'gutti': {
-        name: 'gutti boys',
-        seed: 9,
-        record: { wins: 2, losses: 1 },
-        pointDiff: 20,
-        roster: [],
-        completedGames: [
-          { opponent: 'Ja Wick', result: 'W', score: '21-7', date: 'Sep 25' },
-          { opponent: 'Club ballers', result: 'L', score: '17-21', date: 'Sep 30' },
-          { opponent: 'RRN', result: 'W', score: '21-11', date: 'Oct 2' }
-        ],
-        upcomingGames: []
-      },
-      'sap': {
-        name: 'SAP Center',
-        seed: 10,
-        record: { wins: 2, losses: 1 },
-        pointDiff: 15,
-        roster: [],
-        completedGames: [
-          { opponent: 'LeBronda', result: 'W', score: '11-0', date: 'Sep 25' },
-          { opponent: "Rajesh's Last Dance", result: 'L', score: '14-21', date: 'Sep 30' },
-          { opponent: 'Buzz Ballers', result: 'W', score: '11-0', date: 'Oct 1' }
-        ],
-        upcomingGames: []
-      },
-      'are': {
-        name: 'ARE 3.0',
-        seed: 11,
-        record: { wins: 2, losses: 1 },
-        pointDiff: 12,
-        roster: [],
-        completedGames: [
-          { opponent: 'BBB', result: 'L', score: '18-21', date: 'Sep 22' },
-          { opponent: 'Lafayette Lakers', result: 'W', score: '21-16', date: 'Sep 29' },
-          { opponent: 'Rasthuggers', result: 'W', score: '21-11', date: 'Sep 30' }
-        ],
-        upcomingGames: []
-      },
-      'naujawan': {
-        name: 'Naujawan',
-        seed: 12,
-        record: { wins: 2, losses: 1 },
-        pointDiff: 11,
-        roster: [],
-        completedGames: [
-          { opponent: 'The Baboons', result: 'W', score: '21-17', date: 'Sep 22' },
-          { opponent: 'Walmart Oreos', result: 'W', score: '22-12', date: 'Sep 29' },
-          { opponent: 'BBS', result: 'L', score: '18-21', date: 'Oct 1' }
-        ],
-        upcomingGames: []
-      },
-      'buckit': {
-        name: 'Buckit',
-        seed: 13,
-        record: { wins: 2, losses: 1 },
-        pointDiff: 10,
-        roster: [],
-        completedGames: [
-          { opponent: 'Mutts and Fulls', result: 'L', score: '8-21', date: 'Sep 22' },
-          { opponent: 'Certified Bucket Getters', result: 'W', score: '22-4', date: 'Sep 25' },
-          { opponent: 'The Blue Ballers', result: 'W', score: '21-16', date: 'Oct 2' }
-        ],
-        upcomingGames: []
-      },
-      'swish': {
-        name: 'Swish Kebabs',
-        seed: 14,
-        record: { wins: 1, losses: 2 },
-        pointDiff: 18,
-        roster: [],
-        completedGames: [
-          { opponent: 'KOS', result: 'L', score: '18-21', date: 'Sep 25' },
-          { opponent: 'Tandoori Towers', result: 'L', score: '17-21', date: 'Sep 30' },
-          { opponent: '67 Elite Freaks', result: 'W', score: '21-4', date: 'Oct 1' }
-        ],
-        upcomingGames: []
-      },
-      'diko': {
-        name: 'Diko & Co.',
-        seed: 15,
-        record: { wins: 1, losses: 2 },
-        pointDiff: 5,
-        roster: [],
-        completedGames: [
-          { opponent: 'Nav/Sandeep', result: 'L', score: '18-22', date: 'Sep 22' },
-          { opponent: 'Tech Support', result: 'L', score: '19-21', date: 'Sep 29' },
-          { opponent: 'Kareem Puffs', result: 'W', score: '11-0', date: 'Oct 2' }
-        ],
-        upcomingGames: []
-      },
-      'fuse': {
-        name: 'Fuse',
-        seed: 16,
-        record: { wins: 1, losses: 2 },
-        pointDiff: 2,
-        roster: [],
-        completedGames: [
-          { opponent: 'Hoop', result: 'L', score: '15-21', date: 'Sep 25' },
-          { opponent: 'LeMickey', result: 'L', score: '13-21', date: 'Sep 30' },
-          { opponent: 'Squirt Sisters', result: 'W', score: '22-6', date: 'Oct 2' }
-        ],
-        upcomingGames: []
-      }
-    };
-
-    // Tabs functionality
-    const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
-    const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
-
-    function activateTab(tab) {
-      tabs.forEach(t => t.setAttribute('aria-selected', String(t === tab)));
-      panels.forEach(p => p.classList.toggle('active', p.id === tab.getAttribute('aria-controls')));
-      tab.focus();
-    }
-
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => activateTab(tab));
-      tab.addEventListener('keydown', (e) => {
-        const i = tabs.indexOf(tab);
-        if (e.key === 'ArrowRight') {
-          e.preventDefault(); activateTab(tabs[(i + 1) % tabs.length]);
-        } else if (e.key === 'ArrowLeft') {
-          e.preventDefault(); activateTab(tabs[(i - 1 + tabs.length) % tabs.length]);
+        'mutts': {
+          name: 'Mutts and Fulls',
+          seed: 1,
+          record: { wins: 3, losses: 0 },
+          pointDiff: 42,
+          roster: [],
+          completedGames: [
+            { opponent: 'Buckit', result: 'W', score: '21-8', date: 'Sep 22' },
+            { opponent: 'Certified Bucket Getters', result: 'W', score: '19-0', date: 'Sep 29' },
+            { opponent: 'The Blue Ballers', result: 'W', score: '22-12', date: 'Oct 1' }
+          ],
+          upcomingGames: []
+        },
+        'bbb': {
+          name: 'BBB',
+          seed: 2,
+          record: { wins: 3, losses: 0 },
+          pointDiff: 38,
+          roster: [],
+          completedGames: [
+            { opponent: 'ARE 3.0', result: 'W', score: '21-18', date: 'Sep 22' },
+            { opponent: 'Lafayette Lakers', result: 'W', score: '21-2', date: 'Oct 1' },
+            { opponent: 'Rasthuggers', result: 'W', score: '21-5', date: 'Oct 2' }
+          ],
+          upcomingGames: []
+        },
+        'rajesh': {
+          name: "Rajesh's Last Dance",
+          seed: 3,
+          record: { wins: 3, losses: 0 },
+          pointDiff: 27,
+          roster: [],
+          completedGames: [
+            { opponent: 'Buzz Ballers', result: 'W', score: '9-0', date: 'Sep 25' },
+            { opponent: 'SAP Center', result: 'W', score: '21-14', date: 'Sep 30' },
+            { opponent: 'LeBronda', result: 'W', score: '11-0', date: 'Oct 2' }
+          ],
+          upcomingGames: []
+        },
+        'club': {
+          name: 'Club ballers',
+          seed: 4,
+          record: { wins: 3, losses: 0 },
+          pointDiff: 20,
+          roster: [],
+          completedGames: [
+            { opponent: 'Ja Wick', result: 'W', score: '22-11', date: 'Sep 22' },
+            { opponent: 'RRN', result: 'W', score: '21-16', date: 'Sep 24' },
+            { opponent: 'gutti boys', result: 'W', score: '21-17', date: 'Sep 30' }
+          ],
+          upcomingGames: []
+        },
+        'navsandeep': {
+          name: 'Nav/Sandeep',
+          seed: 5,
+          record: { wins: 3, losses: 0 },
+          pointDiff: 18,
+          roster: [],
+          completedGames: [
+            { opponent: 'Diko & Co.', result: 'W', score: '22-18', date: 'Sep 22' },
+            { opponent: 'Kareem Puffs', result: 'W', score: '21-14', date: 'Sep 29' },
+            { opponent: 'Tech Support', result: 'W', score: '21-14', date: 'Oct 2' }
+          ],
+          upcomingGames: []
+        },
+        'kos': {
+          name: 'KOS',
+          seed: 6,
+          record: { wins: 3, losses: 0 },
+          pointDiff: 17,
+          roster: [],
+          completedGames: [
+            { opponent: 'Swish Kebabs', result: 'W', score: '21-18', date: 'Sep 25' },
+            { opponent: 'Tandoori Towers', result: 'W', score: '21-11', date: 'Sep 29' },
+            { opponent: '67 Elite Freaks', result: 'W', score: '21-17', date: 'Sep 30' }
+          ],
+          upcomingGames: []
+        },
+        'lemickey': {
+          name: 'LeMickey',
+          seed: 7,
+          record: { wins: 3, losses: 0 },
+          pointDiff: 13,
+          roster: [],
+          completedGames: [
+            { opponent: 'Squirt Sisters', result: 'W', score: '21-18', date: 'Sep 25' },
+            { opponent: 'Fuse', result: 'W', score: '21-13', date: 'Sep 30' },
+            { opponent: 'Hoop', result: 'W', score: '21-19', date: 'Oct 1' }
+          ],
+          upcomingGames: []
+        },
+        'bbs': {
+          name: 'BBS',
+          seed: 8,
+          record: { wins: 3, losses: 0 },
+          pointDiff: 11,
+          roster: [],
+          completedGames: [
+            { opponent: 'Walmart Oreos', result: 'W', score: '21-15', date: 'Sep 22' },
+            { opponent: 'The Baboons', result: 'W', score: '21-19', date: 'Sep 29' },
+            { opponent: 'Naujawan', result: 'W', score: '21-18', date: 'Oct 1' }
+          ],
+          upcomingGames: []
+        },
+        'gutti': {
+          name: 'gutti boys',
+          seed: 9,
+          record: { wins: 2, losses: 1 },
+          pointDiff: 20,
+          roster: [],
+          completedGames: [
+            { opponent: 'Ja Wick', result: 'W', score: '21-7', date: 'Sep 25' },
+            { opponent: 'Club ballers', result: 'L', score: '17-21', date: 'Sep 30' },
+            { opponent: 'RRN', result: 'W', score: '21-11', date: 'Oct 2' }
+          ],
+          upcomingGames: []
+        },
+        'sap': {
+          name: 'SAP Center',
+          seed: 10,
+          record: { wins: 2, losses: 1 },
+          pointDiff: 15,
+          roster: [],
+          completedGames: [
+            { opponent: 'LeBronda', result: 'W', score: '11-0', date: 'Sep 25' },
+            { opponent: "Rajesh's Last Dance", result: 'L', score: '14-21', date: 'Sep 30' },
+            { opponent: 'Buzz Ballers', result: 'W', score: '11-0', date: 'Oct 1' }
+          ],
+          upcomingGames: []
+        },
+        'are': {
+          name: 'ARE 3.0',
+          seed: 11,
+          record: { wins: 2, losses: 1 },
+          pointDiff: 12,
+          roster: [],
+          completedGames: [
+            { opponent: 'BBB', result: 'L', score: '18-21', date: 'Sep 22' },
+            { opponent: 'Lafayette Lakers', result: 'W', score: '21-16', date: 'Sep 29' },
+            { opponent: 'Rasthuggers', result: 'W', score: '21-11', date: 'Sep 30' }
+          ],
+          upcomingGames: []
+        },
+        'naujawan': {
+          name: 'Naujawan',
+          seed: 12,
+          record: { wins: 2, losses: 1 },
+          pointDiff: 11,
+          roster: [],
+          completedGames: [
+            { opponent: 'The Baboons', result: 'W', score: '21-17', date: 'Sep 22' },
+            { opponent: 'Walmart Oreos', result: 'W', score: '22-12', date: 'Sep 29' },
+            { opponent: 'BBS', result: 'L', score: '18-21', date: 'Oct 1' }
+          ],
+          upcomingGames: []
+        },
+        'buckit': {
+          name: 'Buckit',
+          seed: 13,
+          record: { wins: 2, losses: 1 },
+          pointDiff: 10,
+          roster: [],
+          completedGames: [
+            { opponent: 'Mutts and Fulls', result: 'L', score: '8-21', date: 'Sep 22' },
+            { opponent: 'Certified Bucket Getters', result: 'W', score: '22-4', date: 'Sep 25' },
+            { opponent: 'The Blue Ballers', result: 'W', score: '21-16', date: 'Oct 2' }
+          ],
+          upcomingGames: []
+        },
+        'swish': {
+          name: 'Swish Kebabs',
+          seed: 14,
+          record: { wins: 1, losses: 2 },
+          pointDiff: 18,
+          roster: [],
+          completedGames: [
+            { opponent: 'KOS', result: 'L', score: '18-21', date: 'Sep 25' },
+            { opponent: 'Tandoori Towers', result: 'L', score: '17-21', date: 'Sep 30' },
+            { opponent: '67 Elite Freaks', result: 'W', score: '21-4', date: 'Oct 1' }
+          ],
+          upcomingGames: []
+        },
+        'diko': {
+          name: 'Diko & Co.',
+          seed: 15,
+          record: { wins: 1, losses: 2 },
+          pointDiff: 5,
+          roster: [],
+          completedGames: [
+            { opponent: 'Nav/Sandeep', result: 'L', score: '18-22', date: 'Sep 22' },
+            { opponent: 'Tech Support', result: 'L', score: '19-21', date: 'Sep 29' },
+            { opponent: 'Kareem Puffs', result: 'W', score: '11-0', date: 'Oct 2' }
+          ],
+          upcomingGames: []
+        },
+        'fuse': {
+          name: 'Fuse',
+          seed: 16,
+          record: { wins: 1, losses: 2 },
+          pointDiff: 2,
+          roster: [],
+          completedGames: [
+            { opponent: 'Hoop', result: 'L', score: '15-21', date: 'Sep 25' },
+            { opponent: 'LeMickey', result: 'L', score: '13-21', date: 'Sep 30' },
+            { opponent: 'Squirt Sisters', result: 'W', score: '22-6', date: 'Oct 2' }
+          ],
+          upcomingGames: []
         }
-      });
-    });
-
-    // Modal functionality
-    const modal = document.getElementById('teamModal');
-    const closeBtn = document.getElementById('closeModal');
-
-    function openTeamModal(teamId) {
-      const team = teamsData[teamId];
-      if (!team) return;
-
-      document.getElementById('modalTeamName').textContent = team.name;
-      document.getElementById('teamRecord').textContent = `${team.record.wins}-${team.record.losses}`;
-      document.getElementById('teamDiff').textContent = team.pointDiff > 0 ? `+${team.pointDiff}` : team.pointDiff;
-      document.getElementById('teamSeed').textContent = `#${team.seed}`;
-
-      // Populate roster
-      const rosterList = document.getElementById('rosterList');
-      rosterList.innerHTML = team.roster.map(player => 
-        `<li><span>${player.name}</span><span class="pill">#${player.number}</span></li>`
-      ).join('');
-
-      // Populate completed games
-      const completedDiv = document.getElementById('completedGames');
-      completedDiv.innerHTML = team.completedGames.length ? team.completedGames.map(game =>
-        `<div class="game-item">
-          <div class="game-header">
-            <span class="matchup">${game.result === 'W' ? '✓' : '✗'} vs ${game.opponent}</span>
-            <span class="badge">${game.score}</span>
-          </div>
-          <div class="game-info">${game.date}</div>
-        </div>`
-      ).join('') : '<p style="color: var(--muted);">No completed games yet</p>';
-
-      // Populate upcoming games
-      const upcomingDiv = document.getElementById('upcomingGames');
-      upcomingDiv.innerHTML = team.upcomingGames.length ? team.upcomingGames.map(game =>
-        `<div class="game-item">
-          <div class="game-header">
-            <span class="matchup">vs ${game.opponent}</span>
-            <span class="badge">${game.court}</span>
-          </div>
-          <div class="game-info">${game.date} at ${game.time}</div>
-        </div>`
-      ).join('') : '<p style="color: var(--muted);">No upcoming games scheduled</p>';
-
-      modal.classList.add('active');
-    }
-
-    closeBtn.addEventListener('click', () => modal.classList.remove('active'));
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) modal.classList.remove('active');
-    });
-
-    // Team card click handlers
-    document.getElementById('teamsGrid').addEventListener('click', (e) => {
-      // Don't open modal if clicking edit icon button
-      if (e.target.classList.contains('edit-icon-btn')) {
-        return;
-      }
-      
-      const card = e.target.closest('.team-card');
-      if (card) {
-        const teamId = card.dataset.team;
-        openTeamModal(teamId);
-      }
-    });
-
-    // Copy link
-    const chip = document.getElementById('copyLink');
-    chip?.addEventListener('click', async () => {
-      try { 
-        await navigator.clipboard.writeText(location.href); 
-        chip.textContent = 'Link copied!'; 
-        setTimeout(() => chip.textContent = 'iba.tourney/2025', 1200); 
-      } catch {}
-    });
-
-    // Footer year
-    document.getElementById('y').textContent = new Date().getFullYear();
-
-    // Admin functionality
-    const adminBtn = document.getElementById('adminBtn');
-    const adminModal = document.getElementById('adminModal');
-    const adminPassword = document.getElementById('adminPassword');
-    const adminSubmit = document.getElementById('adminSubmit');
-    const adminCancel = document.getElementById('adminCancel');
-    const adminError = document.getElementById('adminError');
-
-    const ADMIN_PASSWORD = 'iba2025'; // Change this to your desired password
-    let isAdminMode = false;
-    let currentEditRow = null;
-
-    adminBtn.addEventListener('click', () => {
-      if (isAdminMode) {
-        // Logout
-        isAdminMode = false;
-        document.body.classList.remove('admin-mode');
-        adminBtn.textContent = 'Admin';
-        adminBtn.style.background = 'var(--brand)';
-        document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
-        quickAddSection.style.display = 'none';
-      } else {
-        // Show login
-        adminModal.classList.add('active');
-        adminPassword.value = '';
-        adminError.style.display = 'none';
-        setTimeout(() => adminPassword.focus(), 100);
-      }
-    });
-
-    adminCancel.addEventListener('click', () => {
-      adminModal.classList.remove('active');
-    });
-
-    adminModal.addEventListener('click', (e) => {
-      if (e.target === adminModal) {
-        adminModal.classList.remove('active');
-      }
-    });
-
-    adminSubmit.addEventListener('click', () => {
-      if (adminPassword.value === ADMIN_PASSWORD) {
-        adminModal.classList.remove('active');
-        isAdminMode = true;
-        document.body.classList.add('admin-mode');
-        adminBtn.textContent = 'Logout';
-        adminBtn.style.background = 'var(--success)';
-        document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
-        quickAddSection.style.display = 'block';
-      } else {
-        adminError.style.display = 'block';
-        adminPassword.value = '';
-        adminPassword.focus();
-      }
-    });
-
-    adminPassword.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        adminSubmit.click();
-      }
-    });
-
-    // Add game functionality
-    const addGameBtn = document.getElementById('addGameBtn');
-    const editGameModal = document.getElementById('editGameModal');
-    const gameForm = document.getElementById('gameForm');
-    const cancelEdit = document.getElementById('cancelEdit');
-    const editGameTitle = document.getElementById('editGameTitle');
-    const quickAddSection = document.querySelector('.quick-add-section');
-    const quickAddInput = document.getElementById('quickAddInput');
-    const quickAddBtn = document.getElementById('quickAddBtn');
-
-    addGameBtn.addEventListener('click', () => {
-      currentEditRow = null;
-      editGameTitle.textContent = 'Add New Game';
-      gameForm.reset();
-      editGameModal.classList.add('active');
-    });
-
-    // Quick add functionality
-    quickAddBtn.addEventListener('click', () => {
-      const input = quickAddInput.value.trim();
-      if (!input) {
-        alert('Please enter game details');
-        return;
-      }
-
-      const parts = input.split(',').map(p => p.trim());
-      if (parts.length !== 6) {
-        alert('Invalid format. Use: Team1vTeam2,Day,Time,Court,Round,Status');
-        return;
-      }
-
-      const [matchup, day, timeRaw, court, round, status] = parts;
-      
-      // Convert time format (800pm -> 8:00 PM, 1000pm -> 10:00 PM)
-      let time = timeRaw.toLowerCase().replace('pm', ' PM').replace('am', ' AM');
-      time = time.replace(/(\d{1,2})(\d{2})\s/, '$1:$2 ');
-
-      const gameData = {
-        day,
-        time,
-        matchup: matchup.replace('v', ' vs '),
-        court,
-        round,
-        status
       };
 
-      const { collection, addDoc } = window.firestoreImports;
-      const db = window.db;
+      // Tabs functionality
+      const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+      const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
 
-      addDoc(collection(db, 'games'), gameData).then(() => {
-        quickAddInput.value = '';
-        alert('Game added successfully!');
-      }).catch(error => {
-        console.error('Error adding game:', error);
-        alert('Error adding game: ' + error.message);
-      });
-    });
-
-    // Allow Enter key for quick add
-    quickAddInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        quickAddBtn.click();
+      function activateTab(tab) {
+        tabs.forEach(t => t.setAttribute('aria-selected', String(t === tab)));
+        panels.forEach(p => p.classList.toggle('active', p.id === tab.getAttribute('aria-controls')));
+        tab.focus();
       }
-    });
 
-    // Team icon editing functionality
-    const editIconModal = document.getElementById('editIconModal');
-    const editIconTeamName = document.getElementById('editIconTeamName');
-    const iconPicker = document.getElementById('iconPicker');
-    const cancelIconEdit = document.getElementById('cancelIconEdit');
-    const saveIconBtn = document.getElementById('saveIcon');
-    let currentEditTeam = null;
-    let selectedIcon = null;
-
-    const availableIcons = ['🏀', '🔥', '⚡', '💪', '🏆', '👑', '⭐', '🌟', '💎', '🚀', '🛡️', '🎯', '🪣', '🌶️', '🏟️', '⚽', '🎮', '🎨', '🦁', '🐯', '🦅', '🐉', '🦈', '🐺', '🦊', '🐻', '🦄', '🔱', '⚔️', '🎪'];
-
-    window.editTeamIcon = function(teamId) {
-      if (!isAdminMode) return;
-      
-      currentEditTeam = teamId;
-      const team = teamsData[teamId];
-      editIconTeamName.textContent = team.name;
-      
-      // Get current icon
-      const teamCard = document.querySelector(`[data-team="${teamId}"]`);
-      const currentIcon = teamCard.querySelector('.avatar').textContent;
-      selectedIcon = currentIcon;
-      
-      // Populate icon picker
-      iconPicker.innerHTML = availableIcons.map(icon => 
-        `<div class="icon-option ${icon === currentIcon ? 'selected' : ''}" data-icon="${icon}">${icon}</div>`
-      ).join('');
-      
-      // Add click handlers
-      iconPicker.querySelectorAll('.icon-option').forEach(option => {
-        option.addEventListener('click', () => {
-          iconPicker.querySelectorAll('.icon-option').forEach(o => o.classList.remove('selected'));
-          option.classList.add('selected');
-          selectedIcon = option.dataset.icon;
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => activateTab(tab));
+        tab.addEventListener('keydown', (e) => {
+          const i = tabs.indexOf(tab);
+          if (e.key === 'ArrowRight') {
+            e.preventDefault(); activateTab(tabs[(i + 1) % tabs.length]);
+          } else if (e.key === 'ArrowLeft') {
+            e.preventDefault(); activateTab(tabs[(i - 1 + tabs.length) % tabs.length]);
+          }
         });
       });
-      
-      editIconModal.classList.add('active');
-    };
 
-    cancelIconEdit.addEventListener('click', () => {
-      editIconModal.classList.remove('active');
-    });
+      // Modal functionality
+      const modal = document.getElementById('teamModal');
+      const closeBtn = document.getElementById('closeModal');
 
-    editIconModal.addEventListener('click', (e) => {
-      if (e.target === editIconModal) {
-        editIconModal.classList.remove('active');
+      function openTeamModal(teamId) {
+        const team = teamsData[teamId];
+        if (!team) return;
+
+        document.getElementById('modalTeamName').textContent = team.name;
+        document.getElementById('teamRecord').textContent = `${team.record.wins}-${team.record.losses}`;
+        document.getElementById('teamDiff').textContent = team.pointDiff > 0 ? `+${team.pointDiff}` : team.pointDiff;
+        document.getElementById('teamSeed').textContent = `#${team.seed}`;
+
+        // Populate roster
+        const rosterList = document.getElementById('rosterList');
+        rosterList.innerHTML = team.roster.map(player => 
+          `<li><span>${player.name}</span><span class="pill">#${player.number}</span></li>`
+        ).join('');
+
+        // Populate completed games
+        const completedDiv = document.getElementById('completedGames');
+        completedDiv.innerHTML = team.completedGames.length ? team.completedGames.map(game =>
+          `<div class="game-item">
+            <div class="game-header">
+              <span class="matchup">${game.result === 'W' ? '✓' : '✗'} vs ${game.opponent}</span>
+              <span class="badge">${game.score}</span>
+            </div>
+            <div class="game-info">${game.date}</div>
+          </div>`
+        ).join('') : '<p style="color: var(--muted);">No completed games yet</p>';
+
+        // Populate upcoming games
+        const upcomingDiv = document.getElementById('upcomingGames');
+        upcomingDiv.innerHTML = team.upcomingGames.length ? team.upcomingGames.map(game =>
+          `<div class="game-item">
+            <div class="game-header">
+              <span class="matchup">vs ${game.opponent}</span>
+              <span class="badge">${game.court}</span>
+            </div>
+            <div class="game-info">${game.date} at ${game.time}</div>
+          </div>`
+        ).join('') : '<p style="color: var(--muted);">No upcoming games scheduled</p>';
+
+        modal.classList.add('active');
       }
-    });
 
-    saveIconBtn.addEventListener('click', () => {
-      if (!currentEditTeam || !selectedIcon) return;
-      
-      // Update the icon in the UI
-      const teamCard = document.querySelector(`[data-team="${currentEditTeam}"]`);
-      teamCard.querySelector('.avatar').textContent = selectedIcon;
-      
-      // TODO: Save to Firebase/localStorage if you want persistence
-      // For now, it only updates in the current session
-      
-      editIconModal.classList.remove('active');
-    });
+      closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('active');
+      });
 
-    cancelEdit.addEventListener('click', () => {
-      editGameModal.classList.remove('active');
-    });
+      // Team card click handlers
+      document.getElementById('teamsGrid').addEventListener('click', (e) => {
+        // Don't open modal if clicking edit icon button
+        if (e.target.classList.contains('edit-icon-btn')) {
+          return;
+        }
+        const card = e.target.closest('.team-card');
+        if (card) openTeamModal(card.dataset.team);
+      });
 
-    editGameModal.addEventListener('click', (e) => {
-      if (e.target === editGameModal) {
-        editGameModal.classList.remove('active');
-      }
-    });
+      // Copy link (optional; only if you add an element with id="copyLink")
+      const chip = document.getElementById('copyLink');
+      chip?.addEventListener('click', async () => {
+        try { 
+          await navigator.clipboard.writeText(location.href); 
+          chip.textContent = 'Link copied!'; 
+          setTimeout(() => chip.textContent = 'iba.tourney/2025', 1200); 
+        } catch {}
+      });
 
-    gameForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      
-      const { collection, addDoc, updateDoc, doc } = window.firestoreImports;
-      const db = window.db;
-      
-      const day = document.getElementById('gameDay').value;
-      const time = document.getElementById('gameTime').value;
-      const matchup = document.getElementById('gameMatchup').value;
-      const court = document.getElementById('gameCourt').value;
-      const round = document.getElementById('gameRound').value;
-      const status = document.getElementById('gameStatus').value;
+      // Footer year
+      document.getElementById('y').textContent = new Date().getFullYear();
 
-      const gameData = { day, time, matchup, court, round, status };
+      // Admin functionality
+      const adminBtn = document.getElementById('adminBtn');
+      const adminModal = document.getElementById('adminModal');
+      const adminPassword = document.getElementById('adminPassword');
+      const adminSubmit = document.getElementById('adminSubmit');
+      const adminCancel = document.getElementById('adminCancel');
+      const adminError = document.getElementById('adminError');
 
-      if (currentEditRow) {
-        // Update existing game in Firestore
-        const docId = currentEditRow.dataset.docId;
-        const gameRef = doc(db, 'games', docId);
-        updateDoc(gameRef, gameData).then(() => {
-          editGameModal.classList.remove('active');
-        }).catch(error => {
-          console.error('Error updating game:', error);
-          alert('Error updating game. Please try again.');
-        });
-      } else {
-        // Add new game to Firestore
+      const ADMIN_PASSWORD = 'iba2025'; // Change this to your desired password
+      let isAdminMode = false;
+      let currentEditRow = null;
+
+      adminBtn.addEventListener('click', () => {
+        if (isAdminMode) {
+          // Logout
+          isAdminMode = false;
+          document.body.classList.remove('admin-mode');
+          adminBtn.textContent = 'Admin';
+          adminBtn.style.background = 'var(--brand)';
+          document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
+          quickAddSection.style.display = 'none';
+        } else {
+          // Show login
+          adminModal.classList.add('active');
+          adminPassword.value = '';
+          adminError.style.display = 'none';
+          setTimeout(() => adminPassword.focus(), 100);
+        }
+      });
+
+      adminCancel.addEventListener('click', () => {
+        adminModal.classList.remove('active');
+      });
+
+      adminModal.addEventListener('click', (e) => {
+        if (e.target === adminModal) {
+          adminModal.classList.remove('active');
+        }
+      });
+
+      adminSubmit.addEventListener('click', () => {
+        if (adminPassword.value === ADMIN_PASSWORD) {
+          adminModal.classList.remove('active');
+          isAdminMode = true;
+          document.body.classList.add('admin-mode');
+          adminBtn.textContent = 'Logout';
+          adminBtn.style.background = 'var(--success)';
+          document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
+          quickAddSection.style.display = 'block';
+        } else {
+          adminError.style.display = 'block';
+          adminPassword.value = '';
+          adminPassword.focus();
+        }
+      });
+
+      adminPassword.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          adminSubmit.click();
+        }
+      });
+
+      // Add game functionality
+      const addGameBtn = document.getElementById('addGameBtn');
+      const editGameModal = document.getElementById('editGameModal');
+      const gameForm = document.getElementById('gameForm');
+      const cancelEdit = document.getElementById('cancelEdit');
+      const editGameTitle = document.getElementById('editGameTitle');
+      const quickAddSection = document.querySelector('.quick-add-section');
+      const quickAddInput = document.getElementById('quickAddInput');
+      const quickAddBtn = document.getElementById('quickAddBtn');
+
+      addGameBtn.addEventListener('click', () => {
+        currentEditRow = null;
+        editGameTitle.textContent = 'Add New Game';
+        gameForm.reset();
+        editGameModal.classList.add('active');
+      });
+
+      // Quick add functionality
+      quickAddBtn.addEventListener('click', () => {
+        const input = quickAddInput.value.trim();
+        if (!input) {
+          alert('Please enter game details');
+          return;
+        }
+
+        const parts = input.split(',').map(p => p.trim());
+        if (parts.length !== 6) {
+          alert('Invalid format. Use: Team1vTeam2,Day,Time,Court,Round,Status');
+          return;
+        }
+
+        const [matchup, day, timeRaw, court, round, status] = parts;
+        
+        // Convert time format (800pm -> 8:00 PM, 1000pm -> 10:00 PM)
+        let time = timeRaw.toLowerCase().replace('pm', ' PM').replace('am', ' AM');
+        time = time.replace(/(\d{1,2})(\d{2})\s/, '$1:$2 ');
+
+        const gameData = {
+          day,
+          time,
+          matchup: matchup.replace('v', ' vs '),
+          court,
+          round,
+          status
+        };
+
         addDoc(collection(db, 'games'), gameData).then(() => {
-          editGameModal.classList.remove('active');
+          quickAddInput.value = '';
+          alert('Game added successfully!');
         }).catch(error => {
           console.error('Error adding game:', error);
-          alert('Error adding game. Please try again.');
+          alert('Error adding game: ' + error.message);
         });
-      }
-    });
-
-    // Edit and delete functions (global scope)
-    window.editGame = function(btn) {
-      if (!isAdminMode) return;
-      currentEditRow = btn.closest('tr');
-      const cells = currentEditRow.cells;
-      
-      editGameTitle.textContent = 'Edit Game';
-      document.getElementById('gameDay').value = cells[0].textContent;
-      document.getElementById('gameTime').value = cells[1].textContent;
-      document.getElementById('gameMatchup').value = cells[2].textContent;
-      document.getElementById('gameCourt').value = cells[3].textContent;
-      document.getElementById('gameRound').value = cells[4].textContent;
-      document.getElementById('gameStatus').value = cells[5].querySelector('.badge').textContent.trim();
-      
-      editGameModal.classList.add('active');
-    };
-
-    window.deleteGame = function(btn) {
-      if (!isAdminMode) return;
-      if (confirm('Are you sure you want to delete this game?')) {
-        console.log('🗑️ Deleting game...');
-        const { deleteDoc, doc } = window.firestoreImports;
-        const db = window.db;
-        
-        const row = btn.closest('tr');
-        const docId = row.dataset.docId;
-        const matchup = row.cells[2].textContent;
-        const day = row.cells[0].textContent;
-        
-        // Remove from upcoming games before deleting
-        const teams = matchup.split(' vs ').map(t => t.trim());
-        const team1 = teams[0];
-        const team2 = teams[1];
-        
-        const team1Id = Object.keys(teamsData).find(id => teamsData[id].name === team1);
-        const team2Id = Object.keys(teamsData).find(id => teamsData[id].name === team2);
-        
-        if (team1Id) {
-          teamsData[team1Id].upcomingGames = teamsData[team1Id].upcomingGames.filter(
-            g => g.opponent !== team2 || g.date !== day
-          );
-        }
-        if (team2Id) {
-          teamsData[team2Id].upcomingGames = teamsData[team2Id].upcomingGames.filter(
-            g => g.opponent !== team1 || g.date !== day
-          );
-        }
-        
-        console.log('Deleting document ID:', docId);
-        const gameRef = doc(db, 'games', docId);
-        deleteDoc(gameRef).then(() => {
-          console.log('✅ Game deleted successfully');
-        }).catch(error => {
-          console.error('❌ Error deleting game:', error);
-          alert('Error deleting game: ' + error.message);
-        });
-      }
-    };
-
-    // Schedule filters
-    const search = document.getElementById('search');
-    const dayFilter = document.getElementById('dayFilter');
-    const courtFilter = document.getElementById('courtFilter');
-    const searchBtn = document.getElementById('searchBtn');
-    const rows = document.querySelectorAll('#scheduleTable tbody tr');
-
-    function applyFilters() {
-      const q = (search.value || '').toLowerCase();
-      const day = dayFilter.value;
-      const court = courtFilter.value;
-      const allRows = Array.from(document.querySelectorAll('#scheduleTable tbody tr'));
-      allRows.forEach(tr => {
-        const cells = tr.children;
-        const matchesQuery = !q || tr.textContent.toLowerCase().includes(q);
-        const matchesDay = !day || cells[0].textContent === day;
-        const matchesCourt = !court || cells[3].textContent === court;
-        tr.style.display = (matchesQuery && matchesDay && matchesCourt) ? '' : 'none';
       });
-    }
-    
-    searchBtn.addEventListener('click', applyFilters);
-    search.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        applyFilters();
+
+      // Allow Enter key for quick add
+      quickAddInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') quickAddBtn.click();
+      });
+
+      // Team icon editing functionality
+      const editIconModal = document.getElementById('editIconModal');
+      const editIconTeamName = document.getElementById('editIconTeamName');
+      const iconPicker = document.getElementById('iconPicker');
+      const cancelIconEdit = document.getElementById('cancelIconEdit');
+      const saveIconBtn = document.getElementById('saveIcon');
+      let currentEditTeam = null;
+      let selectedIcon = null;
+
+      const availableIcons = ['🏀', '🔥', '⚡', '💪', '🏆', '👑', '⭐', '🌟', '💎', '🚀', '🛡️', '🎯', '🪣', '🌶️', '🏟️', '⚽', '🎮', '🎨', '🦁', '🐯', '🦅', '🐉', '🦈', '🐺', '🦊', '🐻', '🦄', '🔱', '⚔️', '🎪'];
+
+      window.editTeamIcon = function(teamId) {
+        const bodyHasAdmin = document.body.classList.contains('admin-mode');
+        if (!bodyHasAdmin) return;
+        
+        currentEditTeam = teamId;
+        const teamsDataLocal = teamsData[teamId];
+        editIconTeamName.textContent = teamsDataLocal.name;
+        
+        // Get current icon
+        const teamCard = document.querySelector(`[data-team="${teamId}"]`);
+        const currentIcon = teamCard.querySelector('.avatar').textContent;
+        selectedIcon = currentIcon;
+        
+        // Populate icon picker
+        iconPicker.innerHTML = availableIcons.map(icon => 
+          `<div class="icon-option ${icon === currentIcon ? 'selected' : ''}" data-icon="${icon}">${icon}</div>`
+        ).join('');
+        
+        // Add click handlers
+        iconPicker.querySelectorAll('.icon-option').forEach(option => {
+          option.addEventListener('click', () => {
+            iconPicker.querySelectorAll('.icon-option').forEach(o => o.classList.remove('selected'));
+            option.classList.add('selected');
+            selectedIcon = option.dataset.icon;
+          });
+        });
+        
+        editIconModal.classList.add('active');
+      };
+
+      cancelIconEdit.addEventListener('click', () => {
+        editIconModal.classList.remove('active');
+      });
+
+      editIconModal.addEventListener('click', (e) => {
+        if (e.target === editIconModal) {
+          editIconModal.classList.remove('active');
+        }
+      });
+
+      saveIconBtn.addEventListener('click', () => {
+        if (!currentEditTeam || !selectedIcon) return;
+        
+        // Update the icon in the UI
+        const teamCard = document.querySelector(`[data-team="${currentEditTeam}"]`);
+        teamCard.querySelector('.avatar').textContent = selectedIcon;
+        
+        // TODO: Save to Firebase/localStorage if you want persistence
+        editIconModal.classList.remove('active');
+      });
+
+      cancelEdit.addEventListener('click', () => {
+        editGameModal.classList.remove('active');
+      });
+
+      editGameModal.addEventListener('click', (e) => {
+        if (e.target === editGameModal) {
+          editGameModal.classList.remove('active');
+        }
+      });
+
+      gameForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const day = document.getElementById('gameDay').value;
+        const time = document.getElementById('gameTime').value;
+        const matchup = document.getElementById('gameMatchup').value;
+        const court = document.getElementById('gameCourt').value;
+        const round = document.getElementById('gameRound').value;
+        const status = document.getElementById('gameStatus').value;
+
+        const gameData = { day, time, matchup, court, round, status };
+
+        if (currentEditRow) {
+          // Update existing game in Firestore
+          const docId = currentEditRow.dataset.docId;
+          const gameRef = doc(db, 'games', docId);
+          updateDoc(gameRef, gameData).then(() => {
+            editGameModal.classList.remove('active');
+          }).catch(error => {
+            console.error('Error updating game:', error);
+            alert('Error updating game. Please try again.');
+          });
+        } else {
+          // Add new game to Firestore
+          addDoc(collection(db, 'games'), gameData).then(() => {
+            editGameModal.classList.remove('active');
+          }).catch(error => {
+            console.error('Error adding game:', error);
+            alert('Error adding game. Please try again.');
+          });
+        }
+      });
+
+      // Edit and delete functions (global scope)
+      window.editGame = function(btn) {
+        if (!document.body.classList.contains('admin-mode')) return;
+        currentEditRow = btn.closest('tr');
+        const cells = currentEditRow.cells;
+        
+        editGameTitle.textContent = 'Edit Game';
+        document.getElementById('gameDay').value = cells[0].textContent;
+        document.getElementById('gameTime').value = cells[1].textContent;
+        document.getElementById('gameMatchup').value = cells[2].textContent;
+        document.getElementById('gameCourt').value = cells[3].textContent;
+        document.getElementById('gameRound').value = cells[4].textContent;
+        document.getElementById('gameStatus').value = cells[5].querySelector('.badge').textContent.trim();
+        
+        editGameModal.classList.add('active');
+      };
+
+      window.deleteGame = function(btn) {
+        if (!document.body.classList.contains('admin-mode')) return;
+        if (confirm('Are you sure you want to delete this game?')) {
+          console.log('🗑️ Deleting game...');
+          
+          const row = btn.closest('tr');
+          const docId = row.dataset.docId;
+          const matchup = row.cells[2].textContent;
+          const day = row.cells[0].textContent;
+          
+          // Remove from upcoming games before deleting (if you wire this to Firebase later)
+          const teams = matchup.split(' vs ').map(t => t.trim());
+          const team1 = teams[0];
+          const team2 = teams[1];
+          
+          const team1Id = Object.keys(teamsData).find(id => teamsData[id].name === team1);
+          const team2Id = Object.keys(teamsData).find(id => teamsData[id].name === team2);
+          
+          if (team1Id) {
+            teamsData[team1Id].upcomingGames = teamsData[team1Id].upcomingGames.filter(
+              g => g.opponent !== team2 || g.date !== day
+            );
+          }
+          if (team2Id) {
+            teamsData[team2Id].upcomingGames = teamsData[team2Id].upcomingGames.filter(
+              g => g.opponent !== team1 || g.date !== day
+            );
+          }
+          
+          const gameRef = doc(db, 'games', docId);
+          deleteDoc(gameRef).then(() => {
+            console.log('✅ Game deleted successfully');
+          }).catch(error => {
+            console.error('❌ Error deleting game:', error);
+            alert('Error deleting game: ' + error.message);
+          });
+        }
+      };
+
+      // Schedule filters
+      const search = document.getElementById('search');
+      const dayFilter = document.getElementById('dayFilter');
+      const courtFilter = document.getElementById('courtFilter');
+      const searchBtn = document.getElementById('searchBtn');
+
+      function applyFilters() {
+        const q = (search.value || '').toLowerCase();
+        const day = dayFilter.value;
+        const court = courtFilter.value;
+        const allRows = Array.from(document.querySelectorAll('#scheduleTable tbody tr'));
+        allRows.forEach(tr => {
+          const cells = tr.children;
+          const matchesQuery = !q || tr.textContent.toLowerCase().includes(q);
+          const matchesDay = !day || cells[0].textContent === day;
+          const matchesCourt = !court || cells[3].textContent === court;
+          tr.style.display = (matchesQuery && matchesDay && matchesCourt) ? '' : 'none';
+        });
       }
-    });
-    [dayFilter, courtFilter].forEach(el => el.addEventListener('change', applyFilters));
-    
+      
+      searchBtn.addEventListener('click', applyFilters);
+      search.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') applyFilters();
+      });
+      [dayFilter, courtFilter].forEach(el => el.addEventListener('change', applyFilters));
     }); // End of waitForFirebase
   </script>
 </body>
