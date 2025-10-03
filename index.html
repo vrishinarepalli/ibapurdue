@@ -522,9 +522,6 @@
         <a href="https://www.instagram.com/iba_purdue/" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
           <span class="chip" title="Follow us on Instagram">INSTAGRAM</span>
         </a>
-        <a href="https://www.instagram.com/iba_purdue/" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
-          <span class="chip alt pill" title="Visit our Instagram">@iba_purdue</span>
-        </a>
       </div>
     </header>
 
@@ -537,6 +534,15 @@
 
       <section id="panel-schedule" class="tabpanel active" role="tabpanel" aria-labelledby="tab-schedule">
         <button class="add-game-btn" id="addGameBtn">+ Add New Game</button>
+        <div class="quick-add-section" style="display: none; margin-bottom: 1rem;">
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <input type="text" id="quickAddInput" class="input" style="flex: 1;" placeholder="Team1vTeam2,Day,Time,Court,Round,Status (e.g. KOSvBBB,Friday,800pm,Court A,Round of 16,Scheduled)" />
+            <button class="admin-submit" id="quickAddBtn" style="padding: 0.55rem 1rem; border-radius: 10px;">Quick Add</button>
+          </div>
+          <div style="color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem;">
+            Format: Team1vTeam2,Day,Time,Court,Round,Status (Time: 800pm, 1000pm, etc.)
+          </div>
+        </div>
         <div class="controls">
           <input id="search" class="input" type="search" placeholder="Search team or court…" aria-label="Search schedule" />
           <select id="dayFilter" class="select" aria-label="Filter by day">
@@ -728,7 +734,7 @@
         <div class="faq">
           <details>
             <summary>How many players are allowed per team?</summary>
-            <p>Each team must have exactly 4 players on the roster.</p>
+            <p>Each team may have up to 4 players on the roster.</p>
           </details>
           <details>
             <summary>Who is eligible to participate?</summary>
@@ -748,7 +754,7 @@
           </details>
           <details>
             <summary>Will there be referees and scorekeepers?</summary>
-            <p>Yes, all games will have certified referees officiating and a dedicated scorekeeper tracking the game.</p>
+            <p>Yes, all games will have referees officiating and a dedicated scorekeeper tracking the game.</p>
           </details>
           <details>
             <summary>Is there a penalty for arriving late?</summary>
@@ -862,6 +868,7 @@
               <option value="Scheduled">Scheduled</option>
               <option value="In Progress">In Progress</option>
               <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
               <option value="TBD">TBD</option>
             </select>
           </div>
@@ -1301,12 +1308,63 @@
     const gameForm = document.getElementById('gameForm');
     const cancelEdit = document.getElementById('cancelEdit');
     const editGameTitle = document.getElementById('editGameTitle');
+    const quickAddSection = document.querySelector('.quick-add-section');
+    const quickAddInput = document.getElementById('quickAddInput');
+    const quickAddBtn = document.getElementById('quickAddBtn');
 
     addGameBtn.addEventListener('click', () => {
       currentEditRow = null;
       editGameTitle.textContent = 'Add New Game';
       gameForm.reset();
       editGameModal.classList.add('active');
+    });
+
+    // Quick add functionality
+    quickAddBtn.addEventListener('click', () => {
+      const input = quickAddInput.value.trim();
+      if (!input) {
+        alert('Please enter game details');
+        return;
+      }
+
+      const parts = input.split(',').map(p => p.trim());
+      if (parts.length !== 6) {
+        alert('Invalid format. Use: Team1vTeam2,Day,Time,Court,Round,Status');
+        return;
+      }
+
+      const [matchup, day, timeRaw, court, round, status] = parts;
+      
+      // Convert time format (800pm -> 8:00 PM, 1000pm -> 10:00 PM)
+      let time = timeRaw.toLowerCase().replace('pm', ' PM').replace('am', ' AM');
+      time = time.replace(/(\d{1,2})(\d{2})\s/, '$1:$2 ');
+
+      const gameData = {
+        day,
+        time,
+        matchup: matchup.replace('v', ' vs '),
+        court,
+        round,
+        status
+      };
+
+      const { collection, addDoc } = window.firestoreImports;
+      const db = window.db;
+
+      addDoc(collection(db, 'games'), gameData).then(() => {
+        quickAddInput.value = '';
+        alert('Game added successfully!');
+      }).catch(error => {
+        console.error('Error adding game:', error);
+        alert('Error adding game: ' + error.message);
+      });
+    });
+
+    // Allow Enter key for quick add
+    quickAddInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        quickAddBtn.click();
+      }
     });
 
     cancelEdit.addEventListener('click', () => {
