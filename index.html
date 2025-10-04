@@ -11,7 +11,7 @@
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyBN0rfpzjredziJbPny-YfEgq4uE2l1hzE",
@@ -28,7 +28,7 @@
     
     // Make Firebase available globally
     window.db = db;
-    window.firestoreImports = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot };
+    window.firestoreImports = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc };
   </script>
   
   <style>
@@ -1819,17 +1819,31 @@
     });
 
     // Bracket editing functionality
-    let currentBracketSlot = null;
-
     window.editBracketSlot = function(slotId) {
       if (!isAdminMode) return;
       
-      currentBracketSlot = slotId;
-      const teamName = prompt('Enter team name for this slot:', 
-        document.querySelector(`[data-slot="${slotId}"] .team-name`).textContent);
+      const currentName = document.querySelector(`[data-slot="${slotId}"] .team-name`).textContent;
+      const teamName = prompt('Enter team name for this slot:', currentName);
       
       if (teamName !== null) {
-        document.querySelector(`[data-slot="${slotId}"] .team-name`).textContent = teamName || 'TBD';
+        const newName = teamName.trim() || 'TBD';
+        document.querySelector(`[data-slot="${slotId}"] .team-name`).textContent = newName;
+        
+        // Save to Firebase
+        const { doc, setDoc, getDoc } = window.firestoreImports;
+        const bracketRef = doc(db, 'tournament', 'bracket');
+        
+        getDoc(bracketRef).then((docSnap) => {
+          const bracketData = docSnap.exists() ? docSnap.data() : {};
+          bracketData[slotId] = newName;
+          
+          setDoc(bracketRef, bracketData).then(() => {
+            console.log('Bracket updated in database');
+          }).catch(error => {
+            console.error('Error saving bracket:', error);
+            alert('Error saving bracket: ' + error.message);
+          });
+        });
       }
     };
 
