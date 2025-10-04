@@ -394,6 +394,24 @@
     .admin-mode .admin-btn {
       background: var(--success);
     }
+    .visitor-count {
+      display: none;
+      background: #0b1224;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text);
+      font-weight: 600;
+    }
+    .admin-mode .visitor-count {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .visitor-count .count {
+      color: var(--brand);
+    }
     .edit-btn {
       display: none;
       padding: 0.4rem 0.8rem;
@@ -716,6 +734,9 @@
         <a href="https://groupme.com/join_group/103612585/ARKLYj6v?fbclid=PAZXh0bgNhZW0CMTEAAaeIjRa3CC7_aPN3OBin6Vwxb_526BpUeVZ17QKolQ1m9w-F70UaiJFOTz3s4Q_aem_2m9NaxxWRVEaJBnCeDxOxQ" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
           <span class="chip" title="Join our GroupMe">GROUPME</span>
         </a>
+        <span class="visitor-count" title="Total site visitors">
+          👁️ <span class="count" id="visitorCount">0</span>
+        </span>
       </div>
     </header>
 
@@ -1493,6 +1514,64 @@
       // Start loading bracket
       loadBracket();
 
+      // Track visitor count
+      async function trackVisitor() {
+        try {
+          const { doc, getDoc, setDoc, increment } = window.firestoreImports;
+          const visitorRef = doc(db, 'system', 'visitors');
+
+          // Check if visitor has already been counted in this session
+          if (sessionStorage.getItem('visitorCounted')) {
+            console.log('Visitor already counted in this session');
+            return;
+          }
+
+          // Increment visitor count
+          const visitorDoc = await getDoc(visitorRef);
+          if (visitorDoc.exists()) {
+            const currentCount = visitorDoc.data().count || 0;
+            await setDoc(visitorRef, {
+              count: currentCount + 1,
+              lastVisit: new Date().toISOString()
+            });
+          } else {
+            // Initialize visitor count
+            await setDoc(visitorRef, {
+              count: 1,
+              lastVisit: new Date().toISOString()
+            });
+          }
+
+          // Mark this session as counted
+          sessionStorage.setItem('visitorCounted', 'true');
+          console.log('✅ Visitor tracked');
+        } catch (error) {
+          console.error('❌ Error tracking visitor:', error);
+        }
+      }
+
+      // Track visitor on page load
+      trackVisitor();
+
+      // Load visitor count for admin
+      function loadVisitorCount() {
+        const { doc, onSnapshot } = window.firestoreImports;
+        const visitorRef = doc(db, 'system', 'visitors');
+
+        onSnapshot(visitorRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const visitorCount = docSnap.data().count || 0;
+            const visitorDisplay = document.getElementById('visitorCount');
+            if (visitorDisplay) {
+              visitorDisplay.textContent = visitorCount.toLocaleString();
+            }
+          }
+        });
+      }
+
+      // Start loading visitor count
+      loadVisitorCount();
+
       // Helper function to find team ID by name
       function findTeamIdByName(teamName) {
         return Object.keys(teamsData).find(id =>
@@ -1872,15 +1951,82 @@
     let isAdminMode = false;
     let currentEditRow = null;
 
-    adminBtn.addEventListener('click', () => {
+    // Admin lock monitoring function
+    function startAdminLockMonitor() {
+      const { doc, onSnapshot } = window.firestoreImports;
+      const adminLockRef = doc(db, 'system', 'adminLock');
+
+      // Listen for changes to admin lock
+      window.adminLockUnsubscribe = onSnapshot(adminLockRef, (docSnap) => {
+        if (isAdminMode && docSnap.exists()) {
+          const lockData = docSnap.data();
+
+          // If lock is released, log out this admin
+          if (!lockData.isLocked) {
+            console.log('Admin lock released - logging out');
+            isAdminMode = false;
+            document.body.classList.remove('admin-mode');
+            adminBtn.textContent = 'Admin';
+            adminBtn.style.background = 'var(--brand)';
+            document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
+            quickAddSection.style.display = 'none';
+
+            // Stop monitoring
+            if (window.adminLockUnsubscribe) {
+              window.adminLockUnsubscribe();
+              window.adminLockUnsubscribe = null;
+            }
+
+            // Show notification
+            alert('Admin session ended.');
+          }
+        }
+      });
+    }
+
+    // Release admin lock when page is closed or refreshed
+    window.addEventListener('beforeunload', async () => {
+      if (isAdminMode) {
+        try {
+          const { doc, setDoc } = window.firestoreImports;
+          const adminLockRef = doc(db, 'system', 'adminLock');
+          await setDoc(adminLockRef, {
+            isLocked: false,
+            timestamp: new Date().toISOString()
+          });
+        } catch (error) {
+          console.error('Error releasing admin lock on page unload:', error);
+        }
+      }
+    });
+
+    adminBtn.addEventListener('click', async () => {
       if (isAdminMode) {
         // Logout
-        isAdminMode = false;
-        document.body.classList.remove('admin-mode');
-        adminBtn.textContent = 'Admin';
-        adminBtn.style.background = 'var(--brand)';
-        document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
-        quickAddSection.style.display = 'none';
+        try {
+          // Release admin lock
+          const { doc, setDoc } = window.firestoreImports;
+          const adminLockRef = doc(db, 'system', 'adminLock');
+          await setDoc(adminLockRef, {
+            isLocked: false,
+            timestamp: new Date().toISOString()
+          });
+
+          // Stop monitoring
+          if (window.adminLockUnsubscribe) {
+            window.adminLockUnsubscribe();
+            window.adminLockUnsubscribe = null;
+          }
+
+          isAdminMode = false;
+          document.body.classList.remove('admin-mode');
+          adminBtn.textContent = 'Admin';
+          adminBtn.style.background = 'var(--brand)';
+          document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
+          quickAddSection.style.display = 'none';
+        } catch (error) {
+          console.error('Error releasing admin lock:', error);
+        }
       } else {
         // Show login
         adminModal.classList.add('active');
@@ -1900,16 +2046,46 @@
       }
     });
 
-    adminSubmit.addEventListener('click', () => {
+    adminSubmit.addEventListener('click', async () => {
       if (adminPassword.value === ADMIN_PASSWORD) {
-        adminModal.classList.remove('active');
-        isAdminMode = true;
-        document.body.classList.add('admin-mode');
-        adminBtn.textContent = 'Logout';
-        adminBtn.style.background = 'var(--success)';
-        document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
-        quickAddSection.style.display = 'block';
+        try {
+          // Check if another admin is already logged in
+          const { doc, getDoc, setDoc } = window.firestoreImports;
+          const adminLockRef = doc(db, 'system', 'adminLock');
+          const adminLockDoc = await getDoc(adminLockRef);
+
+          if (adminLockDoc.exists() && adminLockDoc.data().isLocked) {
+            // Another admin is already logged in
+            adminError.textContent = 'Another admin is already logged in. Please try again later.';
+            adminError.style.display = 'block';
+            adminPassword.value = '';
+            adminPassword.focus();
+            return;
+          }
+
+          // Set admin lock
+          await setDoc(adminLockRef, {
+            isLocked: true,
+            timestamp: new Date().toISOString()
+          });
+
+          adminModal.classList.remove('active');
+          isAdminMode = true;
+          document.body.classList.add('admin-mode');
+          adminBtn.textContent = 'Logout';
+          adminBtn.style.background = 'var(--success)';
+          document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
+          quickAddSection.style.display = 'block';
+
+          // Start monitoring admin lock
+          startAdminLockMonitor();
+        } catch (error) {
+          console.error('Error checking admin lock:', error);
+          adminError.textContent = 'Error logging in. Please try again.';
+          adminError.style.display = 'block';
+        }
       } else {
+        adminError.textContent = 'Incorrect password';
         adminError.style.display = 'block';
         adminPassword.value = '';
         adminPassword.focus();
