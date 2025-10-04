@@ -596,29 +596,56 @@
     /* Bracket styles */
     .bracket-container {
       display: flex;
-      gap: 2rem;
+      gap: 3rem;
       padding: 2rem;
       min-width: max-content;
+      align-items: center;
     }
     .bracket-round {
       display: flex;
       flex-direction: column;
-      justify-content: space-around;
-      min-width: 200px;
+      justify-content: center;
+      min-width: 220px;
     }
     .bracket-round-title {
       text-align: center;
       font-weight: 700;
       color: var(--brand);
-      margin-bottom: 1rem;
+      margin-bottom: 2rem;
       font-size: 1.1rem;
     }
     .bracket-match {
       display: flex;
       flex-direction: column;
-      margin: 1rem 0;
       gap: 0.5rem;
+      position: relative;
     }
+
+    /* Round of 16 spacing */
+    .bracket-round:nth-child(1) .bracket-match {
+      margin: 0.75rem 0;
+    }
+
+    /* Quarterfinals spacing - double the gaps */
+    .bracket-round:nth-child(2) .bracket-match {
+      margin: 2.5rem 0;
+    }
+
+    /* Semifinals spacing - quadruple the gaps */
+    .bracket-round:nth-child(3) .bracket-match {
+      margin: 6rem 0;
+    }
+
+    /* Finals spacing */
+    .bracket-round:nth-child(4) .bracket-match {
+      margin: 13.5rem 0;
+    }
+
+    /* Champion - centered */
+    .bracket-round:nth-child(5) {
+      justify-content: center;
+    }
+
     .bracket-team {
       background: var(--card);
       border: 1px solid var(--border);
@@ -629,11 +656,17 @@
       justify-content: space-between;
       position: relative;
       min-height: 45px;
+      transition: all 0.2s ease;
+    }
+    .bracket-team:hover {
+      background: #111a2e;
+      border-color: var(--brand);
     }
     .bracket-team.champion {
       background: linear-gradient(135deg, var(--brand) 0%, #cc7d00 100%);
       border-color: var(--brand);
       font-weight: 700;
+      box-shadow: 0 0 20px rgba(255, 157, 0, 0.3);
     }
     .bracket-team .team-name {
       flex: 1;
