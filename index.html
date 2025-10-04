@@ -630,11 +630,11 @@
         <button class="add-game-btn" id="addGameBtn">+ Add New Game</button>
         <div class="quick-add-section" style="display: none; margin-bottom: 1rem;">
           <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <input type="text" id="quickAddInput" class="input" style="flex: 1;" placeholder="Team1vTeam2,Day,Time,Court,Round,Status (e.g. KOSvBBB,Friday,800pm,Court A,Round of 16,Scheduled)" />
+            <input type="text" id="quickAddInput" class="input" style="flex: 1;" placeholder="Team1 vs Team2,Day,Time,Court,Round,Status (e.g. KOS vs BBB,Friday,800pm,Court A,Round of 16,Scheduled)" />
             <button class="admin-submit" id="quickAddBtn" style="padding: 0.55rem 1rem; border-radius: 10px;">Quick Add</button>
           </div>
           <div style="color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem;">
-            Format: Team1vTeam2,Day,Time,Court,Round,Status (Time: 800pm, 1000pm, etc.)
+            Format: Team1 vs Team2,Day,Time,Court,Round,Status (Time: 800pm, 1000pm, etc.)
           </div>
         </div>
         <div class="controls">
@@ -1462,11 +1462,17 @@
 
       const parts = input.split(',').map(p => p.trim());
       if (parts.length !== 6) {
-        alert('Invalid format. Use: Team1vTeam2,Day,Time,Court,Round,Status');
+        alert('Invalid format. Use: Team1 vs Team2,Day,Time,Court,Round,Status');
         return;
       }
 
       const [matchup, day, timeRaw, court, round, status] = parts;
+      
+      // Check if matchup contains " vs " (with spaces)
+      if (!matchup.includes(' vs ')) {
+        alert('Matchup must use " vs " format (e.g., "Team A vs Team B")');
+        return;
+      }
       
       // Convert time format (800pm -> 8:00 PM, 1000pm -> 10:00 PM)
       let time = timeRaw.toLowerCase().replace('pm', ' PM').replace('am', ' AM');
@@ -1475,7 +1481,7 @@
       const gameData = {
         day,
         time,
-        matchup: matchup.replace('v', ' vs '),
+        matchup, // Already has " vs " in it
         court,
         round,
         status
