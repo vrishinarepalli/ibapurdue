@@ -574,6 +574,70 @@
       border-color: var(--brand);
       box-shadow: 0 0 0 3px var(--ring);
     }
+    
+    /* Bracket styles */
+    .bracket-container {
+      display: flex;
+      gap: 2rem;
+      padding: 2rem;
+      min-width: max-content;
+    }
+    .bracket-round {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      min-width: 200px;
+    }
+    .bracket-round-title {
+      text-align: center;
+      font-weight: 700;
+      color: var(--brand);
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+    }
+    .bracket-match {
+      display: flex;
+      flex-direction: column;
+      margin: 1rem 0;
+      gap: 0.5rem;
+    }
+    .bracket-team {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      min-height: 45px;
+    }
+    .bracket-team.champion {
+      background: linear-gradient(135deg, var(--brand) 0%, #cc7d00 100%);
+      border-color: var(--brand);
+      font-weight: 700;
+    }
+    .bracket-team .team-name {
+      flex: 1;
+    }
+    .edit-bracket-btn {
+      display: none;
+      padding: 0.25rem 0.5rem;
+      background: var(--brand);
+      color: #0b0f1a;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-left: 0.5rem;
+    }
+    .admin-mode .edit-bracket-btn {
+      display: inline-block;
+    }
+    .edit-bracket-btn:hover {
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>
@@ -623,6 +687,7 @@
       <div class="tablist" role="tablist" aria-label="Tournament sections">
         <button role="tab" id="tab-schedule" aria-selected="true" aria-controls="panel-schedule">Schedule</button>
         <button role="tab" id="tab-teams" aria-selected="false" aria-controls="panel-teams">Teams</button>
+        <button role="tab" id="tab-bracket" aria-selected="false" aria-controls="panel-bracket">Bracket</button>
         <button role="tab" id="tab-faq" aria-selected="false" aria-controls="panel-faq">FAQ</button>
       </div>
 
@@ -833,6 +898,193 @@
               <p>Click to view roster and stats</p>
             </div>
           </article>
+        </div>
+      </section>
+
+      <section id="panel-bracket" class="tabpanel" role="tabpanel" aria-labelledby="tab-bracket">
+        <div style="overflow-x: auto;">
+          <div class="bracket-container">
+            <!-- Round of 16 -->
+            <div class="bracket-round">
+              <div class="bracket-round-title">Round of 16</div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="r16-1-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-1-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="r16-1-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-1-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="r16-2-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-2-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="r16-2-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-2-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="r16-3-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-3-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="r16-3-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-3-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="r16-4-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-4-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="r16-4-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-4-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="r16-5-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-5-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="r16-5-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-5-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="r16-6-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-6-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="r16-6-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-6-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="r16-7-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-7-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="r16-7-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-7-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="r16-8-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-8-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="r16-8-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-8-2')">Edit</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quarterfinals -->
+            <div class="bracket-round">
+              <div class="bracket-round-title">Quarterfinals</div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="qf-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="qf-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="qf-3">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-3')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="qf-4">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-4')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="qf-5">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-5')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="qf-6">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-6')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="qf-7">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-7')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="qf-8">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-8')">Edit</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Semifinals -->
+            <div class="bracket-round">
+              <div class="bracket-round-title">Semifinals</div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="sf-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('sf-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="sf-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('sf-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="sf-3">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('sf-3')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="sf-4">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('sf-4')">Edit</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Finals -->
+            <div class="bracket-round">
+              <div class="bracket-round-title">Finals</div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="f-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('f-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="f-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('f-2')">Edit</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Champion -->
+            <div class="bracket-round">
+              <div class="bracket-round-title">Champion</div>
+              <div class="bracket-match">
+                <div class="bracket-team champion" data-slot="champion">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('champion')">Edit</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -1563,11 +1815,23 @@
       const teamCard = document.querySelector(`[data-team="${currentEditTeam}"]`);
       teamCard.querySelector('.avatar').textContent = selectedIcon;
       
-      // TODO: Save to Firebase/localStorage if you want persistence
-      // For now, it only updates in the current session
-      
       editIconModal.classList.remove('active');
     });
+
+    // Bracket editing functionality
+    let currentBracketSlot = null;
+
+    window.editBracketSlot = function(slotId) {
+      if (!isAdminMode) return;
+      
+      currentBracketSlot = slotId;
+      const teamName = prompt('Enter team name for this slot:', 
+        document.querySelector(`[data-slot="${slotId}"] .team-name`).textContent);
+      
+      if (teamName !== null) {
+        document.querySelector(`[data-slot="${slotId}"] .team-name`).textContent = teamName || 'TBD';
+      }
+    };
 
     cancelEdit.addEventListener('click', () => {
       editGameModal.classList.remove('active');
