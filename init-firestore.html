@@ -76,6 +76,7 @@
     <div>
       <button id="initTeamsBtn" onclick="initializeTeams()">Initialize Teams</button>
       <button id="initBracketBtn" onclick="initializeBracket()">Initialize Bracket</button>
+      <button id="initPasswordBtn" onclick="initializeAdminPassword()">Set Admin Password</button>
       <button class="success" onclick="initializeAll()">Initialize All Data</button>
       <button class="warning" onclick="clearLog()">Clear Log</button>
     </div>
@@ -409,10 +410,46 @@
       }
     };
 
+    window.initializeAdminPassword = async function() {
+      const btn = document.getElementById('initPasswordBtn');
+      btn.disabled = true;
+
+      const password = prompt('Enter the admin password you want to set:');
+
+      if (!password) {
+        log('⚠️ Password setup cancelled', 'warning');
+        btn.disabled = false;
+        return;
+      }
+
+      if (password.length < 6) {
+        log('❌ Password must be at least 6 characters long', 'error');
+        btn.disabled = false;
+        return;
+      }
+
+      log('Setting admin password...', 'info');
+
+      try {
+        const { doc, setDoc } = window.firestoreImports;
+        await setDoc(doc(db, 'system', 'adminConfig'), {
+          password: password,
+          lastUpdated: new Date().toISOString()
+        });
+        log('✅ Admin password set successfully!', 'success');
+        log(`⚠️ IMPORTANT: Remember your password: ${password}`, 'warning');
+      } catch (error) {
+        log(`❌ Error: ${error.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    };
+
     window.initializeAll = async function() {
       log('=== Starting full initialization ===', 'warning');
       await window.initializeTeams();
       await window.initializeBracket();
+      await window.initializeAdminPassword();
       log('=== Initialization complete! ===', 'success');
     };
 

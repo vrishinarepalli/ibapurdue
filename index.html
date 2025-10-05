@@ -1990,7 +1990,6 @@
     const adminCancel = document.getElementById('adminCancel');
     const adminError = document.getElementById('adminError');
 
-    const ADMIN_PASSWORD = 'iba2025'; // Change this to your desired password
     let isAdminMode = false;
     let currentEditRow = null;
 
@@ -2090,10 +2089,23 @@
     });
 
     adminSubmit.addEventListener('click', async () => {
-      if (adminPassword.value === ADMIN_PASSWORD) {
-        try {
+      try {
+        const { doc, getDoc, setDoc } = window.firestoreImports;
+
+        // Get password from Firestore
+        const adminConfigRef = doc(db, 'system', 'adminConfig');
+        const adminConfigDoc = await getDoc(adminConfigRef);
+
+        if (!adminConfigDoc.exists()) {
+          adminError.textContent = 'Admin configuration not found. Please contact support.';
+          adminError.style.display = 'block';
+          return;
+        }
+
+        const storedPassword = adminConfigDoc.data().password;
+
+        if (adminPassword.value === storedPassword) {
           // Check if another admin is already logged in
-          const { doc, getDoc, setDoc } = window.firestoreImports;
           const adminLockRef = doc(db, 'system', 'adminLock');
           const adminLockDoc = await getDoc(adminLockRef);
 
@@ -2122,16 +2134,16 @@
 
           // Start monitoring admin lock
           startAdminLockMonitor();
-        } catch (error) {
-          console.error('Error checking admin lock:', error);
-          adminError.textContent = 'Error logging in. Please try again.';
+        } else {
+          adminError.textContent = 'Incorrect password';
           adminError.style.display = 'block';
+          adminPassword.value = '';
+          adminPassword.focus();
         }
-      } else {
-        adminError.textContent = 'Incorrect password';
+      } catch (error) {
+        console.error('Error checking admin login:', error);
+        adminError.textContent = 'Error logging in. Please try again.';
         adminError.style.display = 'block';
-        adminPassword.value = '';
-        adminPassword.focus();
       }
     });
 
