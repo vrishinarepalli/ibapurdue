@@ -699,6 +699,75 @@
     .edit-bracket-btn:hover {
       opacity: 0.9;
     }
+
+    /* Roster management styles */
+    .roster-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+    .roster-item-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1;
+    }
+    .roster-item-number {
+      background: var(--brand);
+      color: #0b0f1a;
+      font-weight: 700;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      min-width: 35px;
+      text-align: center;
+    }
+    .roster-item-name {
+      flex: 1;
+    }
+    .captain-badge {
+      background: #ffd700;
+      color: #0b0f1a;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      margin-left: 0.5rem;
+    }
+    .roster-item-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .make-captain-btn {
+      padding: 0.4rem 0.6rem;
+      background: #ffd700;
+      color: #0b0f1a;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .make-captain-btn:hover {
+      opacity: 0.9;
+    }
+    .remove-player-btn {
+      padding: 0.4rem 0.6rem;
+      background: var(--danger);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .remove-player-btn:hover {
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>
@@ -732,7 +801,7 @@
 
     <!-- Edit team modal -->
     <div id="editTeamModal" class="edit-game-modal">
-      <div class="edit-game-content" style="max-width: 600px;">
+      <div class="edit-game-content" style="max-width: 700px; max-height: 85vh; overflow-y: auto;">
         <h3>Edit Team</h3>
         <form id="teamForm">
           <div class="form-group">
@@ -755,6 +824,19 @@
             <label>Point Differential</label>
             <input type="number" id="teamPointDiff" required />
           </div>
+
+          <h4 style="color: var(--brand); margin-top: 1.5rem; margin-bottom: 1rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">Roster Management</h4>
+
+          <div id="rosterManager" style="margin-bottom: 1rem;">
+            <!-- Roster items will be populated here -->
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <input type="text" id="newPlayerName" class="input" placeholder="Player name" style="flex: 1; background: #0a1122; color: var(--text); border: 1px solid var(--border); padding: 0.55rem; border-radius: 8px;" />
+            <input type="text" id="newPlayerNumber" class="input" placeholder="#" style="width: 80px; background: #0a1122; color: var(--text); border: 1px solid var(--border); padding: 0.55rem; border-radius: 8px;" />
+            <button type="button" id="addPlayerBtn" style="padding: 0.55rem 1rem; background: var(--success); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">+ Add Player</button>
+          </div>
+
           <div class="admin-buttons">
             <button type="button" class="admin-cancel" id="cancelTeamEdit">Cancel</button>
             <button type="submit" class="admin-submit">Save</button>
@@ -1859,9 +1941,19 @@
 
       // Populate roster
       const rosterList = document.getElementById('rosterList');
-      rosterList.innerHTML = team.roster.map(player => 
-        `<li><span>${player.name}</span><span class="pill">#${player.number}</span></li>`
-      ).join('');
+      if (team.roster && team.roster.length > 0) {
+        rosterList.innerHTML = team.roster.map(player =>
+          `<li>
+            <span>
+              ${player.name}
+              ${player.isCaptain ? '<span class="captain-badge">CAPTAIN</span>' : ''}
+            </span>
+            <span class="pill">#${player.number}</span>
+          </li>`
+        ).join('');
+      } else {
+        rosterList.innerHTML = '<li style="color: var(--muted); text-align: center;">No roster available</li>';
+      }
 
       // Populate completed games
       const completedDiv = document.getElementById('completedGames');
@@ -1913,7 +2005,86 @@
     const editTeamModal = document.getElementById('editTeamModal');
     const teamForm = document.getElementById('teamForm');
     const cancelTeamEdit = document.getElementById('cancelTeamEdit');
+    const rosterManager = document.getElementById('rosterManager');
+    const addPlayerBtn = document.getElementById('addPlayerBtn');
     let currentEditTeamId = null;
+    let currentRoster = [];
+
+    // Render roster in edit modal
+    function renderRosterManager() {
+      rosterManager.innerHTML = '';
+
+      if (currentRoster.length === 0) {
+        rosterManager.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 1rem;">No players added yet</p>';
+        return;
+      }
+
+      currentRoster.forEach((player, index) => {
+        const rosterItem = document.createElement('div');
+        rosterItem.className = 'roster-item';
+        rosterItem.innerHTML = `
+          <div class="roster-item-info">
+            <div class="roster-item-number">#${player.number}</div>
+            <div class="roster-item-name">
+              ${player.name}
+              ${player.isCaptain ? '<span class="captain-badge">CAPTAIN</span>' : ''}
+            </div>
+          </div>
+          <div class="roster-item-actions">
+            ${!player.isCaptain ? `<button type="button" class="make-captain-btn" onclick="makeCaptain(${index})">Make Captain</button>` : ''}
+            <button type="button" class="remove-player-btn" onclick="removePlayer(${index})">Remove</button>
+          </div>
+        `;
+        rosterManager.appendChild(rosterItem);
+      });
+    }
+
+    // Add player to roster
+    addPlayerBtn.addEventListener('click', () => {
+      const nameInput = document.getElementById('newPlayerName');
+      const numberInput = document.getElementById('newPlayerNumber');
+
+      const name = nameInput.value.trim();
+      const number = numberInput.value.trim();
+
+      if (!name || !number) {
+        alert('Please enter both player name and number');
+        return;
+      }
+
+      // Check if number already exists
+      if (currentRoster.some(p => p.number === number)) {
+        alert('A player with this number already exists');
+        return;
+      }
+
+      currentRoster.push({
+        name: name,
+        number: number,
+        isCaptain: false
+      });
+
+      nameInput.value = '';
+      numberInput.value = '';
+      renderRosterManager();
+    });
+
+    // Make player captain
+    window.makeCaptain = function(index) {
+      // Remove captain status from all players
+      currentRoster.forEach(p => p.isCaptain = false);
+      // Set this player as captain
+      currentRoster[index].isCaptain = true;
+      renderRosterManager();
+    };
+
+    // Remove player from roster
+    window.removePlayer = function(index) {
+      if (confirm('Remove this player from the roster?')) {
+        currentRoster.splice(index, 1);
+        renderRosterManager();
+      }
+    };
 
     window.editTeamData = function(teamId) {
       if (!isAdminMode) return;
@@ -1928,6 +2099,10 @@
       document.getElementById('teamWins').value = team.record?.wins || 0;
       document.getElementById('teamLosses').value = team.record?.losses || 0;
       document.getElementById('teamPointDiff').value = team.pointDiff || 0;
+
+      // Load roster
+      currentRoster = team.roster ? JSON.parse(JSON.stringify(team.roster)) : [];
+      renderRosterManager();
 
       editTeamModal.classList.add('active');
     };
@@ -1957,7 +2132,8 @@
           wins: parseInt(document.getElementById('teamWins').value),
           losses: parseInt(document.getElementById('teamLosses').value)
         },
-        pointDiff: parseInt(document.getElementById('teamPointDiff').value)
+        pointDiff: parseInt(document.getElementById('teamPointDiff').value),
+        roster: currentRoster
       };
 
       updateDoc(teamRef, updatedData).then(() => {
