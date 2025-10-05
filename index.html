@@ -723,15 +723,6 @@
       gap: 0.75rem;
       flex: 1;
     }
-    .roster-item-number {
-      background: var(--brand);
-      color: #0b0f1a;
-      font-weight: 700;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      min-width: 35px;
-      text-align: center;
-    }
     .roster-item-name {
       flex: 1;
     }
@@ -844,8 +835,7 @@
 
             <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
               <input type="text" id="newPlayerName" class="input" placeholder="Player name" style="flex: 1; background: #0a1122; color: var(--text); border: 1px solid var(--border); padding: 0.65rem; border-radius: 8px; font-size: 0.95rem;" />
-              <input type="text" id="newPlayerNumber" class="input" placeholder="Jersey #" style="width: 100px; background: #0a1122; color: var(--text); border: 1px solid var(--border); padding: 0.65rem; border-radius: 8px; font-size: 0.95rem;" />
-              <button type="button" id="addPlayerBtn" style="padding: 0.65rem 1.2rem; background: var(--success); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; white-space: nowrap;">+ Add</button>
+              <button type="button" id="addPlayerBtn" style="padding: 0.65rem 1.2rem; background: var(--success); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; white-space: nowrap;">+ Add Player</button>
             </div>
           </div>
 
@@ -1960,7 +1950,6 @@
               ${player.name}
               ${player.isCaptain ? '<span class="captain-badge">CAPTAIN</span>' : ''}
             </span>
-            <span class="pill">#${player.number}</span>
           </li>`
         ).join('');
       } else {
@@ -2036,7 +2025,6 @@
         rosterItem.className = 'roster-item';
         rosterItem.innerHTML = `
           <div class="roster-item-info">
-            <div class="roster-item-number">#${player.number}</div>
             <div class="roster-item-name">
               ${player.name}
               ${player.isCaptain ? '<span class="captain-badge">CAPTAIN</span>' : ''}
@@ -2054,30 +2042,25 @@
     // Add player to roster
     addPlayerBtn.addEventListener('click', () => {
       const nameInput = document.getElementById('newPlayerName');
-      const numberInput = document.getElementById('newPlayerNumber');
-
       const name = nameInput.value.trim();
-      const number = numberInput.value.trim();
 
-      if (!name || !number) {
-        alert('Please enter both player name and number');
+      if (!name) {
+        alert('Please enter a player name');
         return;
       }
 
-      // Check if number already exists
-      if (currentRoster.some(p => p.number === number)) {
-        alert('A player with this number already exists');
+      // Check if player already exists
+      if (currentRoster.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+        alert('This player is already on the roster');
         return;
       }
 
       currentRoster.push({
         name: name,
-        number: number,
         isCaptain: false
       });
 
       nameInput.value = '';
-      numberInput.value = '';
       renderRosterManager();
     });
 
