@@ -427,6 +427,12 @@
     .admin-mode .edit-btn {
       display: inline-block;
     }
+    .edit-team-btn {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      z-index: 10;
+    }
     .edit-btn:hover {
       opacity: 0.9;
     }
@@ -1596,7 +1602,7 @@
           card.dataset.team = teamId;
           card.innerHTML = `
             <button class="edit-icon-btn" onclick="editTeamIcon('${teamId}')">Edit Icon</button>
-            <button class="edit-btn" onclick="editTeamData('${teamId}')" style="position: absolute; top: 5px; left: 5px;">Edit</button>
+            <button class="edit-btn edit-team-btn" onclick="editTeamData('${teamId}')">Edit Team</button>
             <div class="avatar" aria-hidden="true">${team.icon || '🏀'}</div>
             <div>
               <h4>${team.name} <span class="pill" title="Seed">#${team.seed}</span></h4>
