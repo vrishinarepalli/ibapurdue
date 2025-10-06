@@ -781,7 +781,7 @@
 <body>
   <div class="wrap">
     <header class="site" role="banner">
-      <div class="logo" aria-hidden="true">
+      <div class="logo">
         <svg viewBox="0 0 24 24" fill="none" stroke="url(#g)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <defs>
             <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
@@ -1395,7 +1395,7 @@
             </div>
             <div class="stat-box">
               <div class="label">Seed</div>
-              <div class="value" id="teamSeed">-</div>
+              <div class="value" id="teamSeedDisplay">-</div>
             </div>
           </div>
 
@@ -1977,7 +1977,7 @@
       document.getElementById('modalTeamName').textContent = team.name;
       document.getElementById('teamRecord').textContent = `${team.record?.wins || 0}-${team.record?.losses || 0}`;
       document.getElementById('teamDiff').textContent = team.pointDiff > 0 ? `+${team.pointDiff}` : (team.pointDiff || 0);
-      document.getElementById('teamSeed').textContent = team.seed ? `#${team.seed}` : 'N/A';
+      document.getElementById('teamSeedDisplay').textContent = team.seed ? `#${team.seed}` : 'N/A';
 
       // Populate roster
       const rosterList = document.getElementById('rosterList');
