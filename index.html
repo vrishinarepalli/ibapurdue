@@ -1812,118 +1812,65 @@
           return;
         }
 
-        // Determine if game is scheduled/upcoming or completed
+        // Only sync to upcoming games - completed games are handled by the complete game modal
         const isCompleted = gameData.status === 'Completed';
 
+        if (isCompleted) {
+          // Don't do anything here - completed games are handled by the complete game modal
+          return;
+        }
+
         try {
-          // Update team 1
+          // Update team 1 - add to upcoming games
           const team1Ref = doc(db, 'teams', team1Id);
           const team1Doc = await getDoc(team1Ref);
           if (team1Doc.exists()) {
             const team1Data = team1Doc.data();
+            const upcomingGames = team1Data.upcomingGames || [];
 
-            if (isCompleted) {
-              // Add to completed games, remove from upcoming
-              const upcomingGames = (team1Data.upcomingGames || []).filter(
-                g => !(g.opponent === team2Name && g.date === gameData.day)
-              );
+            // Remove any existing entry for this game
+            const filteredGames = upcomingGames.filter(
+              g => !(g.opponent === team2Name && g.date === gameData.day)
+            );
 
-              const completedGames = team1Data.completedGames || [];
-              // Check if not already in completed
-              const alreadyCompleted = completedGames.some(
-                g => g.opponent === team2Name && g.date === gameData.day
-              );
+            // Add the new/updated game
+            filteredGames.push({
+              opponent: team2Name,
+              date: gameData.day,
+              time: gameData.time,
+              court: gameData.court,
+              round: gameData.round
+            });
 
-              if (!alreadyCompleted) {
-                completedGames.push({
-                  opponent: team2Name,
-                  result: 'TBD', // You can update this manually or parse from scores
-                  score: 'TBD',
-                  date: gameData.day
-                });
-              }
-
-              await updateDoc(team1Ref, {
-                upcomingGames: upcomingGames,
-                completedGames: completedGames
-              });
-            } else {
-              // Add to upcoming games
-              const upcomingGames = team1Data.upcomingGames || [];
-
-              // Remove any existing entry for this game
-              const filteredGames = upcomingGames.filter(
-                g => !(g.opponent === team2Name && g.date === gameData.day)
-              );
-
-              // Add the new/updated game
-              filteredGames.push({
-                opponent: team2Name,
-                date: gameData.day,
-                time: gameData.time,
-                court: gameData.court,
-                round: gameData.round
-              });
-
-              await updateDoc(team1Ref, {
-                upcomingGames: filteredGames
-              });
-            }
+            await updateDoc(team1Ref, {
+              upcomingGames: filteredGames
+            });
           }
 
-          // Update team 2
+          // Update team 2 - add to upcoming games
           const team2Ref = doc(db, 'teams', team2Id);
           const team2Doc = await getDoc(team2Ref);
           if (team2Doc.exists()) {
             const team2Data = team2Doc.data();
+            const upcomingGames = team2Data.upcomingGames || [];
 
-            if (isCompleted) {
-              // Add to completed games, remove from upcoming
-              const upcomingGames = (team2Data.upcomingGames || []).filter(
-                g => !(g.opponent === team1Name && g.date === gameData.day)
-              );
+            // Remove any existing entry for this game
+            const filteredGames = upcomingGames.filter(
+              g => !(g.opponent === team1Name && g.date === gameData.day)
+            );
 
-              const completedGames = team2Data.completedGames || [];
-              // Check if not already in completed
-              const alreadyCompleted = completedGames.some(
-                g => g.opponent === team1Name && g.date === gameData.day
-              );
+            // Add the new/updated game
+            filteredGames.push({
+              opponent: team1Name,
+              date: gameData.day,
+              time: gameData.time,
+              court: gameData.court,
+              round: gameData.round
+            });
 
-              if (!alreadyCompleted) {
-                completedGames.push({
-                  opponent: team1Name,
-                  result: 'TBD',
-                  score: 'TBD',
-                  date: gameData.day
-                });
-              }
-
-              await updateDoc(team2Ref, {
-                upcomingGames: upcomingGames,
-                completedGames: completedGames
-              });
-            } else {
-              // Add to upcoming games
-              const upcomingGames = team2Data.upcomingGames || [];
-
-              // Remove any existing entry for this game
-              const filteredGames = upcomingGames.filter(
-                g => !(g.opponent === team1Name && g.date === gameData.day)
-              );
-
-              // Add the new/updated game
-              filteredGames.push({
-                opponent: team1Name,
-                date: gameData.day,
-                time: gameData.time,
-                court: gameData.court,
-                round: gameData.round
-              });
-
-              await updateDoc(team2Ref, {
-                upcomingGames: filteredGames
-              });
-            }
+            await updateDoc(team2Ref, {
+              upcomingGames: filteredGames
+            });
           }
 
           console.log('✅ Synced game to teams:', team1Name, 'vs', team2Name);
@@ -2740,10 +2687,15 @@
       // Check if status is being changed to Completed
       if (status === 'Completed' && currentEditRow) {
         const docId = currentEditRow.dataset.docId;
-        currentCompleteGameData = { docId, matchup, day, date };
+        currentCompleteGameData = { docId, matchup, day, date, time, court, round };
 
         // Parse team names
         const teams = matchup.split(' vs ');
+        if (teams.length !== 2) {
+          alert('Invalid matchup format. Must be "Team A vs Team B"');
+          return;
+        }
+
         team1WinName.textContent = teams[0].trim();
         team2WinName.textContent = teams[1].trim();
 
@@ -2754,10 +2706,10 @@
         team1WinBtn.classList.remove('selected');
         team2WinBtn.classList.remove('selected');
 
-        // Show complete game modal
+        // Show complete game modal (don't close edit game modal yet)
         completeGameMatchup.textContent = matchup;
         completeGameModal.classList.add('active');
-        return;
+        return; // Stop here - don't save the game yet
       }
 
       const gameData = { date, day, time, matchup, court, round, status };
@@ -2769,8 +2721,10 @@
           const gameRef = doc(db, 'games', docId);
           await updateDoc(gameRef, gameData);
 
-          // Sync to teams
-          await syncGameToTeams(gameData, docId);
+          // Sync to teams only for non-completed games
+          if (status !== 'Completed') {
+            await syncGameToTeams(gameData, docId);
+          }
 
           editGameModal.classList.remove('active');
         } else {
