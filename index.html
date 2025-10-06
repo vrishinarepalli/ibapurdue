@@ -2605,13 +2605,34 @@
           completedAt: new Date().toISOString()
         });
 
+        console.log('🎯 Completing game:', currentCompleteGameData.matchup);
+
         // Update team records with win/loss and score
         const teams = currentCompleteGameData.matchup.split(' vs ');
         const team1Name = teams[0].trim();
         const team2Name = teams[1].trim();
 
+        console.log('👥 Team 1:', team1Name);
+        console.log('👥 Team 2:', team2Name);
+        console.log('📋 Available teams:', Object.keys(teamsData).map(id => teamsData[id].name));
+        console.log('📊 Full teamsData:', teamsData);
+
         const team1Id = findTeamIdByName(team1Name);
         const team2Id = findTeamIdByName(team2Name);
+
+        console.log('🔑 Team 1 ID:', team1Id);
+        console.log('🔑 Team 2 ID:', team2Id);
+
+        if (!team1Id || !team2Id) {
+          console.error('❌ Could not find team IDs!');
+          console.log('🔍 Searching for:', team1Name, 'and', team2Name);
+          console.log('📝 Team names in database:');
+          Object.keys(teamsData).forEach(id => {
+            console.log(`  - "${teamsData[id].name}" (ID: ${id})`);
+          });
+          alert('Error: Could not find teams. Please check console for details.');
+          return;
+        }
 
         if (team1Id && team2Id) {
           const team1Ref = doc(db, 'teams', team1Id);
@@ -2619,6 +2640,9 @@
 
           const team1Doc = await getDoc(team1Ref);
           const team2Doc = await getDoc(team2Ref);
+
+          console.log('📄 Team 1 exists:', team1Doc.exists());
+          console.log('📄 Team 2 exists:', team2Doc.exists());
 
           if (team1Doc.exists() && team2Doc.exists()) {
             const team1Data = team1Doc.data();
@@ -2659,16 +2683,22 @@
               date: currentCompleteGameData.day
             });
 
+            console.log('📝 About to update teams:');
+            console.log(`  Team 1 (${team1Name}) completed games:`, team1CompletedGames);
+            console.log(`  Team 2 (${team2Name}) completed games:`, team2CompletedGames);
+
             // Update both teams (do not change win/loss records)
             await updateDoc(team1Ref, {
               upcomingGames: team1UpcomingGames,
               completedGames: team1CompletedGames
             });
+            console.log('✅ Team 1 updated successfully');
 
             await updateDoc(team2Ref, {
               upcomingGames: team2UpcomingGames,
               completedGames: team2CompletedGames
             });
+            console.log('✅ Team 2 updated successfully');
 
             console.log('✅ Game completed and teams updated');
           }
