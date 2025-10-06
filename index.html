@@ -768,13 +768,13 @@
 
     /* Complete game modal styles */
     .winner-btn:hover {
-      border-color: var(--brand);
-      background: #111a2e;
+      border-color: var(--brand) !important;
+      background: #111a2e !important;
     }
     .winner-btn.selected {
-      border-color: var(--success);
-      background: var(--success);
-      color: #0b0f1a;
+      border-color: var(--success) !important;
+      background: var(--success) !important;
+      color: #0b0f1a !important;
     }
   </style>
 </head>
@@ -1674,19 +1674,26 @@
         grid.innerHTML = '';
 
         // Sort teams by seed
-        const sortedTeams = Object.entries(teamsData).sort((a, b) => a[1].seed - b[1].seed);
+        const sortedTeams = Object.entries(teamsData).sort((a, b) => {
+          const seedA = a[1].seed || 999;
+          const seedB = b[1].seed || 999;
+          return seedA - seedB;
+        });
 
         sortedTeams.forEach(([teamId, team]) => {
           const card = document.createElement('article');
           card.className = 'team-card';
           card.dataset.team = teamId;
+
+          const seedDisplay = team.seed ? `<span class="pill" title="Seed">#${team.seed}</span>` : '';
+
           card.innerHTML = `
             <button class="edit-icon-btn" onclick="editTeamIcon('${teamId}')">Edit Icon</button>
             <button class="edit-btn edit-team-btn" onclick="editTeamData('${teamId}')">Edit Team</button>
             <div class="avatar" aria-hidden="true">${team.icon || '🏀'}</div>
             <div>
-              <h4>${team.name} <span class="pill" title="Seed">#${team.seed}</span></h4>
-              <p>Click to view roster and stats</p>
+              <h4>${team.name} ${seedDisplay}</h4>
+              <p>Seed #${team.seed || 'N/A'} • Click to view roster and stats</p>
             </div>
           `;
           grid.appendChild(card);
@@ -1968,9 +1975,9 @@
       if (!team) return;
 
       document.getElementById('modalTeamName').textContent = team.name;
-      document.getElementById('teamRecord').textContent = `${team.record.wins}-${team.record.losses}`;
-      document.getElementById('teamDiff').textContent = team.pointDiff > 0 ? `+${team.pointDiff}` : team.pointDiff;
-      document.getElementById('teamSeed').textContent = `#${team.seed}`;
+      document.getElementById('teamRecord').textContent = `${team.record?.wins || 0}-${team.record?.losses || 0}`;
+      document.getElementById('teamDiff').textContent = team.pointDiff > 0 ? `+${team.pointDiff}` : (team.pointDiff || 0);
+      document.getElementById('teamSeed').textContent = team.seed ? `#${team.seed}` : 'N/A';
 
       // Populate roster
       const rosterList = document.getElementById('rosterList');
@@ -2629,10 +2636,15 @@
               g => !(g.opponent === team1Name && g.date === currentCompleteGameData.day)
             );
 
-            // Add to completed games
-            const team1CompletedGames = team1Data.completedGames || [];
-            const team2CompletedGames = team2Data.completedGames || [];
+            // Remove from completed games if already exists (to avoid duplicates), then add new one
+            let team1CompletedGames = (team1Data.completedGames || []).filter(
+              g => !(g.opponent === team2Name && g.date === currentCompleteGameData.day)
+            );
+            let team2CompletedGames = (team2Data.completedGames || []).filter(
+              g => !(g.opponent === team1Name && g.date === currentCompleteGameData.day)
+            );
 
+            // Add the completed game with actual results
             team1CompletedGames.push({
               opponent: team2Name,
               result: team1Won ? 'W' : 'L',
@@ -2662,8 +2674,13 @@
           }
         }
 
+        // Close both modals
         completeGameModal.classList.remove('active');
         editGameModal.classList.remove('active');
+
+        // Reset state
+        currentEditRow = null;
+        selectedWinner = null;
       } catch (error) {
         console.error('Error completing game:', error);
         alert('Error completing game: ' + error.message);
@@ -2722,11 +2739,10 @@
           await updateDoc(gameRef, gameData);
 
           // Sync to teams only for non-completed games
-          if (status !== 'Completed') {
-            await syncGameToTeams(gameData, docId);
-          }
+          await syncGameToTeams(gameData, docId);
 
           editGameModal.classList.remove('active');
+          currentEditRow = null; // Reset current edit row
         } else {
           // Add new game to Firestore
           const docRef = await addDoc(collection(db, 'games'), gameData);
