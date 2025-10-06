@@ -7,7 +7,10 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>IBA Basketball Tournament</title>
-  
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -53,10 +56,47 @@
     html, body { height: 100%; }
     body {
       margin: 0;
-      background: radial-gradient(1200px 800px at 10% 0%, #0d1324, #090d18 60%), var(--bg);
+      background: linear-gradient(-45deg, #0d1324, #090d18, #111b35, #0b1020);
+      background-size: 400% 400%;
+      animation: gradientShift 18s ease infinite;
       color: var(--text);
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
       line-height: 1.6;
+    }
+
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(255,157,0,.55); }
+        50%      { box-shadow: 0 0 0 10px rgba(255,157,0,0); }
+    }
+
+    @keyframes popIn {
+        from { opacity: 0; transform: scale(0.9);}
+        to { opacity: 1; transform: scale(1);}
+    }
+
+    @keyframes flashy-glow {
+        0% {
+          transform: scale(1);
+          box-shadow: 0 0 8px rgba(255, 157, 0, 0.6), 0 0 15px rgba(79, 70, 229, 0.6);
+        }
+        50% {
+          transform: scale(1.1);
+          box-shadow: 0 0 15px rgba(255, 157, 0, 1), 0 0 30px rgba(79, 70, 229, 1);
+        }
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 8px rgba(255, 157, 0, 0.6), 0 0 15px rgba(79, 70, 229, 0.6);
+        }
+    }
+
+    .flashy-glow {
+        animation: flashy-glow 1.5s infinite ease-in-out;
     }
 
     .wrap {
@@ -93,13 +133,32 @@
     }
     .logo svg { width: 30px; height: 30px; }
 
-    .title h1 { margin: 0; font-size: clamp(1.15rem, 1rem + 1vw, 1.6rem); letter-spacing: .3px; }
+    .title h1 {
+        margin: 0;
+        font-size: clamp(1.15rem, 1rem + 1vw, 1.6rem);
+        letter-spacing: .3px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        background: linear-gradient(90deg, var(--brand), var(--brand-2));
+        background-clip: text;
+        -webkit-background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+    }
     .title p { margin: .1rem 0 0; color: var(--muted); font-size: .9rem; }
 
     .meta {
       display: flex; gap: .5rem; align-items: center; flex-wrap: wrap;
     }
-    .chip { font-size: .8rem; color: #0b0f1a; background: var(--brand); padding: .3rem .6rem; border-radius: 999px; font-weight: 700; }
+    .chip {
+        font-size: .8rem;
+        color: #0b0f1a;
+        background: var(--brand);
+        padding: .3rem .6rem;
+        border-radius: 999px;
+        font-weight: 700;
+        animation: pulse 2s infinite;
+    }
     .chip.alt { background: #222b44; color: var(--text); border: 1px solid var(--border); }
 
     .tabs {
@@ -124,7 +183,13 @@
       outline: none; border-color: var(--brand);
       box-shadow: 0 0 0 4px var(--ring);
     }
-    .tablist button[aria-selected="true"] { background: linear-gradient(180deg, #0f1732, #0a1024); }
+    .tablist button[aria-selected="true"] {
+        background: linear-gradient(90deg, var(--brand), var(--brand-2));
+        color: #fff;
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(255,157,0,.5);
+        border-color: var(--brand);
+    }
 
     .tabpanel { display: none; padding: 1.25rem; }
     .tabpanel.active { display: block; }
@@ -154,9 +219,10 @@
       transition: all 0.2s ease;
     }
     .team-card:hover {
-      background: #111a2e;
-      border-color: var(--brand);
-      transform: translateY(-2px);
+        background: #111a2e;
+        border-color: var(--brand);
+        transform: translateY(-6px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(0,0,0,.4);
     }
     @media (min-width: 600px) { .team-card { grid-column: span 6; } }
     @media (min-width: 900px) { .team-card { grid-column: span 4; } }
@@ -176,14 +242,17 @@
     }
     .modal.active { display: flex; align-items: center; justify-content: center; }
     .modal-content {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      max-width: 800px;
-      width: 100%;
-      max-height: 90vh;
-      overflow-y: auto;
-      box-shadow: var(--shadow);
+        background: rgba(15, 20, 35, 0.85);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: var(--radius);
+        max-width: 800px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 12px 40px rgba(0,0,0,.6);
+        animation: popIn .3s ease;
     }
     .modal-header {
       padding: 1.5rem;
@@ -286,6 +355,101 @@
     summary { cursor: pointer; font-weight: 700; list-style: none; }
     summary::-webkit-details-marker { display: none; }
     details p { margin: .6rem 0 0; color: var(--muted); }
+
+    /* Hero Section */
+    .hero-section {
+      position: relative;
+      width: 100%;
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-top: 1.5rem;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      opacity: 0.3;
+    }
+    .hero-bg img {
+      width: 100%;
+      height: 16rem;
+      object-fit: cover;
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, rgba(255, 157, 0, 0.7), rgba(79, 70, 229, 0.7));
+      opacity: 0.7;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+    .hero-content h2 {
+      font-size: clamp(1.875rem, 5vw, 2.25rem);
+      font-weight: 800;
+      color: white;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      margin: 0 0 0.75rem 0;
+    }
+    .hero-content p {
+      color: rgba(255,255,255,0.95);
+      margin: 0 0 1.25rem 0;
+    }
+    .hero-btn {
+      display: inline-block;
+      margin-top: 1.25rem;
+      padding: 0.75rem 1.5rem;
+      background: linear-gradient(90deg, var(--brand), var(--brand-2));
+      color: white;
+      font-weight: 600;
+      border-radius: 12px;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      transition: all 0.2s ease;
+    }
+    .hero-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+    }
+
+    /* Stats Bar */
+    .stats-bar {
+      margin-top: 2rem;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      text-align: center;
+    }
+    @media (min-width: 768px) {
+      .stats-bar {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+    .stat-card {
+      padding: 1.5rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      transition: all 0.2s ease;
+    }
+    .stat-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    }
+    .stat-card h3 {
+      font-size: 2rem;
+      font-weight: 800;
+      color: white;
+      margin: 0;
+    }
+    .stat-card p {
+      color: var(--muted);
+      margin: 0.25rem 0 0 0;
+    }
 
     footer { text-align: center; color: var(--muted); font-size: .85rem; margin: 1.25rem 0 3rem; }
 
@@ -898,7 +1062,7 @@
       </div>
       <div class="meta">
         <a href="https://www.instagram.com/iba_purdue/" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
-          <span class="chip" title="Follow us on Instagram">INSTAGRAM</span>
+          <span class="chip flashy-glow" title="Follow us on Instagram">INSTAGRAM</span>
         </a>
         <a href="https://www.youtube.com/@IBAPurdue" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
           <span class="chip" title="Watch us on YouTube">YOUTUBE</span>
@@ -912,6 +1076,39 @@
       </div>
     </header>
 
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-bg">
+        <img src="images/basketball-court.jpg" alt="Basketball Court" onerror="this.style.display='none'">
+        <div class="hero-overlay"></div>
+      </div>
+      <div class="hero-content">
+        <h2>The Court. The Teams. The Glory</h2>
+        <p>IBA Fall 2025 • Regular Season & Playoffs</p>
+        <a href="#" class="hero-btn" onclick="document.getElementById('tab-signup').click(); return false;">Spring Season Entry Form</a>
+      </div>
+    </section>
+
+    <!-- Stats Bar -->
+    <section class="stats-bar">
+      <div class="stat-card">
+        <h3>16</h3>
+        <p>Teams</p>
+      </div>
+      <div class="stat-card">
+        <h3 id="gamesCount">0</h3>
+        <p>Games</p>
+      </div>
+      <div class="stat-card">
+        <h3>64+</h3>
+        <p>Players</p>
+      </div>
+      <div class="stat-card">
+        <h3>1</h3>
+        <p>Champion Team</p>
+      </div>
+    </section>
+
     <main class="tabs" role="main">
       <div class="tablist" role="tablist" aria-label="Tournament sections">
         <button role="tab" id="tab-schedule" aria-selected="true" aria-controls="panel-schedule">Schedule</button>
@@ -919,6 +1116,7 @@
         <button role="tab" id="tab-bracket" aria-selected="false" aria-controls="panel-bracket">Bracket</button>
         <button role="tab" id="tab-faq" aria-selected="false" aria-controls="panel-faq">FAQ</button>
         <button role="tab" id="tab-contact" aria-selected="false" aria-controls="panel-contact">Contact Us</button>
+        <button role="tab" id="tab-signup" aria-selected="false" aria-controls="panel-signup">✍️ Spring Season</button>
       </div>
 
       <section id="panel-schedule" class="tabpanel active" role="tabpanel" aria-labelledby="tab-schedule">
@@ -1372,6 +1570,35 @@
               Send Message
             </button>
           </form>
+        </div>
+      </section>
+
+      <section id="panel-signup" class="tabpanel" role="tabpanel" aria-labelledby="tab-signup">
+        <div style="max-width: 900px; margin: 0 auto;">
+          <h2 style="font-size: 1.75rem; font-weight: 700; margin: 0 0 1rem 0; background: linear-gradient(90deg, var(--brand), var(--brand-2)); background-clip: text; -webkit-background-clip: text; color: transparent; -webkit-text-fill-color: transparent;">
+            IBA Spring 2026 Sign Up
+          </h2>
+          <p style="color: var(--muted); margin-bottom: 1.5rem;">
+            Fill out the form below to register your team for the upcoming Spring season.
+          </p>
+
+          <!-- Embedded Google Form -->
+          <iframe
+            src="https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?embedded=true"
+            width="100%" height="900" frameborder="0" marginheight="0" marginwidth="0"
+            style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+            Loading…
+          </iframe>
+
+          <!-- Backup Button -->
+          <div style="text-align: center; margin-top: 1.5rem;">
+            <a href="https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform" target="_blank" rel="noopener noreferrer"
+               style="display: inline-block; padding: 0.75rem 1.5rem; background: linear-gradient(90deg, var(--brand), var(--brand-2)); color: white; font-weight: 600; border-radius: 12px; text-decoration: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.2s ease;"
+               onmouseover="this.style.transform='scale(1.05)'"
+               onmouseout="this.style.transform='scale(1)'">
+              Open Form in New Tab
+            </a>
+          </div>
         </div>
       </section>
     </main>
@@ -2190,6 +2417,24 @@
 
     // Footer year
     document.getElementById('y').textContent = new Date().getFullYear();
+
+    // Update games count in stats bar
+    function updateGamesCount() {
+      const gamesCountEl = document.getElementById('gamesCount');
+      if (gamesCountEl) {
+        const tbody = document.querySelector('#scheduleTable tbody');
+        const gameCount = tbody ? tbody.querySelectorAll('tr').length : 0;
+        gamesCountEl.textContent = gameCount;
+      }
+    }
+    // Initial update
+    updateGamesCount();
+    // Update whenever games change (use MutationObserver)
+    const scheduleTable = document.querySelector('#scheduleTable tbody');
+    if (scheduleTable) {
+      const observer = new MutationObserver(updateGamesCount);
+      observer.observe(scheduleTable, { childList: true });
+    }
 
     // Admin functionality
     const adminBtn = document.getElementById('adminBtn');
