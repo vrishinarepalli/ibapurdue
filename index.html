@@ -1092,20 +1092,20 @@
     <!-- Stats Bar -->
     <section class="stats-bar">
       <div class="stat-card">
-        <h3>16</h3>
+        <h3 id="teamsCount">0</h3>
         <p>Teams</p>
       </div>
       <div class="stat-card">
         <h3 id="gamesCount">0</h3>
-        <p>Games</p>
+        <p>Games Played</p>
       </div>
       <div class="stat-card">
-        <h3>64+</h3>
+        <h3 id="playersCount">0</h3>
         <p>Players</p>
       </div>
       <div class="stat-card">
-        <h3>1</h3>
-        <p>Champion Team</p>
+        <h3 id="championName" style="font-size: 1.5rem;">TBD</h3>
+        <p>Champion</p>
       </div>
     </section>
 
@@ -1889,6 +1889,11 @@
 
           // Render teams grid
           renderTeamsGrid();
+
+          // Update stats bar with new team/player counts
+          if (typeof updateStatsBar === 'function') {
+            updateStatsBar();
+          }
         }, (error) => {
           console.error('❌ Error loading teams:', error);
           alert('Error loading teams from database: ' + error.message);
@@ -1938,7 +1943,7 @@
 
         onSnapshot(bracketRef, (docSnap) => {
           if (docSnap.exists()) {
-            const bracketData = docSnap.data();
+            bracketData = docSnap.data();
             console.log('📊 Loaded bracket data from database');
 
             // Update all bracket slots
@@ -1948,6 +1953,11 @@
                 slotElement.textContent = teamName || 'TBD';
               }
             });
+
+            // Update stats bar with champion name
+            if (typeof updateStatsBar === 'function') {
+              updateStatsBar();
+            }
           } else {
             console.log('ℹ️ No bracket data in database yet');
           }
@@ -2418,21 +2428,54 @@
     // Footer year
     document.getElementById('y').textContent = new Date().getFullYear();
 
-    // Update games count in stats bar
-    function updateGamesCount() {
+    // Update stats bar counts
+    function updateStatsBar() {
+      // Update games count
       const gamesCountEl = document.getElementById('gamesCount');
       if (gamesCountEl) {
         const tbody = document.querySelector('#scheduleTable tbody');
         const gameCount = tbody ? tbody.querySelectorAll('tr').length : 0;
         gamesCountEl.textContent = gameCount;
       }
+
+      // Update teams count
+      const teamsCountEl = document.getElementById('teamsCount');
+      if (teamsCountEl) {
+        teamsCountEl.textContent = Object.keys(teamsData).length;
+      }
+
+      // Update players count (sum of all roster sizes)
+      const playersCountEl = document.getElementById('playersCount');
+      if (playersCountEl) {
+        let totalPlayers = 0;
+        Object.values(teamsData).forEach(team => {
+          if (team.roster && Array.isArray(team.roster)) {
+            totalPlayers += team.roster.length;
+          }
+        });
+        playersCountEl.textContent = totalPlayers > 0 ? totalPlayers : '64+';
+      }
+
+      // Update champion name from bracket
+      const championNameEl = document.getElementById('championName');
+      if (championNameEl && bracketData) {
+        const champion = bracketData['champion'];
+        if (champion && champion !== 'TBD') {
+          championNameEl.textContent = champion;
+          championNameEl.style.fontSize = '1.5rem';
+        } else {
+          championNameEl.textContent = 'TBD';
+          championNameEl.style.fontSize = '1.5rem';
+        }
+      }
     }
+
     // Initial update
-    updateGamesCount();
+    updateStatsBar();
     // Update whenever games change (use MutationObserver)
     const scheduleTable = document.querySelector('#scheduleTable tbody');
     if (scheduleTable) {
-      const observer = new MutationObserver(updateGamesCount);
+      const observer = new MutationObserver(updateStatsBar);
       observer.observe(scheduleTable, { childList: true });
     }
 
