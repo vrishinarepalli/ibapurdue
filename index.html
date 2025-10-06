@@ -765,6 +765,17 @@
     .remove-player-btn:hover {
       opacity: 0.9;
     }
+
+    /* Complete game modal styles */
+    .winner-btn:hover {
+      border-color: var(--brand);
+      background: #111a2e;
+    }
+    .winner-btn.selected {
+      border-color: var(--success);
+      background: var(--success);
+      color: #0b0f1a;
+    }
   </style>
 </head>
 <body>
@@ -792,6 +803,40 @@
         <div class="admin-buttons">
           <button type="button" class="admin-cancel" id="cancelIconEdit">Cancel</button>
           <button type="button" class="admin-submit" id="saveIcon">Save Icon</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Complete game modal -->
+    <div id="completeGameModal" class="edit-game-modal">
+      <div class="edit-game-content" style="max-width: 500px;">
+        <h3>Complete Game</h3>
+        <p id="completeGameMatchup" style="color: var(--text); text-align: center; font-size: 1.1rem; margin-bottom: 1.5rem;"></p>
+
+        <div class="form-group">
+          <label>Final Score</label>
+          <div style="display: flex; gap: 1rem; align-items: center; justify-content: center;">
+            <input type="number" id="team1Score" min="0" placeholder="0" required style="width: 80px; text-align: center; font-size: 1.2rem; background: #0a1122; color: var(--text); border: 1px solid var(--border); padding: 0.75rem; border-radius: 8px;" />
+            <span style="color: var(--muted); font-weight: 700;">-</span>
+            <input type="number" id="team2Score" min="0" placeholder="0" required style="width: 80px; text-align: center; font-size: 1.2rem; background: #0a1122; color: var(--text); border: 1px solid var(--border); padding: 0.75rem; border-radius: 8px;" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Winner</label>
+          <div style="display: flex; gap: 0.75rem;">
+            <button type="button" id="team1WinBtn" class="winner-btn" style="flex: 1; padding: 0.75rem; background: var(--card); border: 2px solid var(--border); border-radius: 8px; cursor: pointer; font-weight: 600; color: var(--text); transition: all 0.2s;">
+              <span id="team1WinName"></span>
+            </button>
+            <button type="button" id="team2WinBtn" class="winner-btn" style="flex: 1; padding: 0.75rem; background: var(--card); border: 2px solid var(--border); border-radius: 8px; cursor: pointer; font-weight: 600; color: var(--text); transition: all 0.2s;">
+              <span id="team2WinName"></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-buttons" style="margin-top: 2rem;">
+          <button type="button" class="admin-cancel" id="cancelCompleteGame">Cancel</button>
+          <button type="button" class="admin-submit" id="submitCompleteGame">Complete Game</button>
         </div>
       </div>
     </div>
@@ -1557,6 +1602,45 @@
 
       // Start loading games
       loadGames();
+
+      // Auto-delete completed games older than 1 day
+      async function cleanupOldGames() {
+        try {
+          const { collection, query, where, getDocs, deleteDoc, doc } = window.firestoreImports;
+          const gamesRef = collection(db, 'games');
+
+          const snapshot = await getDocs(gamesRef);
+          const oneDayAgo = new Date();
+          oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+          let deletedCount = 0;
+          for (const docSnap of snapshot.docs) {
+            const game = docSnap.data();
+
+            if (game.status === 'Completed' && game.completedAt) {
+              const completedDate = new Date(game.completedAt);
+
+              if (completedDate < oneDayAgo) {
+                await deleteDoc(doc(db, 'games', docSnap.id));
+                console.log(`🗑️ Deleted old game: ${game.matchup}`);
+                deletedCount++;
+              }
+            }
+          }
+
+          if (deletedCount > 0) {
+            console.log(`✅ Cleaned up ${deletedCount} old completed game(s)`);
+          }
+        } catch (error) {
+          console.error('❌ Error cleaning up old games:', error);
+        }
+      }
+
+      // Run cleanup on page load
+      cleanupOldGames();
+
+      // Run cleanup every hour
+      setInterval(cleanupOldGames, 60 * 60 * 1000);
 
       // Teams data - will be loaded from Firestore
       let teamsData = {};
@@ -2506,6 +2590,139 @@
       }
     });
 
+    // Complete game modal logic
+    const completeGameModal = document.getElementById('completeGameModal');
+    const completeGameMatchup = document.getElementById('completeGameMatchup');
+    const team1Score = document.getElementById('team1Score');
+    const team2Score = document.getElementById('team2Score');
+    const team1WinBtn = document.getElementById('team1WinBtn');
+    const team2WinBtn = document.getElementById('team2WinBtn');
+    const team1WinName = document.getElementById('team1WinName');
+    const team2WinName = document.getElementById('team2WinName');
+    const submitCompleteGame = document.getElementById('submitCompleteGame');
+    const cancelCompleteGame = document.getElementById('cancelCompleteGame');
+    let selectedWinner = null;
+    let currentCompleteGameData = null;
+
+    // Winner button selection
+    team1WinBtn.addEventListener('click', () => {
+      selectedWinner = 1;
+      team1WinBtn.classList.add('selected');
+      team2WinBtn.classList.remove('selected');
+    });
+
+    team2WinBtn.addEventListener('click', () => {
+      selectedWinner = 2;
+      team2WinBtn.classList.add('selected');
+      team1WinBtn.classList.remove('selected');
+    });
+
+    cancelCompleteGame.addEventListener('click', () => {
+      completeGameModal.classList.remove('active');
+    });
+
+    completeGameModal.addEventListener('click', (e) => {
+      if (e.target === completeGameModal) {
+        completeGameModal.classList.remove('active');
+      }
+    });
+
+    submitCompleteGame.addEventListener('click', async () => {
+      const score1 = parseInt(team1Score.value);
+      const score2 = parseInt(team2Score.value);
+
+      if (isNaN(score1) || isNaN(score2)) {
+        alert('Please enter valid scores for both teams');
+        return;
+      }
+
+      if (!selectedWinner) {
+        alert('Please select a winner');
+        return;
+      }
+
+      try {
+        const { doc, updateDoc, getDoc } = window.firestoreImports;
+        const gameRef = doc(db, 'games', currentCompleteGameData.docId);
+
+        // Update game status to completed and add completion timestamp
+        await updateDoc(gameRef, {
+          status: 'Completed',
+          completedAt: new Date().toISOString()
+        });
+
+        // Update team records with win/loss and score
+        const teams = currentCompleteGameData.matchup.split(' vs ');
+        const team1Name = teams[0].trim();
+        const team2Name = teams[1].trim();
+
+        const team1Id = findTeamIdByName(team1Name);
+        const team2Id = findTeamIdByName(team2Name);
+
+        if (team1Id && team2Id) {
+          const team1Ref = doc(db, 'teams', team1Id);
+          const team2Ref = doc(db, 'teams', team2Id);
+
+          const team1Doc = await getDoc(team1Ref);
+          const team2Doc = await getDoc(team2Ref);
+
+          if (team1Doc.exists() && team2Doc.exists()) {
+            const team1Data = team1Doc.data();
+            const team2Data = team2Doc.data();
+
+            // Determine winner and loser
+            const team1Won = selectedWinner === 1;
+            const team2Won = selectedWinner === 2;
+
+            // Remove from upcoming games
+            const team1UpcomingGames = (team1Data.upcomingGames || []).filter(
+              g => !(g.opponent === team2Name && g.date === currentCompleteGameData.day)
+            );
+            const team2UpcomingGames = (team2Data.upcomingGames || []).filter(
+              g => !(g.opponent === team1Name && g.date === currentCompleteGameData.day)
+            );
+
+            // Add to completed games
+            const team1CompletedGames = team1Data.completedGames || [];
+            const team2CompletedGames = team2Data.completedGames || [];
+
+            team1CompletedGames.push({
+              opponent: team2Name,
+              result: team1Won ? 'W' : 'L',
+              score: `${score1}-${score2}`,
+              date: currentCompleteGameData.day
+            });
+
+            team2CompletedGames.push({
+              opponent: team1Name,
+              result: team2Won ? 'W' : 'L',
+              score: `${score2}-${score1}`,
+              date: currentCompleteGameData.day
+            });
+
+            // Update both teams (do not change win/loss records)
+            await updateDoc(team1Ref, {
+              upcomingGames: team1UpcomingGames,
+              completedGames: team1CompletedGames
+            });
+
+            await updateDoc(team2Ref, {
+              upcomingGames: team2UpcomingGames,
+              completedGames: team2CompletedGames
+            });
+
+            console.log('✅ Game completed and teams updated');
+          }
+        }
+
+        completeGameModal.classList.remove('active');
+        editGameModal.classList.remove('active');
+      } catch (error) {
+        console.error('Error completing game:', error);
+        alert('Error completing game: ' + error.message);
+      }
+    });
+
     gameForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
@@ -2519,6 +2736,29 @@
       const court = document.getElementById('gameCourt').value;
       const round = document.getElementById('gameRound').value;
       const status = document.getElementById('gameStatus').value;
+
+      // Check if status is being changed to Completed
+      if (status === 'Completed' && currentEditRow) {
+        const docId = currentEditRow.dataset.docId;
+        currentCompleteGameData = { docId, matchup, day, date };
+
+        // Parse team names
+        const teams = matchup.split(' vs ');
+        team1WinName.textContent = teams[0].trim();
+        team2WinName.textContent = teams[1].trim();
+
+        // Reset form
+        team1Score.value = '';
+        team2Score.value = '';
+        selectedWinner = null;
+        team1WinBtn.classList.remove('selected');
+        team2WinBtn.classList.remove('selected');
+
+        // Show complete game modal
+        completeGameMatchup.textContent = matchup;
+        completeGameModal.classList.add('active');
+        return;
+      }
 
       const gameData = { date, day, time, matchup, court, round, status };
 
