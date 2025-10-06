@@ -1097,7 +1097,7 @@
       </div>
       <div class="stat-card">
         <h3 id="gamesCount">0</h3>
-        <p>Games Played</p>
+        <p>Total Games</p>
       </div>
       <div class="stat-card">
         <h3 id="playersCount">0</h3>
@@ -2430,12 +2430,20 @@
 
     // Update stats bar counts
     function updateStatsBar() {
-      // Update games count
+      // Update games count (sum of completed + upcoming games from all teams / 2, since each game involves 2 teams)
       const gamesCountEl = document.getElementById('gamesCount');
       if (gamesCountEl) {
-        const tbody = document.querySelector('#scheduleTable tbody');
-        const gameCount = tbody ? tbody.querySelectorAll('tr').length : 0;
-        gamesCountEl.textContent = gameCount;
+        let totalGames = 0;
+        Object.values(teamsData).forEach(team => {
+          if (team.completedGames && Array.isArray(team.completedGames)) {
+            totalGames += team.completedGames.length;
+          }
+          if (team.upcomingGames && Array.isArray(team.upcomingGames)) {
+            totalGames += team.upcomingGames.length;
+          }
+        });
+        // Divide by 2 because each game is counted twice (once for each team)
+        gamesCountEl.textContent = Math.floor(totalGames / 2);
       }
 
       // Update teams count
