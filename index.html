@@ -1742,6 +1742,44 @@
       }
     }
 
+    // Admin functionality - must be outside Firebase callback so button works immediately
+    const adminBtn = document.getElementById('adminBtn');
+    const adminModal = document.getElementById('adminModal');
+    const adminPassword = document.getElementById('adminPassword');
+    const adminSubmit = document.getElementById('adminSubmit');
+    const adminCancel = document.getElementById('adminCancel');
+    const adminError = document.getElementById('adminError');
+
+    let isAdminMode = false;
+    let currentEditRow = null;
+
+    // Admin button click handler - show login modal
+    adminBtn.addEventListener('click', () => {
+      if (!isAdminMode) {
+        // Show login
+        adminModal.classList.add('active');
+        adminPassword.value = '';
+        adminError.style.display = 'none';
+        setTimeout(() => adminPassword.focus(), 100);
+      }
+    });
+
+    adminCancel.addEventListener('click', () => {
+      adminModal.classList.remove('active');
+    });
+
+    adminModal.addEventListener('click', (e) => {
+      if (e.target === adminModal) {
+        adminModal.classList.remove('active');
+      }
+    });
+
+    adminPassword.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        adminSubmit.click();
+      }
+    });
+
     waitForFirebase(() => {
       const { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot } = window.firestoreImports;
       const db = window.db;
@@ -2471,17 +2509,6 @@
       observer.observe(scheduleTable, { childList: true });
     }
 
-    // Admin functionality
-    const adminBtn = document.getElementById('adminBtn');
-    const adminModal = document.getElementById('adminModal');
-    const adminPassword = document.getElementById('adminPassword');
-    const adminSubmit = document.getElementById('adminSubmit');
-    const adminCancel = document.getElementById('adminCancel');
-    const adminError = document.getElementById('adminError');
-
-    let isAdminMode = false;
-    let currentEditRow = null;
-
     // Admin lock monitoring function
     function startAdminLockMonitor() {
       const { doc, onSnapshot } = window.firestoreImports;
@@ -2531,9 +2558,9 @@
       }
     });
 
-    adminBtn.addEventListener('click', async () => {
+    // Admin logout handler (needs Firebase)
+    window.adminLogout = async function() {
       if (isAdminMode) {
-        // Logout
         try {
           // Release admin lock
           const { doc, setDoc } = window.firestoreImports;
@@ -2554,26 +2581,18 @@
           adminBtn.textContent = 'Admin';
           adminBtn.style.background = 'var(--brand)';
           document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
+          const quickAddSection = document.querySelector('.quick-add-section');
           quickAddSection.style.display = 'none';
         } catch (error) {
           console.error('Error releasing admin lock:', error);
         }
-      } else {
-        // Show login
-        adminModal.classList.add('active');
-        adminPassword.value = '';
-        adminError.style.display = 'none';
-        setTimeout(() => adminPassword.focus(), 100);
       }
-    });
+    };
 
-    adminCancel.addEventListener('click', () => {
-      adminModal.classList.remove('active');
-    });
-
-    adminModal.addEventListener('click', (e) => {
-      if (e.target === adminModal) {
-        adminModal.classList.remove('active');
+    // Update button click handler to support logout
+    adminBtn.addEventListener('click', () => {
+      if (isAdminMode) {
+        window.adminLogout();
       }
     });
 
@@ -2633,12 +2652,6 @@
         console.error('Error checking admin login:', error);
         adminError.textContent = 'Error logging in. Please try again.';
         adminError.style.display = 'block';
-      }
-    });
-
-    adminPassword.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        adminSubmit.click();
       }
     });
 
