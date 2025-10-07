@@ -17,6 +17,7 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
     import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyBN0rfpzjredziJbPny-YfEgq4uE2l1hzE",
@@ -30,10 +31,17 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    
+    const auth = getAuth(app);
+
+    // Admin UID - only this user can access admin functions
+    const ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
+
     // Make Firebase available globally
     window.db = db;
+    window.auth = auth;
+    window.ADMIN_UID = ADMIN_UID;
     window.firestoreImports = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc };
+    window.authImports = { signInWithEmailAndPassword, signOut, onAuthStateChanged };
   </script>
   
 </head>
@@ -750,8 +758,9 @@
     <div id="adminModal" class="admin-modal">
       <div class="admin-modal-content">
         <h3>Admin Login</h3>
+        <input type="email" id="adminEmail" class="admin-input" placeholder="Enter email" />
         <input type="password" id="adminPassword" class="admin-input" placeholder="Enter password" />
-        <div class="admin-error" id="adminError">Incorrect password</div>
+        <div class="admin-error" id="adminError">Incorrect credentials</div>
         <div class="admin-buttons">
           <button class="admin-cancel" id="adminCancel">Cancel</button>
           <button class="admin-submit" id="adminSubmit">Login</button>
@@ -875,97 +884,91 @@
       }
     });
 
+    // Monitor auth state changes
+    window.addEventListener('load', () => {
+      if (window.auth && window.authImports) {
+        const { onAuthStateChanged } = window.authImports;
+        onAuthStateChanged(window.auth, (user) => {
+          if (user && user.uid === window.ADMIN_UID) {
+            // User is signed in and is admin
+            isAdminMode = true;
+            document.body.classList.add('admin-mode');
+            adminBtn.textContent = 'Logout';
+            adminBtn.style.background = 'var(--success)';
+            document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
+            const quickAddSection = document.querySelector('.quick-add-section');
+            if (quickAddSection) quickAddSection.style.display = 'block';
+          } else {
+            // User is signed out or not admin
+            isAdminMode = false;
+            document.body.classList.remove('admin-mode');
+            adminBtn.textContent = 'Admin';
+            adminBtn.style.background = 'var(--brand)';
+            document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
+            const quickAddSection = document.querySelector('.quick-add-section');
+            if (quickAddSection) quickAddSection.style.display = 'none';
+          }
+        });
+      }
+    });
+
     // Admin submit handler - setup immediately but wait for Firebase
     adminSubmit.addEventListener('click', async () => {
       // Wait for Firebase to be ready
-      if (!window.db || !window.firestoreImports) {
+      if (!window.auth || !window.authImports) {
         adminError.textContent = 'Loading... Please wait and try again.';
         adminError.style.display = 'block';
         setTimeout(() => adminError.style.display = 'none', 2000);
         return;
       }
 
+      const email = document.getElementById('adminEmail').value.trim();
+      const password = adminPassword.value;
+
+      if (!email || !password) {
+        adminError.textContent = 'Please enter both email and password';
+        adminError.style.display = 'block';
+        return;
+      }
+
       try {
-        const { doc, getDoc, setDoc, onSnapshot } = window.firestoreImports;
-        const db = window.db;
+        const { signInWithEmailAndPassword } = window.authImports;
+        const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
+        const user = userCredential.user;
 
-        // Get password from Firestore
-        const adminConfigRef = doc(db, 'system', 'adminConfig');
-        const adminConfigDoc = await getDoc(adminConfigRef);
-
-        if (!adminConfigDoc.exists()) {
-          adminError.textContent = 'Admin configuration not found. Please contact support.';
+        // Check if the logged-in user is the admin
+        if (user.uid !== window.ADMIN_UID) {
+          adminError.textContent = 'You do not have admin privileges';
           adminError.style.display = 'block';
+          await window.auth.signOut(); // Sign them out
           return;
         }
 
-        const storedPassword = adminConfigDoc.data().password;
+        // Success - user is authenticated and is admin
+        adminModal.classList.remove('active');
+        isAdminMode = true;
+        document.body.classList.add('admin-mode');
+        adminBtn.textContent = 'Logout';
+        adminBtn.style.background = 'var(--success)';
+        document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
+        const quickAddSection = document.querySelector('.quick-add-section');
+        quickAddSection.style.display = 'block';
 
-        if (adminPassword.value === storedPassword) {
-          // Check if another admin is already logged in
-          const adminLockRef = doc(db, 'system', 'adminLock');
-          const adminLockDoc = await getDoc(adminLockRef);
+        // Clear form
+        document.getElementById('adminEmail').value = '';
+        adminPassword.value = '';
+        adminError.style.display = 'none';
 
-          if (adminLockDoc.exists() && adminLockDoc.data().isLocked) {
-            // Another admin is already logged in
-            adminError.textContent = 'Another admin is already logged in. Please try again later.';
-            adminError.style.display = 'block';
-            adminPassword.value = '';
-            adminPassword.focus();
-            return;
-          }
-
-          // Set admin lock
-          await setDoc(adminLockRef, {
-            isLocked: true,
-            timestamp: new Date().toISOString()
-          });
-
-          adminModal.classList.remove('active');
-          isAdminMode = true;
-          document.body.classList.add('admin-mode');
-          adminBtn.textContent = 'Logout';
-          adminBtn.style.background = 'var(--success)';
-          document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
-          const quickAddSection = document.querySelector('.quick-add-section');
-          quickAddSection.style.display = 'block';
-
-          // Start monitoring admin lock
-          window.adminLockUnsubscribe = onSnapshot(adminLockRef, (docSnap) => {
-            if (isAdminMode && docSnap.exists()) {
-              const lockData = docSnap.data();
-
-              // If lock is released, log out this admin
-              if (!lockData.isLocked) {
-                console.log('Admin lock released - logging out');
-                isAdminMode = false;
-                document.body.classList.remove('admin-mode');
-                adminBtn.textContent = 'Admin';
-                adminBtn.style.background = 'var(--brand)';
-                document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
-                quickAddSection.style.display = 'none';
-
-                // Stop monitoring
-                if (window.adminLockUnsubscribe) {
-                  window.adminLockUnsubscribe();
-                  window.adminLockUnsubscribe = null;
-                }
-
-                // Show notification
-                alert('Admin session ended.');
-              }
-            }
-          });
-        } else {
-          adminError.textContent = 'Incorrect password';
-          adminError.style.display = 'block';
-          adminPassword.value = '';
-          adminPassword.focus();
-        }
+        console.log('Admin logged in successfully');
       } catch (error) {
-        console.error('Error checking admin login:', error);
-        adminError.textContent = 'Error logging in. Please try again.';
+        console.error('Error logging in:', error);
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+          adminError.textContent = 'Incorrect email or password';
+        } else {
+          adminError.textContent = 'Error logging in. Please try again.';
+        }
         adminError.style.display = 'block';
+        adminPassword.value = '';
       }
     });
 
@@ -1732,39 +1735,14 @@
       });
     }
 
-    // Release admin lock when page is closed or refreshed
-    window.addEventListener('beforeunload', async () => {
-      if (isAdminMode) {
-        try {
-          const { doc, setDoc } = window.firestoreImports;
-          const adminLockRef = doc(db, 'system', 'adminLock');
-          await setDoc(adminLockRef, {
-            isLocked: false,
-            timestamp: new Date().toISOString()
-          });
-        } catch (error) {
-          console.error('Error releasing admin lock on page unload:', error);
-        }
-      }
-    });
 
     // Admin logout handler (needs Firebase)
     window.adminLogout = async function() {
       if (isAdminMode) {
         try {
-          // Release admin lock
-          const { doc, setDoc } = window.firestoreImports;
-          const adminLockRef = doc(db, 'system', 'adminLock');
-          await setDoc(adminLockRef, {
-            isLocked: false,
-            timestamp: new Date().toISOString()
-          });
-
-          // Stop monitoring
-          if (window.adminLockUnsubscribe) {
-            window.adminLockUnsubscribe();
-            window.adminLockUnsubscribe = null;
-          }
+          // Sign out from Firebase Auth
+          const { signOut } = window.authImports;
+          await signOut(window.auth);
 
           isAdminMode = false;
           document.body.classList.remove('admin-mode');
@@ -1773,8 +1751,10 @@
           document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
           const quickAddSection = document.querySelector('.quick-add-section');
           quickAddSection.style.display = 'none';
+
+          console.log('Admin logged out successfully');
         } catch (error) {
-          console.error('Error releasing admin lock:', error);
+          console.error('Error logging out:', error);
         }
       }
     };
