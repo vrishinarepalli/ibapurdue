@@ -98,11 +98,12 @@
 <body>
   <!-- Login Screen -->
   <div id="loginScreen" class="container login-container">
-    <h1>🔐 Access Required</h1>
-    <p>Enter password to access Firestore initialization tools.</p>
-    <input type="password" id="accessPassword" placeholder="Enter password" />
+    <h1>🔐 Admin Access Required</h1>
+    <p>Enter your admin credentials to access Firestore initialization tools.</p>
+    <input type="email" id="adminEmail" placeholder="Enter admin email" />
+    <input type="password" id="adminPassword" placeholder="Enter password" />
     <button onclick="verifyPassword()">Login</button>
-    <div id="errorMsg" class="error-msg">Incorrect password</div>
+    <div id="errorMsg" class="error-msg">Incorrect credentials</div>
   </div>
 
   <!-- Main Content (hidden until authenticated) -->
@@ -126,6 +127,7 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
     import { getFirestore, collection, doc, setDoc, getDocs, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyBN0rfpzjredziJbPny-YfEgq4uE2l1hzE",
@@ -139,49 +141,62 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Admin UID
+    const ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
 
     // Make available globally
     window.db = db;
+    window.auth = auth;
+    window.ADMIN_UID = ADMIN_UID;
     window.firestoreImports = { collection, doc, setDoc, getDocs, getDoc };
+    window.authImports = { signInWithEmailAndPassword, signOut };
 
-    // Password verification against Firestore
+    // Firebase Auth verification
     window.verifyPassword = async function() {
-      const password = document.getElementById('accessPassword').value;
+      const email = document.getElementById('adminEmail').value.trim();
+      const password = document.getElementById('adminPassword').value;
       const errorMsg = document.getElementById('errorMsg');
       const loginBtn = document.querySelector('#loginScreen button');
+
+      if (!email || !password) {
+        errorMsg.textContent = 'Please enter both email and password';
+        errorMsg.style.display = 'block';
+        return;
+      }
 
       loginBtn.disabled = true;
       loginBtn.textContent = 'Verifying...';
 
       try {
-        // Fetch password from Firestore system/initConfig
-        const initConfigRef = doc(db, 'system', 'initConfig');
-        const initConfigSnap = await getDoc(initConfigRef);
+        const { signInWithEmailAndPassword } = window.authImports;
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
 
-        if (!initConfigSnap.exists()) {
-          errorMsg.textContent = 'Init password not configured. Please contact administrator.';
+        // Check if the logged-in user is the admin
+        if (user.uid !== ADMIN_UID) {
+          errorMsg.textContent = 'You do not have admin privileges';
           errorMsg.style.display = 'block';
+          await auth.signOut(); // Sign them out
           loginBtn.disabled = false;
           loginBtn.textContent = 'Login';
           return;
         }
 
-        const storedPassword = initConfigSnap.data().password;
-
-        if (password === storedPassword) {
-          document.getElementById('loginScreen').style.display = 'none';
-          document.getElementById('mainContent').style.display = 'block';
-          errorMsg.style.display = 'none';
-        } else {
-          errorMsg.textContent = 'Incorrect password';
-          errorMsg.style.display = 'block';
-          document.getElementById('accessPassword').value = '';
-          document.getElementById('accessPassword').focus();
-        }
+        // Success - show main content
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+        errorMsg.style.display = 'none';
       } catch (error) {
-        console.error('Error verifying password:', error);
-        errorMsg.textContent = 'Error verifying password. Check console for details.';
+        console.error('Error verifying credentials:', error);
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+          errorMsg.textContent = 'Incorrect email or password';
+        } else {
+          errorMsg.textContent = 'Error logging in. Check console for details.';
+        }
         errorMsg.style.display = 'block';
+        document.getElementById('adminPassword').value = '';
       } finally {
         loginBtn.disabled = false;
         loginBtn.textContent = 'Login';
@@ -189,7 +204,7 @@
     };
 
     // Allow Enter key to submit
-    document.getElementById('accessPassword')?.addEventListener('keypress', (e) => {
+    document.getElementById('adminPassword')?.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         verifyPassword();
       }
