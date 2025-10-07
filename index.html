@@ -2003,6 +2003,7 @@
 
       // Teams data - will be loaded from Firestore
       let teamsData = {};
+      let bracketData = {};
 
       // Load teams from Firestore in real-time
       function loadTeams() {
@@ -2849,10 +2850,10 @@
         const bracketRef = doc(db, 'tournament', 'bracket');
         
         getDoc(bracketRef).then((docSnap) => {
-          const bracketData = docSnap.exists() ? docSnap.data() : {};
-          bracketData[slotId] = newName;
-          
-          setDoc(bracketRef, bracketData).then(() => {
+          const currentBracket = docSnap.exists() ? docSnap.data() : {};
+          currentBracket[slotId] = newName;
+
+          setDoc(bracketRef, currentBracket).then(() => {
             console.log('Bracket updated in database');
           }).catch(error => {
             console.error('Error saving bracket:', error);
