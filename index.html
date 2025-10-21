@@ -390,6 +390,7 @@
       </section>
 
       <section id="panel-bracket" class="tabpanel" role="tabpanel" aria-labelledby="tab-bracket">
+        <button class="add-game-btn" id="bulkImportBracketBtn" style="display: none;">📥 Bulk Import Bracket</button>
         <div style="overflow-x: auto;">
           <div class="bracket-container">
             <!-- Round of 16 -->
@@ -825,6 +826,28 @@
         </form>
       </div>
     </div>
+
+    <!-- Bulk Import Bracket Modal -->
+    <div id="bulkImportModal" class="edit-game-modal">
+      <div class="edit-game-content" style="max-width: 700px;">
+        <h3>Bulk Import Bracket</h3>
+        <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1rem;">
+          Paste your bracket data in JSON format. This will replace all existing bracket data.
+        </p>
+        <textarea id="bulkBracketData" style="width: 100%; min-height: 400px; padding: 1rem; border: 1px solid var(--border); border-radius: 8px; font-family: monospace; font-size: 0.85rem; background: var(--card); color: var(--text);" placeholder='Example format:
+{
+  "r16-1-1": "Slam Squad",
+  "r16-1-2": "Phoenix",
+  "r16-2-1": "Panthers",
+  "r16-2-2": "KOS",
+  ...
+}'></textarea>
+        <div class="admin-buttons" style="margin-top: 1rem;">
+          <button type="button" class="admin-cancel" id="cancelBulkImport">Cancel</button>
+          <button type="button" class="admin-submit" id="submitBulkImport">Import Bracket</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -889,6 +912,8 @@
             document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
             const quickAddSection = document.querySelector('.quick-add-section');
             if (quickAddSection) quickAddSection.style.display = 'block';
+            const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
+            if (bulkImportBtn) bulkImportBtn.style.display = 'block';
           } else {
             // User is signed out or not admin
             isAdminMode = false;
@@ -898,6 +923,8 @@
             document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
             const quickAddSection = document.querySelector('.quick-add-section');
             if (quickAddSection) quickAddSection.style.display = 'none';
+            const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
+            if (bulkImportBtn) bulkImportBtn.style.display = 'none';
           }
         });
       }
@@ -944,6 +971,8 @@
         document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
         const quickAddSection = document.querySelector('.quick-add-section');
         quickAddSection.style.display = 'block';
+        const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
+        if (bulkImportBtn) bulkImportBtn.style.display = 'block';
 
         // Clear form
         document.getElementById('adminEmail').value = '';
@@ -1712,6 +1741,8 @@
             adminBtn.style.background = 'var(--brand)';
             document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
             quickAddSection.style.display = 'none';
+            const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
+            if (bulkImportBtn) bulkImportBtn.style.display = 'none';
 
             // Stop monitoring
             if (window.adminLockUnsubscribe) {
@@ -1742,6 +1773,8 @@
           document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
           const quickAddSection = document.querySelector('.quick-add-section');
           quickAddSection.style.display = 'none';
+          const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
+          if (bulkImportBtn) bulkImportBtn.style.display = 'none';
 
           console.log('Admin logged out successfully');
         } catch (error) {
@@ -1903,18 +1936,18 @@
     // Bracket editing functionality
     window.editBracketSlot = function(slotId) {
       if (!isAdminMode) return;
-      
+
       const currentName = document.querySelector(`[data-slot="${slotId}"] .team-name`).textContent;
       const teamName = prompt('Enter team name for this slot:', currentName);
-      
+
       if (teamName !== null) {
         const newName = teamName.trim() || 'TBD';
         document.querySelector(`[data-slot="${slotId}"] .team-name`).textContent = newName;
-        
+
         // Save to Firebase
         const { doc, setDoc, getDoc } = window.firestoreImports;
         const bracketRef = doc(db, 'tournament', 'bracket');
-        
+
         getDoc(bracketRef).then((docSnap) => {
           const currentBracket = docSnap.exists() ? docSnap.data() : {};
           currentBracket[slotId] = newName;
@@ -1928,6 +1961,73 @@
         });
       }
     };
+
+    // Bulk import bracket functionality
+    const bulkImportBracketBtn = document.getElementById('bulkImportBracketBtn');
+    const bulkImportModal = document.getElementById('bulkImportModal');
+    const bulkBracketData = document.getElementById('bulkBracketData');
+    const cancelBulkImport = document.getElementById('cancelBulkImport');
+    const submitBulkImport = document.getElementById('submitBulkImport');
+
+    bulkImportBracketBtn.addEventListener('click', () => {
+      if (!isAdminMode) return;
+      bulkImportModal.classList.add('active');
+    });
+
+    cancelBulkImport.addEventListener('click', () => {
+      bulkImportModal.classList.remove('active');
+    });
+
+    bulkImportModal.addEventListener('click', (e) => {
+      if (e.target === bulkImportModal) {
+        bulkImportModal.classList.remove('active');
+      }
+    });
+
+    submitBulkImport.addEventListener('click', () => {
+      if (!isAdminMode) return;
+
+      try {
+        const bracketDataInput = bulkBracketData.value.trim();
+        if (!bracketDataInput) {
+          alert('Please enter bracket data');
+          return;
+        }
+
+        const bracketObj = JSON.parse(bracketDataInput);
+
+        // Validate the data structure
+        if (typeof bracketObj !== 'object' || Array.isArray(bracketObj)) {
+          alert('Invalid bracket data format. Must be a JSON object.');
+          return;
+        }
+
+        // Save to Firestore
+        const { doc, setDoc } = window.firestoreImports;
+        const bracketRef = doc(db, 'tournament', 'bracket');
+
+        setDoc(bracketRef, bracketObj).then(() => {
+          console.log('✅ Bracket imported successfully');
+          alert('Bracket data imported successfully!');
+          bulkImportModal.classList.remove('active');
+          bulkBracketData.value = '';
+
+          // Update UI immediately
+          Object.entries(bracketObj).forEach(([slotId, teamName]) => {
+            const slotElement = document.querySelector(`[data-slot="${slotId}"] .team-name`);
+            if (slotElement) {
+              slotElement.textContent = teamName || 'TBD';
+            }
+          });
+        }).catch(error => {
+          console.error('❌ Error importing bracket:', error);
+          alert('Error importing bracket: ' + error.message);
+        });
+      } catch (error) {
+        console.error('❌ Error parsing JSON:', error);
+        alert('Invalid JSON format. Please check your data and try again.');
+      }
+    });
 
     cancelEdit.addEventListener('click', () => {
       editGameModal.classList.remove('active');
