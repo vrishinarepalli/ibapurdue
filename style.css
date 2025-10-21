@@ -81,7 +81,7 @@ header.site {
     padding: 0px 80px;
     background: linear-gradient(270deg, #CFB991, #000);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.06);
-    position: sticky; top: 0; z-index: 999;
+    position: static;
     left: 0;
 }
 .logo {
