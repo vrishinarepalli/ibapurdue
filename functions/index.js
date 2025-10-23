@@ -203,9 +203,15 @@ exports.verifyAuthentication = functions.https.onCall(async (data, context) => {
   try {
     const { credential } = data;
 
+    // Parse the clientDataJSON to extract the challenge
+    const clientDataJSON = JSON.parse(
+      Buffer.from(credential.response.clientDataJSON, 'base64url').toString('utf-8')
+    );
+    const challengeFromClient = clientDataJSON.challenge;
+
     // Find and validate the challenge
     const challengesSnapshot = await db.collection('auth_challenges')
-      .where('challenge', '==', credential.response.clientDataJSON.challenge)
+      .where('challenge', '==', challengeFromClient)
       .where('expiresAt', '>', admin.firestore.Timestamp.now())
       .limit(1)
       .get();
