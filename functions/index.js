@@ -1,5 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const crypto = require('crypto');
 const {
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -36,7 +37,7 @@ exports.generateRegistrationOptions = functions.https.onCall(async (data, contex
     const existingCredentials = adminDoc.exists ? adminDoc.data().credentials || [] : [];
 
     // Generate a random challenge
-    const challenge = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64url');
+    const challenge = crypto.randomBytes(32).toString('base64url');
 
     // Store challenge temporarily for verification (expires in 5 minutes)
     await db.collection('admin').doc('pending_challenge').set({
@@ -165,7 +166,7 @@ exports.generateAuthenticationOptions = functions.https.onCall(async (data, cont
     const credentials = adminDoc.data().credentials;
 
     // Generate a random challenge
-    const challenge = Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64url');
+    const challenge = crypto.randomBytes(32).toString('base64url');
 
     // Store challenge temporarily (expires in 5 minutes)
     await db.collection('auth_challenges').add({
