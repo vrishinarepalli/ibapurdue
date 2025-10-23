@@ -120,8 +120,8 @@ exports.verifyRegistration = functions.https.onCall(async (data, context) => {
     // Store the credential
     const { registrationInfo } = verification;
     const newCredential = {
-      credentialID: Buffer.from(registrationInfo.credentialID).toString('base64'),
-      credentialPublicKey: Buffer.from(registrationInfo.credentialPublicKey).toString('base64'),
+      credentialID: Buffer.from(registrationInfo.credentialID).toString('base64url'),
+      credentialPublicKey: Buffer.from(registrationInfo.credentialPublicKey).toString('base64url'),
       counter: registrationInfo.counter,
       credentialDeviceType: registrationInfo.credentialDeviceType,
       credentialBackedUp: registrationInfo.credentialBackedUp,
@@ -247,8 +247,8 @@ exports.verifyAuthentication = functions.https.onCall(async (data, context) => {
       expectedOrigin: origin,
       expectedRPID: rpID,
       authenticator: {
-        credentialID: Buffer.from(matchedCredential.credentialID, 'base64'),
-        credentialPublicKey: Buffer.from(matchedCredential.credentialPublicKey, 'base64'),
+        credentialID: Buffer.from(matchedCredential.credentialID, 'base64url'),
+        credentialPublicKey: Buffer.from(matchedCredential.credentialPublicKey, 'base64url'),
         counter: matchedCredential.counter,
         transports: matchedCredential.transports,
       },
