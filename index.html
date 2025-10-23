@@ -17,7 +17,8 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
     import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyBN0rfpzjredziJbPny-YfEgq4uE2l1hzE",
@@ -32,6 +33,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+    const functions = getFunctions(app);
 
     // Admin UID - only this user can access admin functions
     const ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
@@ -39,9 +41,11 @@
     // Make Firebase available globally
     window.db = db;
     window.auth = auth;
+    window.functions = functions;
     window.ADMIN_UID = ADMIN_UID;
     window.firestoreImports = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc };
-    window.authImports = { signInWithEmailAndPassword, signOut, onAuthStateChanged };
+    window.authImports = { signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken };
+    window.functionsImports = { httpsCallable };
   </script>
   
 </head>
@@ -877,9 +881,8 @@
         // Show login
         adminModal.classList.add('active');
         adminError.style.display = 'none';
-        // Show setup text if no credentials are stored
-        const hasCredentials = localStorage.getItem('webauthn_credential_id');
-        document.getElementById('adminSetupText').style.display = hasCredentials ? 'none' : 'block';
+        // Always hide setup text - server will determine if registration is needed
+        document.getElementById('adminSetupText').style.display = 'none';
       }
     });
 
@@ -893,7 +896,7 @@
       }
     });
 
-    // WebAuthn helper functions
+    // WebAuthn helper functions for server-side verification
     function arrayBufferToBase64(buffer) {
       const bytes = new Uint8Array(buffer);
       let binary = '';
@@ -912,6 +915,15 @@
       return bytes.buffer;
     }
 
+    function base64urlToBase64(base64url) {
+      let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+      while (base64.length % 4 !== 0) {
+        base64 += '=';
+      }
+      return base64;
+    }
+
+    // Server-verified WebAuthn registration
     async function registerWebAuthn() {
       try {
         // Check if WebAuthn is supported
@@ -919,51 +931,97 @@
           throw new Error('WebAuthn is not supported on this device');
         }
 
-        // Create credential options
-        const challenge = new Uint8Array(32);
-        crypto.getRandomValues(challenge);
+        // Wait for Firebase to be ready
+        if (!window.auth || !window.authImports || !window.functions) {
+          throw new Error('Firebase not initialized. Please refresh and try again.');
+        }
 
+        const { signInWithEmailAndPassword } = window.authImports;
+
+        // First authenticate with Firebase to prove identity
+        // NOTE: For initial setup, you'll need to use the old email/password once
+        const email = prompt('Enter your admin email for initial registration:');
+        const password = prompt('Enter your admin password for initial registration:');
+
+        if (!email || !password) {
+          throw new Error('Email and password required for initial setup');
+        }
+
+        const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
+        const user = userCredential.user;
+
+        if (user.uid !== window.ADMIN_UID) {
+          await window.auth.signOut();
+          throw new Error('You do not have admin privileges');
+        }
+
+        // Get registration options from server
+        const { httpsCallable } = window.functionsImports;
+        const generateRegOptions = httpsCallable(window.functions, 'generateRegistrationOptions');
+        const optionsResponse = await generateRegOptions();
+        const options = optionsResponse.data;
+
+        // Convert challenge from base64url to Uint8Array
+        const challengeArray = base64ToArrayBuffer(base64urlToBase64(options.challenge));
+
+        // Create credential options for browser
         const publicKeyCredentialCreationOptions = {
-          challenge: challenge,
+          challenge: challengeArray,
           rp: {
-            name: "IBA Admin",
-            id: window.location.hostname,
+            name: options.rpName,
+            id: options.rpID,
           },
           user: {
-            id: new Uint8Array(16),
-            name: "admin@iba.purdue",
-            displayName: "IBA Admin",
+            id: Uint8Array.from(options.userID, c => c.charCodeAt(0)),
+            name: options.userName,
+            displayName: 'IBA Admin',
           },
           pubKeyCredParams: [
-            { alg: -7, type: "public-key" },  // ES256
-            { alg: -257, type: "public-key" } // RS256
+            { alg: -7, type: 'public-key' },  // ES256
+            { alg: -257, type: 'public-key' } // RS256
           ],
-          authenticatorSelection: {
-            authenticatorAttachment: "platform", // Touch ID/Face ID
-            requireResidentKey: false,
-            userVerification: "required"
-          },
-          timeout: 60000,
-          attestation: "none"
+          authenticatorSelection: options.authenticatorSelection,
+          timeout: options.timeout,
+          attestation: options.attestationType || 'none',
         };
 
-        // Create credential
+        // Create credential with Touch ID/Face ID
+        console.log('Creating WebAuthn credential...');
         const credential = await navigator.credentials.create({
           publicKey: publicKeyCredentialCreationOptions
         });
 
-        // Store credential ID and public key
-        localStorage.setItem('webauthn_credential_id', arrayBufferToBase64(credential.rawId));
-        localStorage.setItem('webauthn_public_key', arrayBufferToBase64(credential.response.getPublicKey()));
+        // Prepare credential for server verification
+        const credentialData = {
+          id: credential.id,
+          rawId: arrayBufferToBase64(credential.rawId),
+          type: credential.type,
+          response: {
+            clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
+            attestationObject: arrayBufferToBase64(credential.response.attestationObject),
+            transports: credential.response.getTransports ? credential.response.getTransports() : ['internal'],
+          },
+        };
 
-        console.log('WebAuthn registration successful');
-        return true;
+        // Send to server for verification and storage
+        const verifyReg = httpsCallable(window.functions, 'verifyRegistration');
+        const verificationResponse = await verifyReg({ credential: credentialData });
+
+        if (verificationResponse.data.verified) {
+          console.log('✅ Biometric credential registered successfully on server');
+          // Sign out from Firebase email/password auth
+          await window.auth.signOut();
+          return true;
+        } else {
+          throw new Error('Server verification failed');
+        }
       } catch (error) {
         console.error('WebAuthn registration error:', error);
         throw error;
       }
     }
 
+    // Server-verified WebAuthn authentication
     async function authenticateWebAuthn() {
       try {
         // Check if WebAuthn is supported
@@ -971,34 +1029,70 @@
           throw new Error('WebAuthn is not supported on this device');
         }
 
-        // Check if credentials exist
-        const credentialId = localStorage.getItem('webauthn_credential_id');
-        if (!credentialId) {
-          throw new Error('No credentials registered');
+        // Wait for Firebase to be ready
+        if (!window.functions) {
+          throw new Error('Firebase not initialized. Please refresh and try again.');
         }
 
-        // Create authentication options
-        const challenge = new Uint8Array(32);
-        crypto.getRandomValues(challenge);
+        // Get authentication options from server
+        const { httpsCallable } = window.functionsImports;
+        const generateAuthOptions = httpsCallable(window.functions, 'generateAuthenticationOptions');
+        const optionsResponse = await generateAuthOptions();
+        const options = optionsResponse.data;
 
+        // Convert challenge from base64url to Uint8Array
+        const challengeArray = base64ToArrayBuffer(base64urlToBase64(options.challenge));
+
+        // Convert allowCredentials IDs from base64 to ArrayBuffer
+        const allowCredentials = options.allowCredentials.map(cred => ({
+          id: base64ToArrayBuffer(cred.id),
+          type: cred.type,
+          transports: cred.transports,
+        }));
+
+        // Create authentication options for browser
         const publicKeyCredentialRequestOptions = {
-          challenge: challenge,
-          allowCredentials: [{
-            id: base64ToArrayBuffer(credentialId),
-            type: 'public-key',
-            transports: ['internal']
-          }],
-          timeout: 60000,
-          userVerification: "required"
+          challenge: challengeArray,
+          allowCredentials: allowCredentials,
+          timeout: options.timeout,
+          userVerification: options.userVerification,
+          rpId: options.rpID,
         };
 
-        // Get credential
+        // Get credential with Touch ID/Face ID
+        console.log('Authenticating with biometrics...');
         const assertion = await navigator.credentials.get({
           publicKey: publicKeyCredentialRequestOptions
         });
 
-        console.log('WebAuthn authentication successful');
-        return true;
+        // Prepare assertion for server verification
+        const assertionData = {
+          id: assertion.id,
+          rawId: arrayBufferToBase64(assertion.rawId),
+          type: assertion.type,
+          response: {
+            clientDataJSON: arrayBufferToBase64(assertion.response.clientDataJSON),
+            authenticatorData: arrayBufferToBase64(assertion.response.authenticatorData),
+            signature: arrayBufferToBase64(assertion.response.signature),
+            userHandle: assertion.response.userHandle ? arrayBufferToBase64(assertion.response.userHandle) : null,
+          },
+        };
+
+        // Send to server for verification
+        const verifyAuth = httpsCallable(window.functions, 'verifyAuthentication');
+        const verificationResponse = await verifyAuth({ credential: assertionData });
+
+        if (verificationResponse.data.verified) {
+          console.log('✅ Biometric authentication verified by server');
+
+          // Sign in with the custom token from server
+          const { signInWithCustomToken } = window.authImports;
+          await signInWithCustomToken(window.auth, verificationResponse.data.customToken);
+
+          return true;
+        } else {
+          throw new Error('Server verification failed');
+        }
       } catch (error) {
         console.error('WebAuthn authentication error:', error);
         throw error;
@@ -1019,60 +1113,92 @@
       console.log('Admin logged out');
     };
 
-    // Biometric authentication button handler
+    // Biometric authentication button handler with server verification
     document.getElementById('adminBiometricBtn').addEventListener('click', async () => {
       const adminError = document.getElementById('adminError');
+      const adminBiometricBtn = document.getElementById('adminBiometricBtn');
       adminError.style.display = 'none';
 
       try {
-        // Check if credentials exist
-        const hasCredentials = localStorage.getItem('webauthn_credential_id');
+        // Disable button during processing
+        adminBiometricBtn.disabled = true;
+        adminBiometricBtn.textContent = 'Processing...';
 
-        if (!hasCredentials) {
-          // First time - register
-          console.log('Registering new WebAuthn credentials...');
-          await registerWebAuthn();
-          adminError.textContent = 'Successfully registered! Click again to authenticate.';
-          adminError.style.color = 'var(--success)';
-          adminError.style.display = 'block';
-          document.getElementById('adminSetupText').style.display = 'none';
-          setTimeout(() => {
-            adminError.style.display = 'none';
-            adminError.style.color = '';
-          }, 3000);
-          return;
+        // Try to authenticate first
+        try {
+          console.log('Attempting biometric authentication...');
+          await authenticateWebAuthn();
+
+          // Success - user is authenticated with biometrics
+          adminModal.classList.remove('active');
+          isAdminMode = true;
+          document.body.classList.add('admin-mode');
+          adminBtn.textContent = 'Logout';
+          adminBtn.style.background = 'var(--success)';
+          document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
+          const quickAddSection = document.querySelector('.quick-add-section');
+          if (quickAddSection) quickAddSection.style.display = 'block';
+          const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
+          if (bulkImportBtn) bulkImportBtn.style.display = 'block';
+
+          console.log('✅ Admin logged in successfully with server-verified biometrics');
+        } catch (authError) {
+          // If authentication fails because no credentials exist, offer registration
+          if (authError.message?.includes('No biometric credentials registered') ||
+              authError.code === 'functions/failed-precondition') {
+            console.log('No credentials found. Starting registration...');
+
+            // Show registration prompt
+            const shouldRegister = confirm(
+              'No biometric credentials found.\n\n' +
+              'This is your first time setting up Touch ID/Face ID.\n' +
+              'You will need to enter your admin email and password once for verification.\n\n' +
+              'Continue?'
+            );
+
+            if (!shouldRegister) {
+              throw new Error('Registration cancelled');
+            }
+
+            // Register new credentials
+            await registerWebAuthn();
+
+            adminError.textContent = '✅ Successfully registered! Click the button again to login with Touch ID.';
+            adminError.style.color = 'var(--success)';
+            adminError.style.display = 'block';
+            document.getElementById('adminSetupText').style.display = 'none';
+
+            setTimeout(() => {
+              adminError.style.display = 'none';
+              adminError.style.color = '';
+            }, 5000);
+          } else {
+            // Re-throw other authentication errors
+            throw authError;
+          }
         }
-
-        // Authenticate with Touch ID / Face ID
-        console.log('Authenticating with biometrics...');
-        await authenticateWebAuthn();
-
-        // Success - user is authenticated with biometrics
-        adminModal.classList.remove('active');
-        isAdminMode = true;
-        document.body.classList.add('admin-mode');
-        adminBtn.textContent = 'Logout';
-        adminBtn.style.background = 'var(--success)';
-        document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
-        const quickAddSection = document.querySelector('.quick-add-section');
-        if (quickAddSection) quickAddSection.style.display = 'block';
-        const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
-        if (bulkImportBtn) bulkImportBtn.style.display = 'block';
-
-        console.log('Admin logged in successfully with biometrics');
       } catch (error) {
         console.error('Biometric authentication error:', error);
 
+        // Handle specific error types
         if (error.name === 'NotAllowedError') {
           adminError.textContent = 'Authentication cancelled or not allowed';
         } else if (error.name === 'NotSupportedError') {
           adminError.textContent = 'Touch ID / Face ID not available on this device';
-        } else if (error.message.includes('not supported')) {
+        } else if (error.message?.includes('not supported')) {
           adminError.textContent = 'Biometric authentication not supported on this browser';
+        } else if (error.message?.includes('Firebase not initialized')) {
+          adminError.textContent = 'Loading... Please wait and try again';
+        } else if (error.message?.includes('cancelled')) {
+          adminError.textContent = 'Registration cancelled';
         } else {
-          adminError.textContent = 'Authentication failed. Please try again.';
+          adminError.textContent = error.message || 'Authentication failed. Please try again.';
         }
         adminError.style.display = 'block';
+      } finally {
+        // Re-enable button
+        adminBiometricBtn.disabled = false;
+        adminBiometricBtn.textContent = '🔐 Use Touch ID / Face ID';
       }
     });
 
