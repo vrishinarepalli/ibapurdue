@@ -7,6 +7,7 @@ const {
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } = require('@simplewebauthn/server');
+const { isoBase64URL } = require('@simplewebauthn/server/helpers');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -103,6 +104,7 @@ exports.verifyRegistration = functions.https.onCall(async (data, context) => {
     }
 
     // Verify the registration response
+    // The credential from client is already in the correct format for @simplewebauthn
     const verification = await verifyRegistrationResponse({
       response: data.credential,
       expectedChallenge: challenge,

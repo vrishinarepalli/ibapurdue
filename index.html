@@ -923,6 +923,11 @@
       return base64;
     }
 
+    function arrayBufferToBase64url(buffer) {
+      const base64 = arrayBufferToBase64(buffer);
+      return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+
     // Server-verified WebAuthn registration
     async function registerWebAuthn() {
       try {
@@ -991,14 +996,14 @@
           publicKey: publicKeyCredentialCreationOptions
         });
 
-        // Prepare credential for server verification
+        // Prepare credential for server verification (use base64url format)
         const credentialData = {
-          id: credential.id,
-          rawId: arrayBufferToBase64(credential.rawId),
+          id: credential.id, // Already base64url from browser
+          rawId: arrayBufferToBase64url(credential.rawId),
           type: credential.type,
           response: {
-            clientDataJSON: arrayBufferToBase64(credential.response.clientDataJSON),
-            attestationObject: arrayBufferToBase64(credential.response.attestationObject),
+            clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON),
+            attestationObject: arrayBufferToBase64url(credential.response.attestationObject),
             transports: credential.response.getTransports ? credential.response.getTransports() : ['internal'],
           },
         };
