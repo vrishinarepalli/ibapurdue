@@ -750,13 +750,13 @@
     <div id="adminModal" class="admin-modal">
       <div class="admin-modal-content">
         <h3>Admin Login</h3>
-        <input type="email" id="adminEmail" class="admin-input" placeholder="Enter email" />
-        <input type="password" id="adminPassword" class="admin-input" placeholder="Enter password" />
-        <div class="admin-error" id="adminError">Incorrect credentials</div>
+        <p style="color: var(--muted); text-align: center; margin-bottom: 1.5rem;">Authenticate using Touch ID or Face ID</p>
+        <div class="admin-error" id="adminError" style="display: none;">Authentication failed</div>
         <div class="admin-buttons">
           <button class="admin-cancel" id="adminCancel">Cancel</button>
-          <button class="admin-submit" id="adminSubmit">Login</button>
+          <button class="admin-submit" id="adminBiometricBtn">🔐 Use Touch ID / Face ID</button>
         </div>
+        <p id="adminSetupText" style="display: none; color: var(--muted); font-size: 0.85rem; text-align: center; margin-top: 1rem;">First time? Click above to register your biometric credentials.</p>
       </div>
     </div>
 
@@ -876,9 +876,10 @@
       if (!isAdminMode) {
         // Show login
         adminModal.classList.add('active');
-        adminPassword.value = '';
         adminError.style.display = 'none';
-        setTimeout(() => adminPassword.focus(), 100);
+        // Show setup text if no credentials are stored
+        const hasCredentials = localStorage.getItem('webauthn_credential_id');
+        document.getElementById('adminSetupText').style.display = hasCredentials ? 'none' : 'block';
       }
     });
 
@@ -892,77 +893,161 @@
       }
     });
 
-    adminPassword.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        adminSubmit.click();
+    // WebAuthn helper functions
+    function arrayBufferToBase64(buffer) {
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
       }
-    });
+      return btoa(binary);
+    }
 
-    // Monitor auth state changes
-    window.addEventListener('load', () => {
-      if (window.auth && window.authImports) {
-        const { onAuthStateChanged } = window.authImports;
-        onAuthStateChanged(window.auth, (user) => {
-          if (user && user.uid === window.ADMIN_UID) {
-            // User is signed in and is admin
-            isAdminMode = true;
-            document.body.classList.add('admin-mode');
-            adminBtn.textContent = 'Logout';
-            adminBtn.style.background = 'var(--success)';
-            document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
-            const quickAddSection = document.querySelector('.quick-add-section');
-            if (quickAddSection) quickAddSection.style.display = 'block';
-            const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
-            if (bulkImportBtn) bulkImportBtn.style.display = 'block';
-          } else {
-            // User is signed out or not admin
-            isAdminMode = false;
-            document.body.classList.remove('admin-mode');
-            adminBtn.textContent = 'Admin';
-            adminBtn.style.background = 'var(--brand)';
-            document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
-            const quickAddSection = document.querySelector('.quick-add-section');
-            if (quickAddSection) quickAddSection.style.display = 'none';
-            const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
-            if (bulkImportBtn) bulkImportBtn.style.display = 'none';
-          }
+    function base64ToArrayBuffer(base64) {
+      const binary = atob(base64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      return bytes.buffer;
+    }
+
+    async function registerWebAuthn() {
+      try {
+        // Check if WebAuthn is supported
+        if (!window.PublicKeyCredential) {
+          throw new Error('WebAuthn is not supported on this device');
+        }
+
+        // Create credential options
+        const challenge = new Uint8Array(32);
+        crypto.getRandomValues(challenge);
+
+        const publicKeyCredentialCreationOptions = {
+          challenge: challenge,
+          rp: {
+            name: "IBA Admin",
+            id: window.location.hostname,
+          },
+          user: {
+            id: new Uint8Array(16),
+            name: "admin@iba.purdue",
+            displayName: "IBA Admin",
+          },
+          pubKeyCredParams: [
+            { alg: -7, type: "public-key" },  // ES256
+            { alg: -257, type: "public-key" } // RS256
+          ],
+          authenticatorSelection: {
+            authenticatorAttachment: "platform", // Touch ID/Face ID
+            requireResidentKey: false,
+            userVerification: "required"
+          },
+          timeout: 60000,
+          attestation: "none"
+        };
+
+        // Create credential
+        const credential = await navigator.credentials.create({
+          publicKey: publicKeyCredentialCreationOptions
         });
-      }
-    });
 
-    // Admin submit handler - setup immediately but wait for Firebase
-    adminSubmit.addEventListener('click', async () => {
-      // Wait for Firebase to be ready
-      if (!window.auth || !window.authImports) {
-        adminError.textContent = 'Loading... Please wait and try again.';
-        adminError.style.display = 'block';
-        setTimeout(() => adminError.style.display = 'none', 2000);
-        return;
-      }
+        // Store credential ID and public key
+        localStorage.setItem('webauthn_credential_id', arrayBufferToBase64(credential.rawId));
+        localStorage.setItem('webauthn_public_key', arrayBufferToBase64(credential.response.getPublicKey()));
 
-      const email = document.getElementById('adminEmail').value.trim();
-      const password = adminPassword.value;
-
-      if (!email || !password) {
-        adminError.textContent = 'Please enter both email and password';
-        adminError.style.display = 'block';
-        return;
+        console.log('WebAuthn registration successful');
+        return true;
+      } catch (error) {
+        console.error('WebAuthn registration error:', error);
+        throw error;
       }
+    }
+
+    async function authenticateWebAuthn() {
+      try {
+        // Check if WebAuthn is supported
+        if (!window.PublicKeyCredential) {
+          throw new Error('WebAuthn is not supported on this device');
+        }
+
+        // Check if credentials exist
+        const credentialId = localStorage.getItem('webauthn_credential_id');
+        if (!credentialId) {
+          throw new Error('No credentials registered');
+        }
+
+        // Create authentication options
+        const challenge = new Uint8Array(32);
+        crypto.getRandomValues(challenge);
+
+        const publicKeyCredentialRequestOptions = {
+          challenge: challenge,
+          allowCredentials: [{
+            id: base64ToArrayBuffer(credentialId),
+            type: 'public-key',
+            transports: ['internal']
+          }],
+          timeout: 60000,
+          userVerification: "required"
+        };
+
+        // Get credential
+        const assertion = await navigator.credentials.get({
+          publicKey: publicKeyCredentialRequestOptions
+        });
+
+        console.log('WebAuthn authentication successful');
+        return true;
+      } catch (error) {
+        console.error('WebAuthn authentication error:', error);
+        throw error;
+      }
+    }
+
+    // Admin logout function
+    window.adminLogout = function() {
+      isAdminMode = false;
+      document.body.classList.remove('admin-mode');
+      adminBtn.textContent = 'Admin';
+      adminBtn.style.background = 'var(--brand)';
+      document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
+      const quickAddSection = document.querySelector('.quick-add-section');
+      if (quickAddSection) quickAddSection.style.display = 'none';
+      const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
+      if (bulkImportBtn) bulkImportBtn.style.display = 'none';
+      console.log('Admin logged out');
+    };
+
+    // Biometric authentication button handler
+    document.getElementById('adminBiometricBtn').addEventListener('click', async () => {
+      const adminError = document.getElementById('adminError');
+      adminError.style.display = 'none';
 
       try {
-        const { signInWithEmailAndPassword } = window.authImports;
-        const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
-        const user = userCredential.user;
+        // Check if credentials exist
+        const hasCredentials = localStorage.getItem('webauthn_credential_id');
 
-        // Check if the logged-in user is the admin
-        if (user.uid !== window.ADMIN_UID) {
-          adminError.textContent = 'You do not have admin privileges';
+        if (!hasCredentials) {
+          // First time - register
+          console.log('Registering new WebAuthn credentials...');
+          await registerWebAuthn();
+          adminError.textContent = 'Successfully registered! Click again to authenticate.';
+          adminError.style.color = 'var(--success)';
           adminError.style.display = 'block';
-          await window.auth.signOut(); // Sign them out
+          document.getElementById('adminSetupText').style.display = 'none';
+          setTimeout(() => {
+            adminError.style.display = 'none';
+            adminError.style.color = '';
+          }, 3000);
           return;
         }
 
-        // Success - user is authenticated and is admin
+        // Authenticate with Touch ID / Face ID
+        console.log('Authenticating with biometrics...');
+        await authenticateWebAuthn();
+
+        // Success - user is authenticated with biometrics
         adminModal.classList.remove('active');
         isAdminMode = true;
         document.body.classList.add('admin-mode');
@@ -970,25 +1055,24 @@
         adminBtn.style.background = 'var(--success)';
         document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
         const quickAddSection = document.querySelector('.quick-add-section');
-        quickAddSection.style.display = 'block';
+        if (quickAddSection) quickAddSection.style.display = 'block';
         const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
         if (bulkImportBtn) bulkImportBtn.style.display = 'block';
 
-        // Clear form
-        document.getElementById('adminEmail').value = '';
-        adminPassword.value = '';
-        adminError.style.display = 'none';
-
-        console.log('Admin logged in successfully');
+        console.log('Admin logged in successfully with biometrics');
       } catch (error) {
-        console.error('Error logging in:', error);
-        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-          adminError.textContent = 'Incorrect email or password';
+        console.error('Biometric authentication error:', error);
+
+        if (error.name === 'NotAllowedError') {
+          adminError.textContent = 'Authentication cancelled or not allowed';
+        } else if (error.name === 'NotSupportedError') {
+          adminError.textContent = 'Touch ID / Face ID not available on this device';
+        } else if (error.message.includes('not supported')) {
+          adminError.textContent = 'Biometric authentication not supported on this browser';
         } else {
-          adminError.textContent = 'Error logging in. Please try again.';
+          adminError.textContent = 'Authentication failed. Please try again.';
         }
         adminError.style.display = 'block';
-        adminPassword.value = '';
       }
     });
 
@@ -1758,30 +1842,6 @@
     }
 
 
-    // Admin logout handler (needs Firebase)
-    window.adminLogout = async function() {
-      if (isAdminMode) {
-        try {
-          // Sign out from Firebase Auth
-          const { signOut } = window.authImports;
-          await signOut(window.auth);
-
-          isAdminMode = false;
-          document.body.classList.remove('admin-mode');
-          adminBtn.textContent = 'Admin';
-          adminBtn.style.background = 'var(--brand)';
-          document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = 'none');
-          const quickAddSection = document.querySelector('.quick-add-section');
-          quickAddSection.style.display = 'none';
-          const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
-          if (bulkImportBtn) bulkImportBtn.style.display = 'none';
-
-          console.log('Admin logged out successfully');
-        } catch (error) {
-          console.error('Error logging out:', error);
-        }
-      }
-    };
 
     // Update button click handler to support logout
     adminBtn.addEventListener('click', () => {
