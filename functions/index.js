@@ -33,6 +33,11 @@ exports.generateRegistrationOptions = functions.https.onCall(async (data, contex
   }
 
   try {
+    console.log('Registration request received:', {
+      hasCredential: !!data.credential,
+      credentialId: data.credential?.id?.substring(0, 20),
+    });
+
     // Check if admin already has credentials registered
     const adminDoc = await db.collection('admin').doc('biometric').get();
     const existingCredentials = adminDoc.exists ? adminDoc.data().credentials || [] : [];
