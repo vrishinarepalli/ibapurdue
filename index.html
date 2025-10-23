@@ -997,9 +997,10 @@
         });
 
         // Prepare credential for server verification (use base64url format)
+        const rawIdBase64url = arrayBufferToBase64url(credential.rawId);
         const credentialData = {
-          id: credential.id, // Already base64url from browser
-          rawId: arrayBufferToBase64url(credential.rawId),
+          id: rawIdBase64url, // Use the base64url encoding of rawId
+          rawId: rawIdBase64url,
           type: credential.type,
           response: {
             clientDataJSON: arrayBufferToBase64url(credential.response.clientDataJSON),
@@ -1007,6 +1008,8 @@
             transports: credential.response.getTransports ? credential.response.getTransports() : ['internal'],
           },
         };
+
+        console.log('Sending credential data:', { id: credentialData.id, type: credentialData.type });
 
         // Send to server for verification and storage
         const verifyReg = httpsCallable(window.functions, 'verifyRegistration');
