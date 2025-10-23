@@ -126,7 +126,7 @@ exports.verifyRegistration = functions.https.onCall(async (data, context) => {
       credentialDeviceType: registrationInfo.credentialDeviceType,
       credentialBackedUp: registrationInfo.credentialBackedUp,
       transports: data.credential.response.transports || ['internal'],
-      registeredAt: admin.firestore.FieldValue.serverTimestamp(),
+      registeredAt: admin.firestore.Timestamp.now(),
     };
 
     // Get existing credentials
