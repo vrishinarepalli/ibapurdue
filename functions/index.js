@@ -14,8 +14,8 @@ const db = admin.firestore();
 
 // Configuration
 const rpName = 'IBA Admin';
-const rpID = 'iba-website-63cb3.web.app'; // Firebase hosting domain
-const origin = 'https://iba-website-63cb3.web.app'; // Firebase hosting URL
+const rpID = 'ibapurdue.online'; // Custom domain
+const origin = ['https://ibapurdue.online', 'https://iba-website-63cb3.web.app']; // Support both domains
 
 /**
  * Generate registration options for new admin credential setup
@@ -208,6 +208,10 @@ exports.verifyAuthentication = functions.https.onCall(async (data, context) => {
   try {
     const { credential } = data;
 
+    console.log('Received credential ID:', credential.id);
+    console.log('Credential ID type:', typeof credential.id);
+    console.log('Credential ID length:', credential.id?.length);
+
     // Parse the clientDataJSON to extract the challenge
     const clientDataJSON = JSON.parse(
       Buffer.from(credential.response.clientDataJSON, 'base64url').toString('utf-8')
@@ -237,13 +241,19 @@ exports.verifyAuthentication = functions.https.onCall(async (data, context) => {
     const credentials = adminDoc.data().credentials;
     const credentialID = credential.id;
 
+    console.log('Stored credential IDs:', credentials.map(c => c.credentialID));
+
     const matchedCredential = credentials.find(
       cred => cred.credentialID === credentialID
     );
 
     if (!matchedCredential) {
+      console.error('Credential not found. Looking for:', credentialID);
+      console.error('Available credentials:', credentials.map(c => ({ id: c.credentialID, idLength: c.credentialID.length })));
       throw new functions.https.HttpsError('permission-denied', 'Credential not found');
     }
+
+    console.log('Matched credential ID:', matchedCredential.credentialID);
 
     // Verify the authentication response
     const verification = await verifyAuthenticationResponse({
@@ -272,22 +282,67 @@ exports.verifyAuthentication = functions.https.onCall(async (data, context) => {
     // Clean up challenge
     await challengeDoc.ref.delete();
 
-    // Create a custom token for the admin
+    // Create a session token for the admin
+    const sessionToken = crypto.randomBytes(32).toString('base64url');
     const ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
-    const customToken = await admin.auth().createCustomToken(ADMIN_UID, {
-      adminAuthenticated: true,
+
+    // Store session token in Firestore
+    await db.collection('admin_sessions').add({
+      sessionToken,
+      uid: ADMIN_UID,
       authMethod: 'webauthn',
-      authenticatedAt: Date.now(),
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
     });
 
     return {
       verified: true,
-      customToken,
+      sessionToken,
+      uid: ADMIN_UID,
       message: 'Authentication successful',
     };
   } catch (error) {
     console.error('Error verifying authentication:', error);
     throw new functions.https.HttpsError('internal', error.message || 'Failed to verify authentication');
+  }
+});
+
+/**
+ * Validate session token and allow signin
+ */
+exports.validateSessionToken = functions.https.onCall(async (data, context) => {
+  try {
+    const { sessionToken } = data;
+
+    if (!sessionToken) {
+      throw new functions.https.HttpsError('invalid-argument', 'Session token is required');
+    }
+
+    // Find the session token in Firestore
+    const sessionsSnapshot = await db.collection('admin_sessions')
+      .where('sessionToken', '==', sessionToken)
+      .where('expiresAt', '>', admin.firestore.Timestamp.now())
+      .limit(1)
+      .get();
+
+    if (sessionsSnapshot.empty) {
+      throw new functions.https.HttpsError('permission-denied', 'Invalid or expired session token');
+    }
+
+    const sessionDoc = sessionsSnapshot.docs[0];
+    const sessionData = sessionDoc.data();
+
+    // Delete the used session token (one-time use)
+    await sessionDoc.ref.delete();
+
+    return {
+      valid: true,
+      uid: sessionData.uid,
+      authMethod: sessionData.authMethod,
+    };
+  } catch (error) {
+    console.error('Error validating session token:', error);
+    throw new functions.https.HttpsError('internal', error.message || 'Failed to validate session token');
   }
 });
 

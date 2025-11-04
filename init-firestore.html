@@ -121,13 +121,23 @@
     </div>
 
     <div id="log"></div>
+
+    <hr style="margin: 2rem 0; border: 1px solid #1f2937;">
+
+    <h2 style="color: #ff9d00;">📋 Pending Admin Requests</h2>
+    <p>Review and approve/decline admin access requests from users.</p>
+    <button onclick="loadAdminRequests()" style="margin-bottom: 1rem;">🔄 Refresh Requests</button>
+
+    <div id="adminRequestsContainer" style="margin-top: 1rem;">
+      <p style="color: var(--muted);">Click "Refresh Requests" to load pending requests.</p>
+    </div>
   </div>
 
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getFirestore, collection, doc, setDoc, getDocs, getDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-    import { getAuth, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, collection, doc, setDoc, getDocs, getDoc, updateDoc, deleteDoc, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyBN0rfpzjredziJbPny-YfEgq4uE2l1hzE",
@@ -590,6 +600,145 @@
       await window.initializeBracket();
       await window.initializeAdminPassword();
       log('=== Initialization complete! ===', 'success');
+    };
+
+    // Load and display admin requests
+    window.loadAdminRequests = async function() {
+      const container = document.getElementById('adminRequestsContainer');
+      container.innerHTML = '<p style="color: #60a5fa;">Loading requests...</p>';
+
+      try {
+        const requestsSnapshot = await getDocs(collection(db, 'admin_requests'));
+
+        if (requestsSnapshot.empty) {
+          container.innerHTML = '<p style="color: var(--muted);">No pending admin requests.</p>';
+          return;
+        }
+
+        let html = '<div style="display: grid; gap: 1rem;">';
+
+        requestsSnapshot.forEach((docSnapshot) => {
+          const request = docSnapshot.data();
+          const requestId = docSnapshot.id;
+          const status = request.status || 'pending';
+
+          // Only show pending requests
+          if (status !== 'pending') return;
+
+          const requestDate = request.requestedAt?.toDate ? request.requestedAt.toDate().toLocaleString() : 'Unknown date';
+
+          html += `
+            <div style="background: #0a1122; border: 1px solid #1f2937; border-radius: 8px; padding: 1.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                  <h3 style="margin: 0 0 0.5rem 0; color: #e7ecf6;">${request.name || 'Unknown'}</h3>
+                  <p style="margin: 0; color: #60a5fa; font-size: 0.9rem;">${request.email}</p>
+                  <p style="margin: 0.5rem 0 0 0; color: var(--muted); font-size: 0.85rem;">Requested: ${requestDate}</p>
+                </div>
+                <span style="background: #f59e0b; color: #0b0f1a; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">PENDING</span>
+              </div>
+              <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <button onclick="approveAdminRequest('${requestId}', '${request.email}', '${request.password}')" style="flex: 1; background: #22c55e;">
+                  ✅ Approve
+                </button>
+                <button onclick="declineAdminRequest('${requestId}')" style="flex: 1; background: #ef4444;">
+                  ❌ Decline
+                </button>
+              </div>
+            </div>
+          `;
+        });
+
+        html += '</div>';
+        container.innerHTML = html;
+
+      } catch (error) {
+        console.error('Error loading admin requests:', error);
+        container.innerHTML = '<p style="color: #ef4444;">Error loading requests. Check console.</p>';
+      }
+    };
+
+    // Approve admin request
+    window.approveAdminRequest = async function(requestId, email, password) {
+      if (!confirm(`Approve admin access for ${email}?`)) {
+        return;
+      }
+
+      log(`Approving admin request for ${email}...`, 'info');
+
+      try {
+        // Create Firebase Auth account for the new admin
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const newAdminUid = userCredential.user.uid;
+
+        log(`✓ Created Firebase Auth account (UID: ${newAdminUid})`, 'success');
+
+        // Update the request status
+        await updateDoc(doc(db, 'admin_requests', requestId), {
+          status: 'approved',
+          approvedAt: new Date(),
+          adminUid: newAdminUid
+        });
+
+        log(`✓ Updated request status to approved`, 'success');
+
+        // Add to approved admins list
+        await setDoc(doc(db, 'approved_admins', newAdminUid), {
+          email: email,
+          approvedAt: new Date(),
+          approvedBy: window.ADMIN_UID
+        });
+
+        log(`✅ Successfully approved ${email} as admin!`, 'success');
+        log(`⚠️ The user can now login with their email and password.`, 'warning');
+
+        // Reload the requests list
+        await loadAdminRequests();
+
+      } catch (error) {
+        console.error('Error approving admin:', error);
+        log(`❌ Error: ${error.message}`, 'error');
+
+        if (error.code === 'auth/email-already-in-use') {
+          log('Email already has an account. Marking as approved anyway.', 'warning');
+
+          // Just update the request status
+          await updateDoc(doc(db, 'admin_requests', requestId), {
+            status: 'approved',
+            approvedAt: new Date(),
+            error: 'Email already in use'
+          });
+
+          await loadAdminRequests();
+        }
+      }
+    };
+
+    // Decline admin request
+    window.declineAdminRequest = async function(requestId) {
+      if (!confirm('Decline this admin request? This action cannot be undone.')) {
+        return;
+      }
+
+      log(`Declining admin request...`, 'info');
+
+      try {
+        // Update the request status to declined
+        await updateDoc(doc(db, 'admin_requests', requestId), {
+          status: 'declined',
+          declinedAt: new Date(),
+          declinedBy: window.ADMIN_UID
+        });
+
+        log(`✅ Request declined`, 'success');
+
+        // Reload the requests list
+        await loadAdminRequests();
+
+      } catch (error) {
+        console.error('Error declining admin:', error);
+        log(`❌ Error: ${error.message}`, 'error');
+      }
     };
 
     log('🔥 Firestore initialized and ready!', 'success');
