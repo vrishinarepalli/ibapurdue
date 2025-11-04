@@ -14,8 +14,8 @@ const db = admin.firestore();
 
 // Configuration
 const rpName = 'IBA Admin';
-const rpID = 'ibapurdue.online'; // Custom domain
-const origin = ['https://ibapurdue.online', 'https://iba-website-63cb3.web.app']; // Support both domains
+const rpID = 'iba-website-63cb3.web.app'; // Firebase hosting domain
+const origin = ['https://iba-website-63cb3.web.app', 'https://ibapurdue.online']; // Support both domains
 
 /**
  * Generate registration options for new admin credential setup
