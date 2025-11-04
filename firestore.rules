@@ -2,6 +2,22 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper function to check if user is main admin
+    function isMainAdmin() {
+      return request.auth != null && request.auth.uid == 'seZ01FolJbSajEKTIsljwGtYHGD3';
+    }
+
+    // Helper function to check if user is an approved admin
+    function isApprovedAdmin() {
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/approved_admins/$(request.auth.uid));
+    }
+
+    // Helper function to check if user is any admin (main or approved)
+    function isAdmin() {
+      return isMainAdmin() || isApprovedAdmin();
+    }
+
     // Admin biometric credentials - only accessible by server-side functions
     match /admin/{document=**} {
       allow read, write: if false; // Only Cloud Functions can access
@@ -12,36 +28,57 @@ service cloud.firestore {
       allow read, write: if false; // Only Cloud Functions can access
     }
 
-    // Games collection - read by anyone, write only by authenticated admin
+    // Admin sessions - only accessible by server-side functions
+    match /admin_sessions/{document=**} {
+      allow read, write: if false; // Only Cloud Functions can access
+    }
+
+    // Admin requests - anyone can create, only main admin can read/update
+    match /admin_requests/{requestId} {
+      allow create: if true; // Anyone can request admin access
+      allow read, update, delete: if isMainAdmin(); // Only main admin can manage requests
+    }
+
+    // Approved admins - only main admin can manage
+    match /approved_admins/{adminId} {
+      allow read: if isAdmin(); // Any admin can read the list
+      allow write: if isMainAdmin(); // Only main admin can approve/remove admins
+    }
+
+    // Games collection - read by anyone, write only by admins
     match /games/{gameId} {
       allow read: if true;
-      allow write: if request.auth != null &&
-                      request.auth.uid == 'seZ01FolJbSajEKTIsljwGtYHGD3' &&
-                      request.auth.token.adminAuthenticated == true;
+      allow write: if isAdmin();
     }
 
-    // Teams collection - read by anyone, write only by authenticated admin
+    // Teams collection - read by anyone, write only by admins
     match /teams/{teamId} {
       allow read: if true;
-      allow write: if request.auth != null &&
-                      request.auth.uid == 'seZ01FolJbSajEKTIsljwGtYHGD3' &&
-                      request.auth.token.adminAuthenticated == true;
+      allow write: if isAdmin();
     }
 
-    // Bracket collection - read by anyone, write only by authenticated admin
+    // Bracket collection - read by anyone, write only by admins
     match /bracket/{bracketId} {
       allow read: if true;
-      allow write: if request.auth != null &&
-                      request.auth.uid == 'seZ01FolJbSajEKTIsljwGtYHGD3' &&
-                      request.auth.token.adminAuthenticated == true;
+      allow write: if isAdmin();
     }
 
-    // Contact messages - anyone can create, only admin can read
+    // Tournament collection - read by anyone, write only by admins
+    match /tournament/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Contact messages - anyone can create, only admins can read
     match /contact_messages/{messageId} {
       allow create: if true;
-      allow read, update, delete: if request.auth != null &&
-                                      request.auth.uid == 'seZ01FolJbSajEKTIsljwGtYHGD3' &&
-                                      request.auth.token.adminAuthenticated == true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // System collection - read by anyone, write by anyone for visitor tracking
+    match /system/{document} {
+      allow read: if true;
+      allow write: if true;
     }
   }
 }
