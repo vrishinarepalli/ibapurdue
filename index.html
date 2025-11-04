@@ -1011,22 +1011,24 @@
 
         const { signInWithEmailAndPassword } = window.authImports;
 
-        // First authenticate with Firebase to prove identity
-        // NOTE: For initial setup, you'll need to use the old email/password once
-        const email = prompt('Enter your admin email for initial registration:');
-        const password = prompt('Enter your admin password for initial registration:');
+        // Check if already authenticated
+        let user = window.auth.currentUser;
 
-        if (!email || !password) {
-          throw new Error('Email and password required for initial setup');
+        if (!user) {
+          // Not logged in - need to authenticate first
+          const email = prompt('Enter your admin email for initial registration:');
+          const password = prompt('Enter your admin password for initial registration:');
+
+          if (!email || !password) {
+            throw new Error('Email and password required for initial setup');
+          }
+
+          const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
+          user = userCredential.user;
         }
 
-        const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
-        const user = userCredential.user;
-
-        if (user.uid !== window.ADMIN_UID) {
-          await window.auth.signOut();
-          throw new Error('You do not have admin privileges');
-        }
+        // Verify user is an admin (will be checked by server too)
+        console.log('Registering Touch ID for user:', user.uid, user.email);
 
         // Get registration options from server
         const { httpsCallable } = window.functionsImports;
@@ -1100,8 +1102,8 @@
 
         if (verificationResponse.data.verified) {
           console.log('✅ Biometric credential registered successfully on server');
-          // Sign out from Firebase email/password auth
-          await window.auth.signOut();
+          console.log('✅ Touch ID/Face ID is now enabled for your account!');
+          // Keep user logged in - they can use Touch ID next time
           return true;
         } else {
           throw new Error('Server verification failed');

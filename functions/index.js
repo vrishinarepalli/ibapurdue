@@ -17,37 +17,66 @@ const rpName = 'IBA Admin';
 const rpID = 'iba-website-63cb3.web.app'; // Firebase hosting domain
 const origin = ['https://iba-website-63cb3.web.app', 'https://ibapurdue.online']; // Support both domains
 
+// Admin UID
+const ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
+
+/**
+ * Helper function to check if user is main admin or approved admin
+ */
+async function isAdmin(uid) {
+  if (uid === ADMIN_UID) {
+    return true; // Main admin
+  }
+
+  // Check if user is in approved_admins collection
+  const approvedAdminDoc = await db.collection('approved_admins').doc(uid).get();
+  return approvedAdminDoc.exists;
+}
+
 /**
  * Generate registration options for new admin credential setup
- * Only callable by the authorized admin UID
+ * Callable by main admin or any approved admin
  */
 exports.generateRegistrationOptions = functions.https.onCall(async (data, context) => {
-  // Verify the caller is authenticated and is the admin
-  const ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
+  // Verify the caller is authenticated and is an admin
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated'
+    );
+  }
 
-  if (!context.auth || context.auth.uid !== ADMIN_UID) {
+  const userIsAdmin = await isAdmin(context.auth.uid);
+  if (!userIsAdmin) {
     throw new functions.https.HttpsError(
       'permission-denied',
-      'Only the admin can register biometric credentials'
+      'Only admins can register biometric credentials'
     );
   }
 
   try {
+    const currentUserUid = context.auth.uid;
     console.log('Registration request received:', {
+      uid: currentUserUid,
       hasCredential: !!data.credential,
       credentialId: data.credential?.id?.substring(0, 20),
     });
 
-    // Check if admin already has credentials registered
+    // Check if this admin already has credentials registered
     const adminDoc = await db.collection('admin').doc('biometric').get();
-    const existingCredentials = adminDoc.exists ? adminDoc.data().credentials || [] : [];
+    const allCredentials = adminDoc.exists ? adminDoc.data().credentials || [] : [];
+
+    // Filter to only this admin's credentials
+    const userCredentials = allCredentials.filter(cred => cred.adminUid === currentUserUid);
 
     // Generate a random challenge
     const challenge = crypto.randomBytes(32).toString('base64url');
 
     // Store challenge temporarily for verification (expires in 5 minutes)
-    await db.collection('admin').doc('pending_challenge').set({
+    // Store with user UID to prevent cross-admin attacks
+    await db.collection('admin').doc(`pending_challenge_${currentUserUid}`).set({
       challenge,
+      adminUid: currentUserUid,
       timestamp: admin.firestore.FieldValue.serverTimestamp(),
       expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 5 * 60 * 1000),
     });
@@ -55,15 +84,15 @@ exports.generateRegistrationOptions = functions.https.onCall(async (data, contex
     const options = {
       rpName,
       rpID,
-      userID: ADMIN_UID,
-      userName: 'admin@iba.purdue',
+      userID: currentUserUid,
+      userName: context.auth.token.email || 'admin@iba.purdue',
       challenge,
       authenticatorSelection: {
         authenticatorAttachment: 'platform', // Touch ID / Face ID
         requireResidentKey: false,
         userVerification: 'required',
       },
-      excludeCredentials: existingCredentials.map(cred => ({
+      excludeCredentials: userCredentials.map(cred => ({
         id: cred.credentialID,
         type: 'public-key',
         transports: cred.transports || ['internal'],
@@ -83,18 +112,27 @@ exports.generateRegistrationOptions = functions.https.onCall(async (data, contex
  * Verify registration response and store the admin's public key
  */
 exports.verifyRegistration = functions.https.onCall(async (data, context) => {
-  const ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
+  // Verify the caller is authenticated and is an admin
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'User must be authenticated'
+    );
+  }
 
-  if (!context.auth || context.auth.uid !== ADMIN_UID) {
+  const userIsAdmin = await isAdmin(context.auth.uid);
+  if (!userIsAdmin) {
     throw new functions.https.HttpsError(
       'permission-denied',
-      'Only the admin can register biometric credentials'
+      'Only admins can register biometric credentials'
     );
   }
 
   try {
-    // Get the stored challenge
-    const challengeDoc = await db.collection('admin').doc('pending_challenge').get();
+    const currentUserUid = context.auth.uid;
+
+    // Get the stored challenge for this user
+    const challengeDoc = await db.collection('admin').doc(`pending_challenge_${currentUserUid}`).get();
 
     if (!challengeDoc.exists) {
       throw new functions.https.HttpsError('failed-precondition', 'No pending challenge found');
@@ -122,7 +160,7 @@ exports.verifyRegistration = functions.https.onCall(async (data, context) => {
       throw new functions.https.HttpsError('invalid-argument', 'Registration verification failed');
     }
 
-    // Store the credential
+    // Store the credential with admin UID
     const { registrationInfo } = verification;
     const newCredential = {
       credentialID: Buffer.from(registrationInfo.credentialID).toString('base64url'),
@@ -131,6 +169,8 @@ exports.verifyRegistration = functions.https.onCall(async (data, context) => {
       credentialDeviceType: registrationInfo.credentialDeviceType,
       credentialBackedUp: registrationInfo.credentialBackedUp,
       transports: data.credential.response.transports || ['internal'],
+      adminUid: currentUserUid, // Store which admin owns this credential
+      adminEmail: context.auth.token.email || 'unknown',
       registeredAt: admin.firestore.Timestamp.now(),
     };
 
@@ -145,7 +185,7 @@ exports.verifyRegistration = functions.https.onCall(async (data, context) => {
     });
 
     // Clean up challenge
-    await db.collection('admin').doc('pending_challenge').delete();
+    await db.collection('admin').doc(`pending_challenge_${currentUserUid}`).delete();
 
     return { verified: true, message: 'Biometric credential registered successfully' };
   } catch (error) {
@@ -254,6 +294,7 @@ exports.verifyAuthentication = functions.https.onCall(async (data, context) => {
     }
 
     console.log('Matched credential ID:', matchedCredential.credentialID);
+    console.log('Credential belongs to admin UID:', matchedCredential.adminUid);
 
     // Verify the authentication response
     const verification = await verifyAuthenticationResponse({
@@ -282,14 +323,23 @@ exports.verifyAuthentication = functions.https.onCall(async (data, context) => {
     // Clean up challenge
     await challengeDoc.ref.delete();
 
-    // Create a session token for the admin
+    // Get the admin UID from the matched credential
+    const authenticatedAdminUid = matchedCredential.adminUid;
+
+    // Verify this admin is still authorized (check if main admin or in approved_admins)
+    const isAuthorized = await isAdmin(authenticatedAdminUid);
+    if (!isAuthorized) {
+      throw new functions.https.HttpsError('permission-denied', 'Admin access has been revoked');
+    }
+
+    // Create a session token for the authenticated admin
     const sessionToken = crypto.randomBytes(32).toString('base64url');
-    const ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
 
     // Store session token in Firestore
     await db.collection('admin_sessions').add({
       sessionToken,
-      uid: ADMIN_UID,
+      uid: authenticatedAdminUid,
+      email: matchedCredential.adminEmail || 'unknown',
       authMethod: 'webauthn',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       expiresAt: admin.firestore.Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
@@ -298,7 +348,7 @@ exports.verifyAuthentication = functions.https.onCall(async (data, context) => {
     return {
       verified: true,
       sessionToken,
-      uid: ADMIN_UID,
+      uid: authenticatedAdminUid,
       message: 'Authentication successful',
     };
   } catch (error) {
