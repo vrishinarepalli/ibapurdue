@@ -1407,13 +1407,34 @@
         return; // User cancelled
       }
 
-      const password = prompt('Create a password for your admin account (min 6 characters):');
+      const password = prompt('Create a password for your admin account:\n• Min 8 characters\n• Include uppercase letter\n• Include lowercase letter\n• Include number\n• Include special character (!@#$%...)');
       if (!password) {
         return; // User cancelled
       }
 
-      if (password.length < 6) {
-        adminError.textContent = 'Password must be at least 6 characters';
+      // Validate password strength
+      if (password.length < 8) {
+        adminError.textContent = 'Password must be at least 8 characters';
+        adminError.style.display = 'block';
+        return;
+      }
+      if (!/[A-Z]/.test(password)) {
+        adminError.textContent = 'Password must contain at least one uppercase letter';
+        adminError.style.display = 'block';
+        return;
+      }
+      if (!/[a-z]/.test(password)) {
+        adminError.textContent = 'Password must contain at least one lowercase letter';
+        adminError.style.display = 'block';
+        return;
+      }
+      if (!/[0-9]/.test(password)) {
+        adminError.textContent = 'Password must contain at least one number';
+        adminError.style.display = 'block';
+        return;
+      }
+      if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+        adminError.textContent = 'Password must contain at least one special character (!@#$%^&*...)';
         adminError.style.display = 'block';
         return;
       }

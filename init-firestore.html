@@ -689,6 +689,12 @@
           approvedBy: window.ADMIN_UID
         });
 
+        log(`✓ Added to approved admins list`, 'success');
+
+        // DELETE the request to remove password from database
+        await deleteDoc(doc(db, 'admin_requests', requestId));
+        log(`✓ Deleted request from database (password removed)`, 'success');
+
         log(`✅ Successfully approved ${email} as admin!`, 'success');
         log(`⚠️ The user can now login with their email and password.`, 'warning');
 
@@ -700,14 +706,19 @@
         log(`❌ Error: ${error.message}`, 'error');
 
         if (error.code === 'auth/email-already-in-use') {
-          log('Email already has an account. Marking as approved anyway.', 'warning');
+          log('Email already has an account. Adding to approved admins and deleting request.', 'warning');
 
-          // Just update the request status
-          await updateDoc(doc(db, 'admin_requests', requestId), {
-            status: 'approved',
-            approvedAt: new Date(),
-            error: 'Email already in use'
-          });
+          // Get the email from the request before deleting
+          const requestDoc = await getDoc(doc(db, 'admin_requests', requestId));
+          const requestEmail = requestDoc.data().email;
+
+          // Try to find existing user UID (manual lookup needed)
+          log('⚠️ Manual action needed: Find the UID for this email in Firebase Auth', 'warning');
+          log('⚠️ Then manually add to approved_admins collection', 'warning');
+
+          // Delete the request to remove password
+          await deleteDoc(doc(db, 'admin_requests', requestId));
+          log(`✓ Deleted request from database`, 'success');
 
           await loadAdminRequests();
         }
@@ -716,21 +727,17 @@
 
     // Decline admin request
     window.declineAdminRequest = async function(requestId) {
-      if (!confirm('Decline this admin request? This action cannot be undone.')) {
+      if (!confirm('Decline this admin request? The request will be permanently deleted.')) {
         return;
       }
 
       log(`Declining admin request...`, 'info');
 
       try {
-        // Update the request status to declined
-        await updateDoc(doc(db, 'admin_requests', requestId), {
-          status: 'declined',
-          declinedAt: new Date(),
-          declinedBy: window.ADMIN_UID
-        });
+        // DELETE the request completely (removes password from database)
+        await deleteDoc(doc(db, 'admin_requests', requestId));
 
-        log(`✅ Request declined`, 'success');
+        log(`✅ Request declined and deleted from database`, 'success');
 
         // Reload the requests list
         await loadAdminRequests();
