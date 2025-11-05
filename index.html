@@ -171,6 +171,14 @@
         <span class="visitor-count" title="Total site visitors">
           👁️ <span class="count" id="visitorCount">0</span>
         </span>
+        <a href="login.html" id="loginLink" style="text-decoration: none;">
+          <span class="chip" title="Sign in to your account" style="background: var(--brand); color: white;">LOGIN</span>
+        </a>
+        <div id="userProfileChip" style="display: none; cursor: pointer;" title="View your profile">
+          <span class="chip" style="background: var(--success); color: white;">
+            <span id="userDisplayName"></span>
+          </span>
+        </div>
       </div>
     </header>
 
@@ -213,6 +221,9 @@
         <button role="tab" id="tab-schedule" aria-selected="false" aria-controls="panel-schedule">Schedule</button>
         <button role="tab" id="tab-teams" aria-selected="false" aria-controls="panel-teams">Teams</button>
         <button role="tab" id="tab-bracket" aria-selected="false" aria-controls="panel-bracket">Bracket</button>
+        <a href="about.html" style="text-decoration: none;">
+          <button role="tab" style="background: transparent; border: none; cursor: pointer;">About Us</button>
+        </a>
         <button role="tab" id="tab-faq" aria-selected="false" aria-controls="panel-faq">FAQ</button>
         <button role="tab" id="tab-contact" aria-selected="false" aria-controls="panel-contact">Contact Us</button>
         <button role="tab" id="tab-signup" aria-selected="false" aria-controls="panel-signup">✍️ Spring Season</button>
@@ -2896,6 +2907,29 @@
         // Re-enable button
         submitBtn.disabled = false;
         submitBtn.textContent = 'Send Message';
+      }
+    });
+
+    // Auth state listener for user profile display
+    onAuthStateChanged(auth, (user) => {
+      const loginLink = document.getElementById('loginLink');
+      const userProfileChip = document.getElementById('userProfileChip');
+      const userDisplayName = document.getElementById('userDisplayName');
+
+      if (user) {
+        // User is signed in
+        loginLink.style.display = 'none';
+        userProfileChip.style.display = 'block';
+        userDisplayName.textContent = user.displayName || user.email.split('@')[0];
+
+        // Click to go to login page (which will show profile)
+        userProfileChip.onclick = () => {
+          window.location.href = 'login.html';
+        };
+      } else {
+        // User is signed out
+        loginLink.style.display = 'block';
+        userProfileChip.style.display = 'none';
       }
     });
 

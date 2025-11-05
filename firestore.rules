@@ -80,5 +80,12 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true;
     }
+
+    // Users collection - users can read all profiles but only edit their own
+    match /users/{userId} {
+      allow read: if true; // Anyone can read user profiles
+      allow create: if request.auth != null && request.auth.uid == userId; // Users can create their own profile
+      allow update, delete: if request.auth != null && request.auth.uid == userId; // Users can only update their own profile
+    }
   }
 }

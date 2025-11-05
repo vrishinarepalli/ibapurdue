@@ -37,7 +37,9 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  signInWithCustomToken
+  signInWithCustomToken,
+  GoogleAuthProvider,
+  signInWithPopup
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import {
   getFunctions,
@@ -85,7 +87,9 @@ export const authAPI = {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  signInWithCustomToken
+  signInWithCustomToken,
+  GoogleAuthProvider,
+  signInWithPopup
 };
 
 export const functionsAPI = {
