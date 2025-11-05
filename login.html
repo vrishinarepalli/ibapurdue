@@ -249,6 +249,8 @@
 
       <div id="roleSelection" class="role-selection">
         <h2>Select Your Role</h2>
+        <p style="color: var(--muted); margin-bottom: 0.5rem;">Signed in as:</p>
+        <p id="roleSelectionEmail" style="color: var(--brand); font-weight: 600; font-size: 1.1rem; margin-bottom: 2rem;"></p>
         <p style="color: var(--muted); margin-bottom: 2rem;">Are you an admin or a player?</p>
 
         <div class="role-buttons">
@@ -299,6 +301,7 @@
     const userAvatar = document.getElementById('userAvatar');
     const userName = document.getElementById('userName');
     const userEmail = document.getElementById('userEmail');
+    const roleSelectionEmail = document.getElementById('roleSelectionEmail');
 
     let currentUser = null;
 
@@ -345,12 +348,14 @@
           } else {
             // New user - show role selection
             hideAllSections();
+            roleSelectionEmail.textContent = user.email;
             roleSelection.classList.add('show');
           }
         } catch (error) {
           console.error('Error checking user profile:', error);
           // Show role selection by default on error
           hideAllSections();
+          roleSelectionEmail.textContent = user.email;
           roleSelection.classList.add('show');
         }
       } else {
