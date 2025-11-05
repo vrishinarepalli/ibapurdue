@@ -152,6 +152,71 @@
     .error-message.show {
       display: block;
     }
+
+    .role-selection {
+      display: none;
+      text-align: center;
+    }
+
+    .role-selection.show {
+      display: block;
+    }
+
+    .role-selection h2 {
+      color: var(--brand);
+      margin-bottom: 1.5rem;
+    }
+
+    .role-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .role-btn {
+      flex: 1;
+      padding: 1.5rem;
+      background: white;
+      border: 3px solid #e0e0e0;
+      border-radius: 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 1rem;
+    }
+
+    .role-btn:hover {
+      border-color: var(--brand);
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(207, 185, 145, 0.3);
+    }
+
+    .role-btn .icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .role-btn .title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--brand);
+      margin-bottom: 0.5rem;
+    }
+
+    .role-btn .description {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .loading-message {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+      color: var(--brand);
+    }
+
+    .loading-message.show {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -182,6 +247,30 @@
         <a href="index.html" class="back-link">← Back to Tournament</a>
       </div>
 
+      <div id="roleSelection" class="role-selection">
+        <h2>Select Your Role</h2>
+        <p style="color: var(--muted); margin-bottom: 2rem;">Are you an admin or a player?</p>
+
+        <div class="role-buttons">
+          <button id="playerBtn" class="role-btn">
+            <div class="icon">🏀</div>
+            <div class="title">Player</div>
+            <div class="description">Join teams and participate in tournaments</div>
+          </button>
+
+          <button id="adminBtn" class="role-btn">
+            <div class="icon">⚙️</div>
+            <div class="title">Admin</div>
+            <div class="description">Manage teams, games, and tournament brackets</div>
+          </button>
+        </div>
+      </div>
+
+      <div id="loadingMessage" class="loading-message">
+        <h3>⏳ Authenticating...</h3>
+        <p>Please complete Touch ID authentication</p>
+      </div>
+
       <div id="userSection" class="user-info">
         <img id="userAvatar" class="user-avatar" src="" alt="User avatar">
         <h3 id="userName"></h3>
@@ -196,15 +285,22 @@
 
   <script type="module">
     import { auth, authAPI, db, firestoreAPI } from './js/firebase-config.js';
+    import { authenticateWebAuthn, enableAdminMode } from './js/auth.js';
 
     const googleSignInBtn = document.getElementById('googleSignInBtn');
     const signOutBtn = document.getElementById('signOutBtn');
+    const playerBtn = document.getElementById('playerBtn');
+    const adminBtnEl = document.getElementById('adminBtn');
     const loginSection = document.getElementById('loginSection');
+    const roleSelection = document.getElementById('roleSelection');
+    const loadingMessage = document.getElementById('loadingMessage');
     const userSection = document.getElementById('userSection');
     const errorMessage = document.getElementById('errorMessage');
     const userAvatar = document.getElementById('userAvatar');
     const userName = document.getElementById('userName');
     const userEmail = document.getElementById('userEmail');
+
+    let currentUser = null;
 
     // Show error message
     function showError(message) {
@@ -215,48 +311,52 @@
       }, 5000);
     }
 
+    // Hide all sections
+    function hideAllSections() {
+      loginSection.style.display = 'none';
+      roleSelection.classList.remove('show');
+      loadingMessage.classList.remove('show');
+      userSection.classList.remove('show');
+    }
+
     // Update UI based on auth state
     authAPI.onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+
       if (user) {
-        // User is signed in
-        loginSection.style.display = 'none';
-        userSection.classList.add('show');
-
-        userAvatar.src = user.photoURL || 'https://via.placeholder.com/80';
-        userName.textContent = user.displayName || 'User';
-        userEmail.textContent = user.email;
-
-        // Create/update user profile in Firestore
+        // Check if user already has a role assigned
         try {
           const userDocRef = firestoreAPI.doc(db, 'users', user.uid);
           const userDoc = await firestoreAPI.getDoc(userDocRef);
 
-          if (!userDoc.exists()) {
-            // New user - create profile
-            await firestoreAPI.setDoc(userDocRef, {
-              uid: user.uid,
-              email: user.email,
-              displayName: user.displayName,
-              photoURL: user.photoURL,
-              role: 'user', // default role
-              createdAt: new Date().toISOString(),
-              lastLogin: new Date().toISOString()
-            });
-            console.log('✅ User profile created');
-          } else {
-            // Existing user - update last login
+          if (userDoc.exists() && userDoc.data().role) {
+            // User already has a role - show profile
+            hideAllSections();
+            userSection.classList.add('show');
+
+            userAvatar.src = user.photoURL || 'https://via.placeholder.com/80';
+            userName.textContent = user.displayName || 'User';
+            userEmail.textContent = user.email;
+
+            // Update last login
             await firestoreAPI.updateDoc(userDocRef, {
               lastLogin: new Date().toISOString()
             });
-            console.log('✅ User profile updated');
+          } else {
+            // New user - show role selection
+            hideAllSections();
+            roleSelection.classList.add('show');
           }
         } catch (error) {
-          console.error('Error managing user profile:', error);
+          console.error('Error checking user profile:', error);
+          // Show role selection by default on error
+          hideAllSections();
+          roleSelection.classList.add('show');
         }
       } else {
         // User is signed out
+        hideAllSections();
         loginSection.style.display = 'block';
-        userSection.classList.remove('show');
       }
     });
 
@@ -272,11 +372,92 @@
       }
     });
 
+    // Player Role Selection
+    playerBtn.addEventListener('click', async () => {
+      if (!currentUser) return;
+
+      try {
+        // Create/update user profile with player role
+        const userDocRef = firestoreAPI.doc(db, 'users', currentUser.uid);
+        await firestoreAPI.setDoc(userDocRef, {
+          uid: currentUser.uid,
+          email: currentUser.email,
+          displayName: currentUser.displayName,
+          photoURL: currentUser.photoURL,
+          role: 'user',
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        });
+
+        console.log('✅ Player profile created');
+        // Redirect to main page
+        window.location.href = 'index.html';
+      } catch (error) {
+        console.error('Error creating player profile:', error);
+        showError('Failed to create player profile');
+      }
+    });
+
+    // Admin Role Selection
+    adminBtnEl.addEventListener('click', async () => {
+      if (!currentUser) return;
+
+      try {
+        // Check if user is in approved_admins collection
+        const approvedAdminRef = firestoreAPI.doc(db, 'approved_admins', currentUser.uid);
+        const approvedAdminDoc = await firestoreAPI.getDoc(approvedAdminRef);
+
+        if (!approvedAdminDoc.exists()) {
+          showError('Your email is not registered as an admin. Please contact the main admin.');
+          return;
+        }
+
+        // User is approved admin - show loading and trigger Touch ID
+        hideAllSections();
+        loadingMessage.classList.add('show');
+
+        // Trigger Touch ID authentication
+        const authenticated = await authenticateWebAuthn();
+
+        if (authenticated) {
+          // Create/update user profile with admin role
+          const userDocRef = firestoreAPI.doc(db, 'users', currentUser.uid);
+          await firestoreAPI.setDoc(userDocRef, {
+            uid: currentUser.uid,
+            email: currentUser.email,
+            displayName: currentUser.displayName,
+            photoURL: currentUser.photoURL,
+            role: 'admin',
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString()
+          });
+
+          console.log('✅ Admin authenticated and profile created');
+
+          // Enable admin mode
+          enableAdminMode();
+
+          // Redirect to main page
+          window.location.href = 'index.html';
+        } else {
+          hideAllSections();
+          roleSelection.classList.add('show');
+          showError('Touch ID authentication failed');
+        }
+      } catch (error) {
+        console.error('Error during admin authentication:', error);
+        hideAllSections();
+        roleSelection.classList.add('show');
+        showError(error.message || 'Admin authentication failed');
+      }
+    });
+
     // Sign Out
     signOutBtn.addEventListener('click', async () => {
       try {
         await authAPI.signOut(auth);
         console.log('✅ Signed out');
+        window.location.reload();
       } catch (error) {
         console.error('Sign-out error:', error);
         showError('Failed to sign out');
