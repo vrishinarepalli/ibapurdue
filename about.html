@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About Us - IBA Basketball Tournament</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .about-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+      min-height: 100vh;
+    }
+
+    .about-header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .about-header h1 {
+      font-size: 3.5rem;
+      color: var(--brand);
+      margin-bottom: 1rem;
+    }
+
+    .about-header p {
+      font-size: 1.3rem;
+      color: var(--muted);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .about-section {
+      margin-bottom: 4rem;
+      background: white;
+      border-radius: var(--radius);
+      padding: 3rem;
+      box-shadow: var(--shadow);
+    }
+
+    .about-section h2 {
+      color: var(--brand);
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .about-section p {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #333;
+      margin-bottom: 1rem;
+    }
+
+    .about-section ul {
+      margin: 1.5rem 0;
+      padding-left: 2rem;
+    }
+
+    .about-section li {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+
+    .team-member {
+      text-align: center;
+      padding: 2rem;
+      background: #f8f9fa;
+      border-radius: 15px;
+      transition: transform 0.3s ease;
+    }
+
+    .team-member:hover {
+      transform: translateY(-5px);
+    }
+
+    .team-member .avatar {
+      width: 100px;
+      height: 100px;
+      background: var(--brand);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      margin: 0 auto 1rem;
+    }
+
+    .team-member h3 {
+      color: var(--brand);
+      margin-bottom: 0.5rem;
+    }
+
+    .team-member p {
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .back-btn {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: var(--brand);
+      color: white;
+      text-decoration: none;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      margin-bottom: 2rem;
+    }
+
+    .back-btn:hover {
+      background: var(--brand-2);
+      transform: translateY(-2px);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      margin: 2rem 0;
+    }
+
+    .stat-box {
+      text-align: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+      border-radius: 15px;
+      color: white;
+    }
+
+    .stat-box h3 {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-box p {
+      font-size: 1.1rem;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="about-container">
+    <a href="index.html" class="back-btn">← Back to Tournament</a>
+
+    <div class="about-header">
+      <h1>🏀 About IBA</h1>
+      <p>Building community and competition through basketball at Purdue University</p>
+    </div>
+
+    <div class="about-section">
+      <h2>🎯 Our Mission</h2>
+      <p>
+        The Indian Basketball Association (IBA) at Purdue University was founded with a simple yet powerful goal:
+        to bring together students who share a passion for basketball and create a vibrant, competitive,
+        and inclusive community.
+      </p>
+      <p>
+        We organize seasonal tournaments that provide students with opportunities to compete, stay active,
+        and build lasting friendships. Whether you're a seasoned player or just getting started, IBA welcomes
+        everyone to join the game.
+      </p>
+    </div>
+
+    <div class="about-section">
+      <h2>📊 By the Numbers</h2>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <h3>16+</h3>
+          <p>Teams</p>
+        </div>
+        <div class="stat-box">
+          <h3>100+</h3>
+          <p>Players</p>
+        </div>
+        <div class="stat-box">
+          <h3>2</h3>
+          <p>Seasons/Year</p>
+        </div>
+        <div class="stat-box">
+          <h3>50+</h3>
+          <p>Games</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="about-section">
+      <h2>🏆 What We Offer</h2>
+      <ul>
+        <li><strong>Competitive Tournaments:</strong> Organized seasonal tournaments with brackets, schedules, and championship games</li>
+        <li><strong>Fair Play:</strong> Structured seeding system based on team performance and skill level</li>
+        <li><strong>Community Building:</strong> Connect with fellow students who share your love for basketball</li>
+        <li><strong>Skill Development:</strong> Improve your game through regular competition</li>
+        <li><strong>Flexible Participation:</strong> Join as a free agent or form your own team</li>
+        <li><strong>Professional Organization:</strong> Real-time brackets, game schedules, and stats tracking</li>
+      </ul>
+    </div>
+
+    <div class="about-section">
+      <h2>📅 How It Works</h2>
+      <p><strong>1. Registration:</strong> Sign up as an individual or register your team before the season starts</p>
+      <p><strong>2. Team Formation:</strong> Create your own team or join an existing one looking for players</p>
+      <p><strong>3. Tournament Play:</strong> Compete in round-robin group stages followed by single-elimination playoffs</p>
+      <p><strong>4. Championship:</strong> Battle your way to the finals and claim the IBA championship title</p>
+    </div>
+
+    <div class="about-section">
+      <h2>🤝 Get Involved</h2>
+      <p>
+        Want to be part of IBA? Here's how you can get involved:
+      </p>
+      <ul>
+        <li><strong>Join a Team:</strong> Sign up and join an existing team looking for players</li>
+        <li><strong>Create a Team:</strong> Gather your friends and register as a team captain</li>
+        <li><strong>Follow Us:</strong> Stay updated on Instagram, YouTube, and GroupMe for schedules and highlights</li>
+        <li><strong>Volunteer:</strong> Help organize events, referee games, or assist with tournament logistics</li>
+      </ul>
+    </div>
+
+    <div class="about-section">
+      <h2>📞 Contact Us</h2>
+      <p>
+        Have questions or want to learn more? Reach out to us through the Contact form on our main page,
+        or connect with us on social media. We're always happy to hear from current and prospective members!
+      </p>
+      <p>
+        <strong>Instagram:</strong> <a href="https://www.instagram.com/iba_purdue/" target="_blank" style="color: var(--brand);">@iba_purdue</a><br>
+        <strong>YouTube:</strong> <a href="https://www.youtube.com/@IBAPurdue" target="_blank" style="color: var(--brand);">@IBAPurdue</a><br>
+        <strong>GroupMe:</strong> Join our community chat for updates and discussions
+      </p>
+    </div>
+
+    <div style="text-align: center; margin-top: 4rem;">
+      <a href="index.html" class="back-btn">Back to Tournament →</a>
+    </div>
+  </div>
+</body>
+</html>
