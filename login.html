@@ -217,6 +217,118 @@
     .loading-message.show {
       display: block;
     }
+
+    .admin-request-form {
+      display: none;
+      text-align: left;
+    }
+
+    .admin-request-form.show {
+      display: block;
+    }
+
+    .admin-request-form h2 {
+      color: var(--brand);
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .admin-request-form p {
+      color: var(--muted);
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      color: #333;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: border-color 0.3s ease;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--brand);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .btn-secondary {
+      flex: 1;
+      padding: 1rem;
+      background: #e0e0e0;
+      color: #333;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-secondary:hover {
+      background: #d0d0d0;
+      transform: translateY(-2px);
+    }
+
+    .btn-primary {
+      flex: 1;
+      padding: 1rem;
+      background: var(--brand);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background: var(--brand-2);
+      transform: translateY(-2px);
+    }
+
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .success-message {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .success-message.show {
+      display: block;
+    }
+
+    .success-message h2 {
+      color: var(--success);
+      margin-bottom: 1rem;
+    }
+
+    .success-message p {
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
   </style>
 </head>
 <body>
@@ -273,6 +385,46 @@
         <p>Please complete Touch ID authentication</p>
       </div>
 
+      <div id="adminRequestForm" class="admin-request-form">
+        <h2>Request Admin Access</h2>
+        <p>Your email is not currently registered as an admin. Fill out this form to request access.</p>
+        <p style="color: var(--brand); font-weight: 600; margin-bottom: 2rem;">Email: <span id="requestEmail"></span></p>
+
+        <form id="adminRequestFormEl">
+          <div class="form-group">
+            <label for="fullName">Full Name *</label>
+            <input type="text" id="fullName" required placeholder="Enter your full name">
+          </div>
+
+          <div class="form-group">
+            <label for="adminPassword">Admin Password *</label>
+            <input type="password" id="adminPassword" required placeholder="Create a password for admin access" minlength="6">
+            <small style="color: var(--muted); font-size: 0.85rem;">Minimum 6 characters</small>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password *</label>
+            <input type="password" id="confirmPassword" required placeholder="Re-enter your password">
+          </div>
+
+          <div id="passwordError" style="color: var(--danger); font-size: 0.9rem; margin-bottom: 1rem; display: none;">
+            Passwords do not match!
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="cancelRequest" class="btn-secondary">Cancel</button>
+            <button type="submit" id="submitRequest" class="btn-primary">Submit Request</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="requestSuccess" class="success-message">
+        <h2>✅ Request Submitted</h2>
+        <p>Your admin access request has been submitted successfully.</p>
+        <p>The main admin will review your request. You'll be notified once approved.</p>
+        <button onclick="window.location.href='index.html'" class="btn-primary" style="max-width: 200px; margin: 0 auto;">Go to Tournament</button>
+      </div>
+
       <div id="userSection" class="user-info">
         <img id="userAvatar" class="user-avatar" src="" alt="User avatar">
         <h3 id="userName"></h3>
@@ -302,6 +454,15 @@
     const userName = document.getElementById('userName');
     const userEmail = document.getElementById('userEmail');
     const roleSelectionEmail = document.getElementById('roleSelectionEmail');
+    const adminRequestForm = document.getElementById('adminRequestForm');
+    const adminRequestFormEl = document.getElementById('adminRequestFormEl');
+    const requestEmail = document.getElementById('requestEmail');
+    const fullNameInput = document.getElementById('fullName');
+    const adminPasswordInput = document.getElementById('adminPassword');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+    const passwordError = document.getElementById('passwordError');
+    const cancelRequest = document.getElementById('cancelRequest');
+    const requestSuccess = document.getElementById('requestSuccess');
 
     let currentUser = null;
 
@@ -320,6 +481,8 @@
       roleSelection.classList.remove('show');
       loadingMessage.classList.remove('show');
       userSection.classList.remove('show');
+      adminRequestForm.classList.remove('show');
+      requestSuccess.classList.remove('show');
     }
 
     // Update UI based on auth state
@@ -413,7 +576,11 @@
         const approvedAdminDoc = await firestoreAPI.getDoc(approvedAdminRef);
 
         if (!approvedAdminDoc.exists()) {
-          showError('Your email is not registered as an admin. Please contact the main admin.');
+          // User is not approved - show request form
+          hideAllSections();
+          requestEmail.textContent = currentUser.email;
+          fullNameInput.value = currentUser.displayName || '';
+          adminRequestForm.classList.add('show');
           return;
         }
 
@@ -454,6 +621,64 @@
         hideAllSections();
         roleSelection.classList.add('show');
         showError(error.message || 'Admin authentication failed');
+      }
+    });
+
+    // Cancel admin request - go back to role selection
+    cancelRequest.addEventListener('click', () => {
+      hideAllSections();
+      roleSelectionEmail.textContent = currentUser.email;
+      roleSelection.classList.add('show');
+      // Clear form
+      adminRequestFormEl.reset();
+      passwordError.style.display = 'none';
+    });
+
+    // Submit admin request
+    adminRequestFormEl.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!currentUser) return;
+
+      const fullName = fullNameInput.value.trim();
+      const password = adminPasswordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+
+      // Validate passwords match
+      if (password !== confirmPassword) {
+        passwordError.style.display = 'block';
+        confirmPasswordInput.focus();
+        return;
+      }
+
+      passwordError.style.display = 'none';
+
+      try {
+        // Create admin request in Firestore
+        const adminRequestsRef = firestoreAPI.collection(db, 'admin_requests');
+        await firestoreAPI.addDoc(adminRequestsRef, {
+          uid: currentUser.uid,
+          email: currentUser.email,
+          fullName: fullName,
+          password: password, // In production, you'd hash this
+          photoURL: currentUser.photoURL || null,
+          status: 'pending',
+          requestedAt: new Date().toISOString(),
+          approvedAt: null,
+          approvedBy: null
+        });
+
+        console.log('✅ Admin request submitted');
+
+        // Show success message
+        hideAllSections();
+        requestSuccess.classList.add('show');
+
+        // Clear form
+        adminRequestFormEl.reset();
+      } catch (error) {
+        console.error('Error submitting admin request:', error);
+        showError('Failed to submit request. Please try again.');
       }
     });
 
