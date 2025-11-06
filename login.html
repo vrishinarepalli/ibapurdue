@@ -362,7 +362,10 @@
       <div id="roleSelection" class="role-selection">
         <h2>Select Your Role</h2>
         <p style="color: var(--muted); margin-bottom: 0.5rem;">Signed in as:</p>
-        <p id="roleSelectionEmail" style="color: var(--brand); font-weight: 600; font-size: 1.1rem; margin-bottom: 2rem;"></p>
+        <p id="roleSelectionEmail" style="color: var(--brand); font-weight: 600; font-size: 1.1rem; margin-bottom: 0.5rem;"></p>
+        <button id="switchAccountBtn" style="background: transparent; border: none; color: var(--brand); text-decoration: underline; cursor: pointer; font-size: 0.9rem; margin-bottom: 2rem; padding: 0;">
+          Switch to a different account
+        </button>
         <p style="color: var(--muted); margin-bottom: 2rem;">Are you an admin or a player?</p>
 
         <div class="role-buttons">
@@ -388,7 +391,10 @@
       <div id="adminRequestForm" class="admin-request-form">
         <h2>Request Admin Access</h2>
         <p>Your email is not currently registered as an admin. Fill out this form to request access.</p>
-        <p style="color: var(--brand); font-weight: 600; margin-bottom: 2rem;">Email: <span id="requestEmail"></span></p>
+        <p style="color: var(--brand); font-weight: 600; margin-bottom: 0.5rem;">Email: <span id="requestEmail"></span></p>
+        <button id="switchAccountFromRequest" type="button" style="background: transparent; border: none; color: var(--brand); text-decoration: underline; cursor: pointer; font-size: 0.9rem; margin-bottom: 2rem; padding: 0;">
+          Wrong account? Switch to a different one
+        </button>
 
         <form id="adminRequestFormEl">
           <div class="form-group">
@@ -463,6 +469,8 @@
     const passwordError = document.getElementById('passwordError');
     const cancelRequest = document.getElementById('cancelRequest');
     const requestSuccess = document.getElementById('requestSuccess');
+    const switchAccountBtn = document.getElementById('switchAccountBtn');
+    const switchAccountFromRequest = document.getElementById('switchAccountFromRequest');
 
     let currentUser = null;
 
@@ -537,6 +545,30 @@
       } catch (error) {
         console.error('Sign-in error:', error);
         showError(error.message || 'Failed to sign in with Google');
+      }
+    });
+
+    // Switch Account - sign out and return to login
+    switchAccountBtn.addEventListener('click', async () => {
+      try {
+        await authAPI.signOut(auth);
+        console.log('✅ Signed out - ready to switch accounts');
+        // Auth state listener will automatically show login screen
+      } catch (error) {
+        console.error('Sign-out error:', error);
+        showError('Failed to switch accounts');
+      }
+    });
+
+    // Switch Account from request form
+    switchAccountFromRequest.addEventListener('click', async () => {
+      try {
+        await authAPI.signOut(auth);
+        console.log('✅ Signed out from request form');
+        // Auth state listener will automatically show login screen
+      } catch (error) {
+        console.error('Sign-out error:', error);
+        showError('Failed to switch accounts');
       }
     });
 
