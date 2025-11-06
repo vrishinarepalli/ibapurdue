@@ -13,16 +13,17 @@
       justify-content: center;
       min-height: 100vh;
       padding: 2rem;
-      background: linear-gradient(135deg, #0b0f1a 0%, #111827 100%);
+      background: white;
     }
 
     .login-card {
       background: white;
-      border-radius: var(--radius);
+      border-radius: 25px;
       padding: 3rem;
       max-width: 450px;
       width: 100%;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      box-shadow: 20px 20px 30px rgba(0,0,0,.02);
+      border: 1px solid #d4d4d4;
       text-align: center;
     }
 
@@ -505,13 +506,13 @@
       currentUser = user;
 
       if (user) {
-        // Check if user already has a role assigned
+        // Check if user already has a profile
         try {
           const userDocRef = firestoreAPI.doc(db, 'users', user.uid);
           const userDoc = await firestoreAPI.getDoc(userDocRef);
 
           if (userDoc.exists() && userDoc.data().roles && userDoc.data().roles.length > 0) {
-            // User already has roles - show profile
+            // Existing user - show profile
             hideAllSections();
             userSection.classList.add('show');
 
@@ -524,17 +525,24 @@
               lastLogin: new Date().toISOString()
             });
           } else {
-            // New user - show role selection
-            hideAllSections();
-            roleSelectionEmail.textContent = user.email;
-            roleSelection.classList.add('show');
+            // New user - automatically create player profile and redirect
+            await firestoreAPI.setDoc(userDocRef, {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName,
+              photoURL: user.photoURL,
+              roles: ['player'], // Default to player role
+              createdAt: new Date().toISOString(),
+              lastLogin: new Date().toISOString()
+            });
+
+            console.log('✅ Player profile created automatically');
+            // Redirect to main page
+            window.location.href = 'index.html';
           }
         } catch (error) {
-          console.error('Error checking user profile:', error);
-          // Show role selection by default on error
-          hideAllSections();
-          roleSelectionEmail.textContent = user.email;
-          roleSelection.classList.add('show');
+          console.error('Error managing user profile:', error);
+          showError('Failed to create profile. Please try again.');
         }
       } else {
         // User is signed out
@@ -546,6 +554,10 @@
     // Google Sign-In
     googleSignInBtn.addEventListener('click', async () => {
       try {
+        // Set persistence to LOCAL so user stays signed in
+        await authAPI.setPersistence(auth, authAPI.browserLocalPersistence);
+        console.log('✅ Auth persistence set to LOCAL');
+
         const provider = new authAPI.GoogleAuthProvider();
         const result = await authAPI.signInWithPopup(auth, provider);
         console.log('✅ Signed in:', result.user.email);

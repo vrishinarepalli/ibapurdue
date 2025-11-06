@@ -3696,19 +3696,31 @@
       const navUserDropdown = document.getElementById('navUserDropdown');
       const navSignOutBtn = document.getElementById('navSignOutBtn');
 
+      console.log('🔐 Auth state changed. User:', user ? user.email : 'Not signed in');
+      console.log('Nav elements found:', { navSignInBtn: !!navSignInBtn, navUserProfile: !!navUserProfile, navUserAvatar: !!navUserAvatar });
+
       if (user) {
         // User is signed in
+        console.log('✅ User is signed in:', user.email);
         loginLink.style.display = 'none';
         userProfileChip.style.display = 'block';
         userDisplayName.textContent = user.displayName || user.email.split('@')[0];
 
         // Show user profile in card navigation
-        if (navSignInBtn) navSignInBtn.style.display = 'none';
-        if (navUserProfile) navUserProfile.style.display = 'block';
+        if (navSignInBtn) {
+          navSignInBtn.style.display = 'none';
+          console.log('Hidden sign in button');
+        }
+        if (navUserProfile) {
+          navUserProfile.style.display = 'flex';
+          console.log('Showing user profile');
+        }
         if (navUserAvatar) {
           // Use Google profile photo if available, otherwise use a default avatar
-          navUserAvatar.src = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email.split('@')[0])}&background=CFB991&color=fff&size=128`;
+          const avatarUrl = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email.split('@')[0])}&background=CFB991&color=fff&size=128`;
+          navUserAvatar.src = avatarUrl;
           navUserAvatar.alt = user.displayName || user.email;
+          console.log('Set avatar URL:', avatarUrl);
         }
 
         // Toggle dropdown when user button is clicked
@@ -3784,6 +3796,7 @@
         }
       } else {
         // User is signed out
+        console.log('❌ User is signed out');
         loginLink.style.display = 'block';
         userProfileChip.style.display = 'none';
         if (myTeamsTab) myTeamsTab.style.display = 'none';
@@ -3791,8 +3804,14 @@
         window.currentUserData = null;
 
         // Show sign in button in card navigation
-        if (navSignInBtn) navSignInBtn.style.display = 'block';
-        if (navUserProfile) navUserProfile.style.display = 'none';
+        if (navSignInBtn) {
+          navSignInBtn.style.display = 'block';
+          console.log('Showing sign in button');
+        }
+        if (navUserProfile) {
+          navUserProfile.style.display = 'none';
+          console.log('Hiding user profile');
+        }
       }
     });
 

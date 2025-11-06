@@ -39,7 +39,9 @@ import {
   onAuthStateChanged,
   signInWithCustomToken,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  setPersistence,
+  browserLocalPersistence
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import {
   getFunctions,
@@ -89,7 +91,9 @@ export const authAPI = {
   onAuthStateChanged,
   signInWithCustomToken,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  setPersistence,
+  browserLocalPersistence
 };
 
 export const functionsAPI = {
