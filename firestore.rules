@@ -87,5 +87,21 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == userId; // Users can create their own profile
       allow update, delete: if request.auth != null && request.auth.uid == userId; // Users can only update their own profile
     }
+
+    // Player teams - authenticated users can create, read all, captains can update their own
+    match /player_teams/{teamId} {
+      allow read: if true; // Anyone can read teams
+      allow create: if request.auth != null; // Authenticated users can create teams
+      allow update: if request.auth != null && request.auth.uid == resource.data.captainUid; // Only captain can update
+      allow delete: if request.auth != null && request.auth.uid == resource.data.captainUid; // Only captain can delete
+    }
+
+    // Team join requests - players can create, captains can read/update requests for their teams
+    match /team_join_requests/{requestId} {
+      allow create: if request.auth != null; // Authenticated users can create join requests
+      allow read: if request.auth != null; // Authenticated users can read join requests
+      allow update: if request.auth != null && request.auth.uid == resource.data.captainUid; // Only captain can update
+      allow delete: if request.auth != null && (request.auth.uid == resource.data.captainUid || request.auth.uid == resource.data.playerUid); // Captain or requester can delete
+    }
   }
 }

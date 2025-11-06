@@ -179,6 +179,12 @@
             <span id="userDisplayName"></span>
           </span>
         </div>
+        <div id="notificationsIcon" style="display: none; position: relative; cursor: pointer;" class="player-only" title="Notifications">
+          <span class="chip" style="background: var(--brand); color: white; position: relative;">
+            🔔
+            <span id="notificationBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; font-weight: bold; display: flex; align-items: center; justify-content: center;">0</span>
+          </span>
+        </div>
       </div>
     </header>
 
@@ -221,6 +227,7 @@
         <button role="tab" id="tab-schedule" aria-selected="false" aria-controls="panel-schedule">Schedule</button>
         <button role="tab" id="tab-teams" aria-selected="false" aria-controls="panel-teams">Teams</button>
         <button role="tab" id="tab-bracket" aria-selected="false" aria-controls="panel-bracket">Bracket</button>
+        <button role="tab" id="tab-myteams" aria-selected="false" aria-controls="panel-myteams" style="display: none;" class="player-only">My Teams</button>
         <a href="about.html" style="text-decoration: none;">
           <button role="tab" style="background: transparent; border: none; cursor: pointer;">About Us</button>
         </a>
@@ -601,6 +608,54 @@
         </div>
       </section>
 
+      <section id="panel-myteams" class="tabpanel" role="tabpanel" aria-labelledby="tab-myteams">
+        <div style="margin-bottom: 2rem;">
+          <h2 style="color: var(--brand); margin-bottom: 1rem;">My Teams</h2>
+
+          <div id="playerTeamSection" style="margin-bottom: 2rem;">
+            <div id="myTeamDisplay" style="display: none;">
+              <h3>Your Team</h3>
+              <div id="myTeamCard" class="team-card" style="background: #f8f9fa; padding: 1.5rem; border-radius: 15px; margin-bottom: 1rem;">
+                <!-- Team info will be populated here -->
+              </div>
+            </div>
+
+            <div id="noTeamDisplay">
+              <button id="createTeamBtn" class="admin-submit" style="margin-right: 1rem;">+ Create New Team</button>
+              <p style="color: var(--muted); margin-top: 1rem;">Or browse teams below to request to join</p>
+            </div>
+          </div>
+
+          <!-- Create Team Modal -->
+          <div id="createTeamModal" class="edit-game-modal" style="display: none;">
+            <div class="edit-game-content" style="max-width: 500px;">
+              <h3>Create New Team</h3>
+              <form id="createTeamForm">
+                <div class="form-group">
+                  <label>Team Name *</label>
+                  <input type="text" id="newTeamName" required placeholder="Enter team name">
+                </div>
+                <div class="form-group">
+                  <label>Team Description (Optional)</label>
+                  <textarea id="newTeamDescription" placeholder="Tell others about your team..." style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; min-height: 100px; background: #0a1122; color: var(--text);"></textarea>
+                </div>
+                <div class="admin-buttons">
+                  <button type="button" class="admin-cancel" id="cancelCreateTeam">Cancel</button>
+                  <button type="submit" class="admin-submit">Create Team</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div id="allTeamsSection">
+            <h3 style="margin-top: 2rem;">All Teams</h3>
+            <div id="allTeamsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
+              <!-- Teams will be populated here -->
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="panel-faq" class="tabpanel" role="tabpanel" aria-labelledby="tab-faq">
         <div class="faq">
           <details>
@@ -721,6 +776,19 @@
         </div>
       </section>
     </main>
+
+    <!-- Notifications Modal -->
+    <div id="notificationsModal" class="modal" style="display: none;">
+      <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+          <h2>📬 Notifications</h2>
+          <button class="modal-close" id="closeNotifications">&times;</button>
+        </div>
+        <div id="notificationsContent" style="max-height: 500px; overflow-y: auto;">
+          <!-- Notifications will be populated here -->
+        </div>
+      </div>
+    </div>
 
     <!-- Team Detail Modal -->
     <div id="teamModal" class="modal">
@@ -2910,11 +2978,361 @@
       }
     });
 
+    // ==================== TEAM MANAGEMENT FUNCTIONS ====================
+
+    // Load team notifications for captain
+    async function loadTeamNotifications(uid) {
+      try {
+        const requestsRef = collection(db, 'team_join_requests');
+        const q = query(requestsRef, where('captainUid', '==', uid), where('status', '==', 'pending'));
+        const querySnapshot = await getDocs(q);
+
+        const count = querySnapshot.size;
+        const badge = document.getElementById('notificationBadge');
+
+        if (count > 0) {
+          badge.textContent = count;
+          badge.style.display = 'flex';
+        } else {
+          badge.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+      }
+    }
+
+    // Create new team
+    document.getElementById('createTeamBtn')?.addEventListener('click', () => {
+      document.getElementById('createTeamModal').style.display = 'flex';
+    });
+
+    document.getElementById('cancelCreateTeam')?.addEventListener('click', () => {
+      document.getElementById('createTeamModal').style.display = 'none';
+      document.getElementById('createTeamForm').reset();
+    });
+
+    document.getElementById('createTeamForm')?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!window.currentUserData) return;
+
+      const teamName = document.getElementById('newTeamName').value.trim();
+      const teamDescription = document.getElementById('newTeamDescription').value.trim();
+
+      try {
+        const teamsRef = collection(db, 'player_teams');
+        await addDoc(teamsRef, {
+          name: teamName,
+          description: teamDescription,
+          captainUid: window.currentUserData.uid,
+          captainName: window.currentUserData.displayName,
+          captainEmail: window.currentUserData.email,
+          members: [{
+            uid: window.currentUserData.uid,
+            name: window.currentUserData.displayName,
+            email: window.currentUserData.email,
+            joinedAt: new Date().toISOString(),
+            role: 'captain'
+          }],
+          createdAt: new Date().toISOString()
+        });
+
+        document.getElementById('createTeamModal').style.display = 'none';
+        document.getElementById('createTeamForm').reset();
+        alert('✅ Team created successfully!');
+        loadMyTeam();
+      } catch (error) {
+        console.error('Error creating team:', error);
+        alert('Failed to create team. Please try again.');
+      }
+    });
+
+    // Load user's team
+    async function loadMyTeam() {
+      if (!window.currentUserData) return;
+
+      try {
+        const teamsRef = collection(db, 'player_teams');
+        const q = query(teamsRef);
+        const querySnapshot = await getDocs(q);
+
+        let userTeam = null;
+        querySnapshot.forEach((doc) => {
+          const team = doc.data();
+          const isMember = team.members.some(m => m.uid === window.currentUserData.uid);
+          if (isMember) {
+            userTeam = { id: doc.id, ...team };
+          }
+        });
+
+        if (userTeam) {
+          document.getElementById('noTeamDisplay').style.display = 'none';
+          document.getElementById('myTeamDisplay').style.display = 'block';
+          displayMyTeam(userTeam);
+        } else {
+          document.getElementById('noTeamDisplay').style.display = 'block';
+          document.getElementById('myTeamDisplay').style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error loading my team:', error);
+      }
+    }
+
+    // Display user's team
+    function displayMyTeam(team) {
+      const card = document.getElementById('myTeamCard');
+      const isCaptain = team.captainUid === window.currentUserData.uid;
+
+      let html = `
+        <h4 style="color: var(--brand); margin-bottom: 0.5rem;">${team.name}</h4>
+        <p style="color: var(--muted); margin-bottom: 1rem;">${team.description || 'No description'}</p>
+        <p style="margin-bottom: 0.5rem;"><strong>Captain:</strong> ${team.captainName}</p>
+        <p style="margin-bottom: 1rem;"><strong>Members (${team.members.length}):</strong></p>
+        <ul style="list-style: none; padding: 0;">
+      `;
+
+      team.members.forEach(member => {
+        html += `
+          <li style="padding: 0.5rem; background: white; margin-bottom: 0.5rem; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <span>${member.name} ${member.role === 'captain' ? '👑' : ''}</span>
+            ${isCaptain && member.uid !== window.currentUserData.uid ? `
+              <button onclick="kickPlayer('${team.id}', '${member.uid}')" style="background: var(--danger); color: white; border: none; padding: 0.25rem 0.75rem; border-radius: 5px; cursor: pointer;">Kick</button>
+            ` : ''}
+          </li>
+        `;
+      });
+
+      html += `</ul>`;
+
+      if (isCaptain) {
+        html += `<button onclick="viewJoinRequests('${team.id}')" style="margin-top: 1rem; background: var(--brand); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 10px; cursor: pointer;">View Join Requests</button>`;
+      }
+
+      card.innerHTML = html;
+    }
+
+    // Make these functions global
+    window.kickPlayer = async function(teamId, memberUid) {
+      if (!confirm('Are you sure you want to kick this player?')) return;
+
+      try {
+        const teamRef = doc(db, 'player_teams', teamId);
+        const teamDoc = await getDoc(teamRef);
+        const team = teamDoc.data();
+
+        const updatedMembers = team.members.filter(m => m.uid !== memberUid);
+
+        await updateDoc(teamRef, { members: updatedMembers });
+        alert('✅ Player kicked from team');
+        loadMyTeam();
+      } catch (error) {
+        console.error('Error kicking player:', error);
+        alert('Failed to kick player');
+      }
+    };
+
+    window.viewJoinRequests = function(teamId) {
+      // Show notifications modal with join requests
+      showJoinRequests(teamId);
+    };
+
+    // Show join requests in notifications modal
+    async function showJoinRequests(teamId) {
+      const modal = document.getElementById('notificationsModal');
+      const content = document.getElementById('notificationsContent');
+
+      try {
+        const requestsRef = collection(db, 'team_join_requests');
+        const q = query(requestsRef, where('teamId', '==', teamId), where('status', '==', 'pending'));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          content.innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--muted);">No pending join requests</p>';
+        } else {
+          let html = '';
+          querySnapshot.forEach((doc) => {
+            const request = doc.data();
+            html += `
+              <div style="padding: 1rem; border-bottom: 1px solid var(--border);">
+                <p><strong>${request.playerName}</strong> wants to join your team</p>
+                <p style="color: var(--muted); font-size: 0.9rem;">${request.playerEmail}</p>
+                <p style="color: var(--muted); font-size: 0.85rem;">Requested: ${new Date(request.requestedAt).toLocaleDateString()}</p>
+                <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
+                  <button onclick="acceptJoinRequest('${doc.id}', '${teamId}')" style="flex: 1; background: var(--success); color: white; border: none; padding: 0.5rem; border-radius: 8px; cursor: pointer;">✅ Accept</button>
+                  <button onclick="rejectJoinRequest('${doc.id}')" style="flex: 1; background: var(--danger); color: white; border: none; padding: 0.5rem; border-radius: 8px; cursor: pointer;">❌ Reject</button>
+                </div>
+              </div>
+            `;
+          });
+          content.innerHTML = html;
+        }
+
+        modal.style.display = 'flex';
+      } catch (error) {
+        console.error('Error loading join requests:', error);
+      }
+    }
+
+    // Accept join request
+    window.acceptJoinRequest = async function(requestId, teamId) {
+      try {
+        const requestRef = doc(db, 'team_join_requests', requestId);
+        const requestDoc = await getDoc(requestRef);
+        const request = requestDoc.data();
+
+        const teamRef = doc(db, 'player_teams', teamId);
+        const teamDoc = await getDoc(teamRef);
+        const team = teamDoc.data();
+
+        // Add player to team
+        const updatedMembers = [...team.members, {
+          uid: request.playerUid,
+          name: request.playerName,
+          email: request.playerEmail,
+          joinedAt: new Date().toISOString(),
+          role: 'member'
+        }];
+
+        await updateDoc(teamRef, { members: updatedMembers });
+        await updateDoc(requestRef, { status: 'accepted' });
+
+        alert('✅ Player added to team!');
+        showJoinRequests(teamId);
+        loadMyTeam();
+        loadTeamNotifications(window.currentUserData.uid);
+      } catch (error) {
+        console.error('Error accepting request:', error);
+        alert('Failed to accept request');
+      }
+    };
+
+    // Reject join request
+    window.rejectJoinRequest = async function(requestId) {
+      try {
+        const requestRef = doc(db, 'team_join_requests', requestId);
+        await updateDoc(requestRef, { status: 'rejected' });
+
+        alert('Request rejected');
+        document.getElementById('notificationsModal').style.display = 'none';
+        loadTeamNotifications(window.currentUserData.uid);
+      } catch (error) {
+        console.error('Error rejecting request:', error);
+        alert('Failed to reject request');
+      }
+    };
+
+    // Close notifications modal
+    document.getElementById('closeNotifications')?.addEventListener('click', () => {
+      document.getElementById('notificationsModal').style.display = 'none';
+    });
+
+    // Open notifications when bell icon clicked
+    document.getElementById('notificationsIcon')?.addEventListener('click', async () => {
+      if (!window.currentUserData) return;
+
+      const modal = document.getElementById('notificationsModal');
+      const content = document.getElementById('notificationsContent');
+
+      try {
+        // Find user's team
+        const teamsRef = collection(db, 'player_teams');
+        const teamsSnapshot = await getDocs(teamsRef);
+
+        let userTeamId = null;
+        teamsSnapshot.forEach((doc) => {
+          const team = doc.data();
+          if (team.captainUid === window.currentUserData.uid) {
+            userTeamId = doc.id;
+          }
+        });
+
+        if (userTeamId) {
+          showJoinRequests(userTeamId);
+        } else {
+          content.innerHTML = '<p style="padding: 2rem; text-align: center; color: var(--muted);">You are not a team captain</p>';
+          modal.style.display = 'flex';
+        }
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+      }
+    });
+
+    // Load all teams
+    async function loadAllTeams() {
+      try {
+        const teamsRef = collection(db, 'player_teams');
+        const querySnapshot = await getDocs(teamsRef);
+
+        const grid = document.getElementById('allTeamsGrid');
+        grid.innerHTML = '';
+
+        if (querySnapshot.empty) {
+          grid.innerHTML = '<p style="color: var(--muted);">No teams yet. Be the first to create one!</p>';
+          return;
+        }
+
+        querySnapshot.forEach((doc) => {
+          const team = doc.data();
+          const isMember = team.members.some(m => m.uid === window.currentUserData?.uid);
+
+          const card = document.createElement('div');
+          card.style.cssText = 'background: #f8f9fa; padding: 1.5rem; border-radius: 15px;';
+
+          card.innerHTML = `
+            <h4 style="color: var(--brand); margin-bottom: 0.5rem;">${team.name}</h4>
+            <p style="color: var(--muted); margin-bottom: 1rem; font-size: 0.9rem;">${team.description || 'No description'}</p>
+            <p style="font-size: 0.9rem; margin-bottom: 0.5rem;"><strong>Captain:</strong> ${team.captainName}</p>
+            <p style="font-size: 0.9rem; margin-bottom: 1rem;"><strong>Members:</strong> ${team.members.length}</p>
+            ${!isMember && window.currentUserData ? `
+              <button onclick="requestToJoinTeam('${doc.id}', '${team.name}', '${team.captainUid}')" style="width: 100%; background: var(--brand); color: white; border: none; padding: 0.75rem; border-radius: 10px; cursor: pointer; font-weight: 600;">Request to Join</button>
+            ` : isMember ? `
+              <p style="color: var(--success); font-weight: 600; text-align: center;">✅ You're in this team</p>
+            ` : ''}
+          `;
+
+          grid.appendChild(card);
+        });
+      } catch (error) {
+        console.error('Error loading teams:', error);
+      }
+    }
+
+    // Request to join team
+    window.requestToJoinTeam = async function(teamId, teamName, captainUid) {
+      if (!window.currentUserData) return;
+
+      try {
+        const requestsRef = collection(db, 'team_join_requests');
+        await addDoc(requestsRef, {
+          teamId: teamId,
+          teamName: teamName,
+          captainUid: captainUid,
+          playerUid: window.currentUserData.uid,
+          playerName: window.currentUserData.displayName,
+          playerEmail: window.currentUserData.email,
+          status: 'pending',
+          requestedAt: new Date().toISOString()
+        });
+
+        alert('✅ Join request sent!');
+      } catch (error) {
+        console.error('Error sending join request:', error);
+        alert('Failed to send join request');
+      }
+    };
+
+    // Listen for tab changes to load teams
+    document.getElementById('tab-myteams')?.addEventListener('click', () => {
+      loadMyTeam();
+      loadAllTeams();
+    });
+
     // Auth state listener for user profile display
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
       const loginLink = document.getElementById('loginLink');
       const userProfileChip = document.getElementById('userProfileChip');
       const userDisplayName = document.getElementById('userDisplayName');
+      const notificationsIcon = document.getElementById('notificationsIcon');
+      const myTeamsTab = document.getElementById('tab-myteams');
 
       if (user) {
         // User is signed in
@@ -2926,10 +3344,43 @@
         userProfileChip.onclick = () => {
           window.location.href = 'login.html';
         };
+
+        // Check if user has player role
+        try {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            const roles = userData.roles || [];
+
+            // Show player-only elements if user has player role
+            if (roles.includes('player')) {
+              if (myTeamsTab) myTeamsTab.style.display = 'block';
+              if (notificationsIcon) notificationsIcon.style.display = 'block';
+
+              // Store current user data globally for team management
+              window.currentUserData = {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName,
+                roles: roles
+              };
+
+              // Load team notifications
+              loadTeamNotifications(user.uid);
+            }
+          }
+        } catch (error) {
+          console.error('Error checking user roles:', error);
+        }
       } else {
         // User is signed out
         loginLink.style.display = 'block';
         userProfileChip.style.display = 'none';
+        if (myTeamsTab) myTeamsTab.style.display = 'none';
+        if (notificationsIcon) notificationsIcon.style.display = 'none';
+        window.currentUserData = null;
       }
     });
 
