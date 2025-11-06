@@ -178,7 +178,7 @@
 
           <div id="navUserProfile" style="display: none; position: relative;">
             <button class="card-nav-user-button" id="navUserButton">
-              <span id="navUserEmail">user@email.com</span>
+              <img id="navUserAvatar" src="" alt="User Avatar" class="nav-user-avatar" />
             </button>
             <div class="nav-user-dropdown" id="navUserDropdown" style="display: none;">
               <button class="nav-dropdown-item" id="navSignOutBtn">
@@ -3691,7 +3691,7 @@
       // Card navigation elements
       const navSignInBtn = document.getElementById('navSignInBtn');
       const navUserProfile = document.getElementById('navUserProfile');
-      const navUserEmail = document.getElementById('navUserEmail');
+      const navUserAvatar = document.getElementById('navUserAvatar');
       const navUserButton = document.getElementById('navUserButton');
       const navUserDropdown = document.getElementById('navUserDropdown');
       const navSignOutBtn = document.getElementById('navSignOutBtn');
@@ -3705,7 +3705,11 @@
         // Show user profile in card navigation
         if (navSignInBtn) navSignInBtn.style.display = 'none';
         if (navUserProfile) navUserProfile.style.display = 'block';
-        if (navUserEmail) navUserEmail.textContent = user.email;
+        if (navUserAvatar) {
+          // Use Google profile photo if available, otherwise use a default avatar
+          navUserAvatar.src = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email.split('@')[0])}&background=CFB991&color=fff&size=128`;
+          navUserAvatar.alt = user.displayName || user.email;
+        }
 
         // Toggle dropdown when user button is clicked
         if (navUserButton) {
