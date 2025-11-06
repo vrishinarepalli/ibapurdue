@@ -33,15 +33,15 @@ service cloud.firestore {
       allow read, write: if false; // Only Cloud Functions can access
     }
 
-    // Admin requests - anyone can create, only main admin can read/update
+    // Admin requests - authenticated users can create, only main admin can read/update
     match /admin_requests/{requestId} {
-      allow create: if true; // Anyone can request admin access
+      allow create: if request.auth != null; // Authenticated users can request admin access
       allow read, update, delete: if isMainAdmin(); // Only main admin can manage requests
     }
 
-    // Approved admins - only main admin can manage
+    // Approved admins - authenticated users can check if they're approved
     match /approved_admins/{adminId} {
-      allow read: if isAdmin(); // Any admin can read the list
+      allow read: if request.auth != null; // Any authenticated user can check if they're approved
       allow write: if isMainAdmin(); // Only main admin can approve/remove admins
     }
 
