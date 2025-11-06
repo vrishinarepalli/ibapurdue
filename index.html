@@ -3681,6 +3681,7 @@
     });
 
     // Auth state listener for user profile display
+    const { onAuthStateChanged, signOut } = window.authImports;
     onAuthStateChanged(auth, async (user) => {
       const loginLink = document.getElementById('loginLink');
       const userProfileChip = document.getElementById('userProfileChip');
