@@ -416,3 +416,49 @@ exports.checkAdminStatus = functions.https.onCall(async (data, context) => {
     authMethod: context.auth.token?.authMethod || 'unknown',
   };
 });
+
+/**
+ * Scheduled Firestore Export
+ * Automatically exports Firestore data to Cloud Storage
+ * Scheduled to run daily at 2 AM UTC via Cloud Scheduler
+ */
+exports.scheduledFirestoreExport = functions.https.onRequest(async (req, res) => {
+  const projectId = process.env.GCLOUD_PROJECT;
+  const databaseName = 'projects/' + projectId + '/databases/(default)';
+
+  // Get current date for folder naming
+  const date = new Date();
+  const timestamp = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+
+  // Cloud Storage bucket and folder
+  const bucket = 'gs://' + projectId + '.appspot.com/firestore-backups/' + timestamp;
+
+  const client = new admin.firestore.v1.FirestoreAdminClient();
+
+  try {
+    console.log(`Starting Firestore export to ${bucket}...`);
+
+    const [response] = await client.exportDocuments({
+      name: databaseName,
+      outputUriPrefix: bucket,
+      // Export all collections
+      collectionIds: []
+    });
+
+    console.log(`Export operation started: ${response.name}`);
+
+    res.status(200).send({
+      success: true,
+      message: 'Firestore export initiated successfully',
+      operation: response.name,
+      exportLocation: bucket,
+      timestamp: date.toISOString()
+    });
+  } catch (error) {
+    console.error('Error exporting Firestore:', error);
+    res.status(500).send({
+      success: false,
+      error: error.message
+    });
+  }
+});
