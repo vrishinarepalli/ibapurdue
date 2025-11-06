@@ -380,6 +380,12 @@
             <div class="title">Admin</div>
             <div class="description">Manage teams, games, and tournament brackets</div>
           </button>
+
+          <button id="bothBtn" class="role-btn">
+            <div class="icon">👥</div>
+            <div class="title">Both</div>
+            <div class="description">Player and admin access</div>
+          </button>
         </div>
       </div>
 
@@ -451,6 +457,7 @@
     const signOutBtn = document.getElementById('signOutBtn');
     const playerBtn = document.getElementById('playerBtn');
     const adminBtnEl = document.getElementById('adminBtn');
+    const bothBtn = document.getElementById('bothBtn');
     const loginSection = document.getElementById('loginSection');
     const roleSelection = document.getElementById('roleSelection');
     const loadingMessage = document.getElementById('loadingMessage');
@@ -503,8 +510,8 @@
           const userDocRef = firestoreAPI.doc(db, 'users', user.uid);
           const userDoc = await firestoreAPI.getDoc(userDocRef);
 
-          if (userDoc.exists() && userDoc.data().role) {
-            // User already has a role - show profile
+          if (userDoc.exists() && userDoc.data().roles && userDoc.data().roles.length > 0) {
+            // User already has roles - show profile
             hideAllSections();
             userSection.classList.add('show');
 
@@ -584,7 +591,7 @@
           email: currentUser.email,
           displayName: currentUser.displayName,
           photoURL: currentUser.photoURL,
-          role: 'user',
+          roles: ['player'], // Array of roles
           createdAt: new Date().toISOString(),
           lastLogin: new Date().toISOString()
         });
@@ -631,7 +638,7 @@
             email: currentUser.email,
             displayName: currentUser.displayName,
             photoURL: currentUser.photoURL,
-            role: 'admin',
+            roles: ['admin'], // Array of roles
             createdAt: new Date().toISOString(),
             lastLogin: new Date().toISOString()
           });
@@ -653,6 +660,64 @@
         hideAllSections();
         roleSelection.classList.add('show');
         showError(error.message || 'Admin authentication failed');
+      }
+    });
+
+    // Both Roles Selection (Player + Admin)
+    bothBtn.addEventListener('click', async () => {
+      if (!currentUser) return;
+
+      try {
+        // Check if user is in approved_admins collection
+        const approvedAdminRef = firestoreAPI.doc(db, 'approved_admins', currentUser.uid);
+        const approvedAdminDoc = await firestoreAPI.getDoc(approvedAdminRef);
+
+        if (!approvedAdminDoc.exists()) {
+          // User is not approved - show request form
+          hideAllSections();
+          requestEmail.textContent = currentUser.email;
+          fullNameInput.value = currentUser.displayName || '';
+          adminRequestForm.classList.add('show');
+          return;
+        }
+
+        // User is approved admin - show loading and trigger Touch ID
+        hideAllSections();
+        loadingMessage.classList.add('show');
+
+        // Trigger Touch ID authentication
+        const authenticated = await authenticateWebAuthn();
+
+        if (authenticated) {
+          // Create/update user profile with BOTH roles
+          const userDocRef = firestoreAPI.doc(db, 'users', currentUser.uid);
+          await firestoreAPI.setDoc(userDocRef, {
+            uid: currentUser.uid,
+            email: currentUser.email,
+            displayName: currentUser.displayName,
+            photoURL: currentUser.photoURL,
+            roles: ['player', 'admin'], // Both roles!
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString()
+          });
+
+          console.log('✅ Both roles (player + admin) authenticated and profile created');
+
+          // Enable admin mode
+          enableAdminMode();
+
+          // Redirect to main page
+          window.location.href = 'index.html';
+        } else {
+          hideAllSections();
+          roleSelection.classList.add('show');
+          showError('Touch ID authentication failed');
+        }
+      } catch (error) {
+        console.error('Error during both roles authentication:', error);
+        hideAllSections();
+        roleSelection.classList.add('show');
+        showError(error.message || 'Authentication failed');
       }
     });
 
