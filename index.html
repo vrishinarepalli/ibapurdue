@@ -13,6 +13,9 @@
 
   <link rel="stylesheet" href="style.css">
 
+  <!-- GSAP for animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
+
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -51,10 +54,7 @@
 </head>
 <body>
   <div class="wrap">
-    <header class="site" role="banner">
-      <div class="logo">
-        <img src="images/iba-logo.png" alt="IBA Logo" style="width: 100%; height: 100%; object-fit: contain;" />
-        <!-- Edit icon modal -->
+    <!-- Edit icon modal -->
     <div id="editIconModal" class="edit-icon-modal">
       <div class="edit-icon-content">
         <h3>Change Team Icon</h3>
@@ -154,39 +154,124 @@
       </div>
     </div>
   </div>
-      <div class="title">
-        <h1>IBA Tournament</h1>
-        <p>Indian Basketball Association • Fall 2025</p>
-      </div>
-      <div class="meta">
-        <a href="https://www.instagram.com/iba_purdue/" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
-          <span class="chip flashy-glow" title="Follow us on Instagram">INSTAGRAM</span>
-        </a>
-        <a href="https://www.youtube.com/@IBAPurdue" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
-          <span class="chip" title="Watch us on YouTube">YOUTUBE</span>
-        </a>
-        <a href="https://groupme.com/join_group/103612585/ARKLYj6v?fbclid=PAZXh0bgNhZW0CMTEAAaeIjRa3CC7_aPN3OBin6Vwxb_526BpUeVZ17QKolQ1m9w-F70UaiJFOTz3s4Q_aem_2m9NaxxWRVEaJBnCeDxOxQ" target="_blank" rel="noopener noreferrer" style="text-decoration: none;">
-          <span class="chip" title="Join our GroupMe">GROUPME</span>
-        </a>
-        <span class="visitor-count" title="Total site visitors">
-          👁️ <span class="count" id="visitorCount">0</span>
-        </span>
-        <a href="login.html" id="loginLink" style="text-decoration: none;">
-          <span class="chip" title="Sign in to your account" style="background: var(--brand); color: white;">LOGIN</span>
-        </a>
-        <div id="userProfileChip" style="display: none; cursor: pointer;" title="View your profile">
-          <span class="chip" style="background: var(--success); color: white;">
-            <span id="userDisplayName"></span>
-          </span>
+
+  <!-- Card Navigation -->
+  <div class="card-nav-container">
+      <nav class="card-nav" id="cardNav">
+        <div class="card-nav-top">
+          <div class="hamburger-menu" id="hamburgerMenu">
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+          </div>
+
+          <div class="nav-logo-container">
+            <img src="images/iba-logo.png" alt="IBA Logo" class="nav-logo-img" />
+            <div class="nav-title-text">
+              <span class="nav-title-main">Indian Basketball Association</span>
+              <span class="nav-title-sub">IBA Purdue</span>
+            </div>
+          </div>
+
+          <a href="login.html" id="navSignInBtn" style="text-decoration: none;">
+            <button class="card-nav-cta-button">Sign In</button>
+          </a>
+
+          <div id="navUserProfile" style="display: none; position: relative;">
+            <button class="card-nav-user-button" id="navUserButton">
+              <span id="navUserEmail">user@email.com</span>
+            </button>
+            <div class="nav-user-dropdown" id="navUserDropdown" style="display: none;">
+              <button class="nav-dropdown-item" id="navSignOutBtn">
+                <span>🚪</span>
+                Sign Out
+              </button>
+            </div>
+          </div>
         </div>
-        <div id="notificationsIcon" style="display: none; position: relative; cursor: pointer;" class="player-only" title="Notifications">
-          <span class="chip" style="background: var(--brand); color: white; position: relative;">
-            🔔
-            <span id="notificationBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 0.7rem; font-weight: bold; display: flex; align-items: center; justify-content: center;">0</span>
-          </span>
+
+        <div class="card-nav-content" id="cardNavContent">
+          <!-- Tournament Card -->
+          <div class="nav-card" style="background: linear-gradient(135deg, #CFB991 0%, #D4BE9C 100%); color: #000;">
+            <div class="nav-card-label">Tournament</div>
+            <div class="nav-card-links">
+              <a href="#" class="nav-card-link" data-tab="tab-current">
+                <span>→</span>
+                Current Season
+              </a>
+              <a href="#" class="nav-card-link" data-tab="tab-schedule">
+                <span>→</span>
+                Schedule
+              </a>
+              <a href="#" class="nav-card-link" data-tab="tab-bracket">
+                <span>→</span>
+                Bracket
+              </a>
+              <a href="#" class="nav-card-link" data-tab="tab-previous">
+                <span>→</span>
+                Previous Tournaments
+              </a>
+            </div>
+          </div>
+
+          <!-- Teams Card -->
+          <div class="nav-card" style="background: linear-gradient(135deg, #D9C6A7 0%, #E4D4B8 100%); color: #000;">
+            <div class="nav-card-label">Teams</div>
+            <div class="nav-card-links">
+              <a href="#" class="nav-card-link" data-tab="tab-teams">
+                <span>→</span>
+                All Teams
+              </a>
+              <a href="#" class="nav-card-link player-only" data-tab="tab-myteams" style="display: none;">
+                <span>→</span>
+                My Teams
+              </a>
+              <a href="#" class="nav-card-link" data-tab="tab-signup">
+                <span>→</span>
+                Sign Up
+              </a>
+            </div>
+          </div>
+
+          <!-- Info Card -->
+          <div class="nav-card" style="background: linear-gradient(135deg, #EFE3C9 0%, #F5EDDA 100%); color: #000;">
+            <div class="nav-card-label">Info</div>
+            <div class="nav-card-links">
+              <a href="about.html" class="nav-card-link">
+                <span>→</span>
+                About Us
+              </a>
+              <a href="#" class="nav-card-link" data-tab="tab-faq">
+                <span>→</span>
+                FAQ
+              </a>
+              <a href="#" class="nav-card-link" data-tab="tab-contact">
+                <span>→</span>
+                Contact
+              </a>
+            </div>
+          </div>
+
+          <!-- Social Media Card -->
+          <div class="nav-card" style="background: linear-gradient(135deg, #FAF5EB 0%, #FFFCF5 100%); color: #000;">
+            <div class="nav-card-label">Connect</div>
+            <div class="nav-card-links">
+              <a href="https://www.instagram.com/iba_purdue/" target="_blank" rel="noopener noreferrer" class="nav-card-link">
+                <span>→</span>
+                Instagram
+              </a>
+              <a href="https://www.youtube.com/@IBAPurdue" target="_blank" rel="noopener noreferrer" class="nav-card-link">
+                <span>→</span>
+                YouTube
+              </a>
+              <a href="https://groupme.com/join_group/103612585/ARKLYj6v?fbclid=PAZXh0bgNhZW0CMTEAAaeIjRa3CC7_aPN3OBin6Vwxb_526BpUeVZ17QKolQ1m9w-F70UaiJFOTz3s4Q_aem_2m9NaxxWRVEaJBnCeDxOxQ" target="_blank" rel="noopener noreferrer" class="nav-card-link">
+                <span>→</span>
+                GroupMe
+              </a>
+            </div>
+          </div>
         </div>
-      </div>
-    </header>
+      </nav>
+    </div>
 
     <!-- Hero Section -->
     <section class="hero-section">
@@ -197,10 +282,17 @@
       <div class="hero-content">
         <h2>The Court. The Teams. The Glory</h2>
         <p>IBA Fall 2025 • Regular Season & Playoffs</p>
-        <a href="#" class="hero-btn" onclick="document.getElementById('tab-signup').click(); return false;">Spring Season Entry Form</a>
+        <a href="#panel-signup" class="hero-btn" id="heroSignupBtn">Spring Season Entry Form</a>
+      </div>
+      <!-- Wave transition -->
+      <div class="hero-wave">
+        <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+          <path d="M0,0 C300,80 900,80 1200,0 L1200,120 L0,120 Z" fill="#fff"></path>
+        </svg>
       </div>
     </section>
 
+  <div class="wrap">
     <!-- Stats Bar -->
     <section class="stats-bar">
       <div class="stat-card">
@@ -227,6 +319,7 @@
         <button role="tab" id="tab-schedule" aria-selected="false" aria-controls="panel-schedule">Schedule</button>
         <button role="tab" id="tab-teams" aria-selected="false" aria-controls="panel-teams">Teams</button>
         <button role="tab" id="tab-bracket" aria-selected="false" aria-controls="panel-bracket">Bracket</button>
+        <button role="tab" id="tab-previous" aria-selected="false" aria-controls="panel-previous" style="display: none;">Previous Tournaments</button>
         <button role="tab" id="tab-myteams" aria-selected="false" aria-controls="panel-myteams" style="display: none;" class="player-only">My Teams</button>
         <a href="about.html" style="text-decoration: none;">
           <button role="tab" style="background: transparent; border: none; cursor: pointer;">About Us</button>
@@ -608,6 +701,91 @@
         </div>
       </section>
 
+      <section id="panel-previous" class="tabpanel" role="tabpanel" aria-labelledby="tab-previous">
+        <h2 style="color: var(--brand); margin-bottom: 1.5rem;">Previous Tournaments</h2>
+
+        <div style="margin-bottom: 2rem;">
+          <label for="tournamentSelect" style="font-weight: 600; color: #222; margin-bottom: 0.5rem; display: block;">Select Tournament:</label>
+          <select id="tournamentSelect" class="select" style="max-width: 300px;">
+            <option value="">Choose a tournament...</option>
+            <option value="fall-2025">Fall 2025</option>
+          </select>
+        </div>
+
+        <div id="previousTournamentData" style="display: none;">
+          <div style="margin-bottom: 2rem;">
+            <h3 id="selectedTournamentTitle" style="color: var(--brand); margin-bottom: 1rem;"></h3>
+
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+              <div class="stat-box">
+                <div class="label">Champion</div>
+                <div class="value" id="prevChampion" style="font-size: 1.5rem;">-</div>
+              </div>
+              <div class="stat-box">
+                <div class="label">Total Teams</div>
+                <div class="value" id="prevTotalTeams">-</div>
+              </div>
+              <div class="stat-box">
+                <div class="label">Total Games</div>
+                <div class="value" id="prevTotalGames">-</div>
+              </div>
+              <div class="stat-box">
+                <div class="label">Total Players</div>
+                <div class="value" id="prevTotalPlayers">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabs for different views -->
+          <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <button class="prev-view-btn active" data-view="standings" style="padding: 0.5rem 1rem; border: none; background: var(--brand); color: #000; border-radius: 4px; cursor: pointer; font-weight: 600;">Final Standings</button>
+            <button class="prev-view-btn" data-view="bracket" style="padding: 0.5rem 1rem; border: none; background: #f5f1e8; color: #222; border-radius: 4px; cursor: pointer; font-weight: 600;">Bracket</button>
+            <button class="prev-view-btn" data-view="schedule" style="padding: 0.5rem 1rem; border: none; background: #f5f1e8; color: #222; border-radius: 4px; cursor: pointer; font-weight: 600;">Schedule</button>
+          </div>
+
+          <div id="prevStandingsView" class="prev-view">
+            <h3 style="margin-bottom: 1rem;">Final Standings</h3>
+            <div class="grid" id="prevTeamsGrid">
+              <!-- Teams will be loaded here -->
+            </div>
+          </div>
+
+          <div id="prevBracketView" class="prev-view" style="display: none;">
+            <h3 style="margin-bottom: 1rem;">Tournament Bracket</h3>
+            <div style="overflow-x: auto;">
+              <div class="bracket-container" id="prevBracketContainer">
+                <!-- Bracket will be loaded here -->
+              </div>
+            </div>
+          </div>
+
+          <div id="prevScheduleView" class="prev-view" style="display: none;">
+            <h3 style="margin-bottom: 1rem;">Game Schedule</h3>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Teams</th>
+                    <th>Time</th>
+                    <th>Court</th>
+                    <th>Round</th>
+                    <th>Result</th>
+                  </tr>
+                </thead>
+                <tbody id="prevScheduleTable">
+                  <!-- Schedule will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="noTournamentSelected" style="text-align: center; padding: 3rem; color: var(--muted);">
+          <p>Select a tournament from the dropdown above to view its data.</p>
+        </div>
+      </section>
+
       <section id="panel-myteams" class="tabpanel" role="tabpanel" aria-labelledby="tab-myteams">
         <div style="margin-bottom: 2rem;">
           <h2 style="color: var(--brand); margin-bottom: 1rem;">My Teams</h2>
@@ -841,46 +1019,65 @@
     <!-- Admin login modal -->
     <div id="adminModal" class="admin-modal">
       <div class="admin-modal-content">
-        <h3>Admin Login</h3>
-        <p style="color: var(--muted); text-align: center; margin-bottom: 1.5rem;">Choose your authentication method</p>
+        <h3>Admin Access</h3>
         <div class="admin-error" id="adminError" style="display: none;">Authentication failed</div>
 
-        <!-- Email/Password Login Form -->
-        <div id="emailPasswordForm" style="margin-bottom: 1.5rem;">
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem; color: var(--text);">Email</label>
-            <input type="email" id="adminEmail" placeholder="admin@example.com" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: #222; font-size: 1rem;" />
+        <!-- Logged In View -->
+        <div id="adminLoggedInView" style="display: none;">
+          <div style="text-align: center; margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 10px;">
+            <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 0.5rem;">Signed in as:</p>
+            <p id="adminCurrentEmail" style="color: var(--brand); font-weight: 600; font-size: 1rem;"></p>
           </div>
-          <div class="form-group" style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem; color: var(--text);">Password</label>
-            <input type="password" id="adminPassword" placeholder="Enter your password" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: #222; font-size: 1rem;" />
+
+          <!-- Admin Verification (shown only if user is registered admin) -->
+          <div id="adminVerificationSection" style="display: none;">
+            <p style="color: var(--muted); text-align: center; margin-bottom: 1.5rem;">Choose your authentication method</p>
+
+            <!-- Email/Password Login -->
+            <div style="margin-bottom: 1rem;">
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text);">Password</label>
+                <input type="password" id="adminPassword" placeholder="Enter your password" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: #222; font-size: 1rem;" />
+              </div>
+              <button class="admin-submit" id="adminEmailPasswordBtn" style="width: 100%; margin-bottom: 1rem;">🔑 Login with Password</button>
+            </div>
+
+            <div style="text-align: center; margin: 1rem 0; color: var(--muted); font-size: 0.9rem;">
+              <span style="display: inline-block; position: relative;">
+                <span style="position: relative; z-index: 1; background: #fff; padding: 0 1rem;">OR</span>
+                <span style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--border);"></span>
+              </span>
+            </div>
+
+            <!-- Biometric Login Button -->
+            <button class="admin-submit" id="adminBiometricBtn" style="width: 100%; margin-bottom: 1rem;">🔐 Use Touch ID / Face ID</button>
           </div>
-          <button class="admin-submit" id="adminEmailPasswordBtn" style="width: 100%; margin-bottom: 1rem;">🔑 Login with Email & Password</button>
+
+          <!-- Request Admin Access (shown if user is NOT admin) -->
+          <div id="adminRequestSection" style="display: none;">
+            <p style="color: var(--muted); text-align: center; margin-bottom: 1.5rem;">You don't have admin access yet. Request access below:</p>
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+              <label style="display: block; margin-bottom: 0.5rem; color: var(--text);">Your Name</label>
+              <input type="text" id="requestAdminName" placeholder="Enter your full name" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: #222; font-size: 1rem;" />
+            </div>
+
+            <button class="admin-submit" id="submitAdminRequestBtn" style="width: 100%; margin-bottom: 1rem;">📝 Submit Request</button>
+          </div>
+
+          <div class="admin-buttons">
+            <button class="admin-cancel" id="adminCancel">Cancel</button>
+          </div>
         </div>
 
-        <div style="text-align: center; margin: 1.5rem 0; color: var(--muted); font-size: 0.9rem;">
-          <span style="display: inline-block; position: relative;">
-            <span style="position: relative; z-index: 1; background: #fff; padding: 0 1rem;">OR</span>
-            <span style="position: absolute; top: 50%; left: 0; right: 0; height: 1px; background: var(--border);"></span>
-          </span>
+        <!-- Not Logged In View -->
+        <div id="adminNotLoggedInView" style="display: none;">
+          <p style="color: var(--muted); text-align: center; margin-bottom: 1.5rem;">Please sign in first to access admin features</p>
+          <a href="login.html" class="admin-submit" style="display: block; width: 100%; text-align: center; text-decoration: none; padding: 0.75rem;">Sign In</a>
+          <div class="admin-buttons">
+            <button class="admin-cancel" id="adminCancelNotLoggedIn">Cancel</button>
+          </div>
         </div>
-
-        <!-- Biometric Login Button -->
-        <button class="admin-submit" id="adminBiometricBtn" style="width: 100%; margin-bottom: 1rem;">🔐 Use Touch ID / Face ID</button>
-
-        <div class="admin-buttons">
-          <button class="admin-cancel" id="adminCancel">Cancel</button>
-        </div>
-
-        <!-- Request Admin Access -->
-        <div style="text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
-          <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 0.75rem;">Don't have admin access?</p>
-          <button id="requestAdminBtn" style="background: transparent; color: var(--brand); border: 1px solid var(--brand); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.2s;">
-            📝 Request Admin Access
-          </button>
-        </div>
-
-        <p id="adminSetupText" style="display: none; color: var(--muted); font-size: 0.85rem; text-align: center; margin-top: 1rem;">First time? Click above to register your biometric credentials.</p>
       </div>
     </div>
 
@@ -1024,30 +1221,75 @@
     checkAdminSession();
 
     // Admin button click handler - show login modal
-    adminBtn.addEventListener('click', () => {
+    adminBtn.addEventListener('click', async () => {
       if (!isAdminMode) {
-        // Show login
-        adminModal.classList.add('active');
         adminError.style.display = 'none';
-        // Always hide setup text - server will determine if registration is needed
-        document.getElementById('adminSetupText').style.display = 'none';
+
+        // Check if user is logged in with Firebase Auth
+        const currentUser = window.auth.currentUser;
+
+        if (!currentUser) {
+          // Not logged in - show sign in prompt
+          document.getElementById('adminLoggedInView').style.display = 'none';
+          document.getElementById('adminNotLoggedInView').style.display = 'block';
+          adminModal.classList.add('active');
+          return;
+        }
+
+        // User is logged in - show their email
+        document.getElementById('adminCurrentEmail').textContent = currentUser.email;
+        document.getElementById('adminNotLoggedInView').style.display = 'none';
+        document.getElementById('adminLoggedInView').style.display = 'block';
+
+        // Check if user's Gmail is registered as an admin
+        try {
+          const isMainAdmin = currentUser.uid === ADMIN_UID;
+          let isApprovedAdmin = false;
+
+          if (!isMainAdmin) {
+            const { getDoc, doc } = window.firestoreImports;
+            const approvedAdminDoc = await getDoc(doc(window.db, 'approved_admins', currentUser.uid));
+            isApprovedAdmin = approvedAdminDoc.exists();
+          }
+
+          if (isMainAdmin || isApprovedAdmin) {
+            // User IS an admin - show verification options
+            document.getElementById('adminVerificationSection').style.display = 'block';
+            document.getElementById('adminRequestSection').style.display = 'none';
+          } else {
+            // User is NOT an admin - show request form
+            document.getElementById('adminVerificationSection').style.display = 'none';
+            document.getElementById('adminRequestSection').style.display = 'block';
+          }
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+          adminError.textContent = 'Error checking admin status. Please try again.';
+          adminError.style.display = 'block';
+        }
+
+        adminModal.classList.add('active');
       }
     });
 
     adminCancel.addEventListener('click', () => {
       adminModal.classList.remove('active');
       // Clear form when closing
-      document.getElementById('adminEmail').value = '';
       document.getElementById('adminPassword').value = '';
+      document.getElementById('requestAdminName').value = '';
       document.getElementById('adminError').style.display = 'none';
+    });
+
+    // Handle cancel for not logged in view
+    document.getElementById('adminCancelNotLoggedIn')?.addEventListener('click', () => {
+      adminModal.classList.remove('active');
     });
 
     adminModal.addEventListener('click', (e) => {
       if (e.target === adminModal) {
         adminModal.classList.remove('active');
         // Clear form when closing
-        document.getElementById('adminEmail').value = '';
         document.getElementById('adminPassword').value = '';
+        document.getElementById('requestAdminName').value = '';
         document.getElementById('adminError').style.display = 'none';
       }
     });
@@ -1400,16 +1642,20 @@
     document.getElementById('adminEmailPasswordBtn').addEventListener('click', async () => {
       const adminError = document.getElementById('adminError');
       const adminEmailPasswordBtn = document.getElementById('adminEmailPasswordBtn');
-      const emailInput = document.getElementById('adminEmail');
       const passwordInput = document.getElementById('adminPassword');
       adminError.style.display = 'none';
 
       try {
-        const email = emailInput.value.trim();
+        const currentUser = window.auth.currentUser;
+        if (!currentUser) {
+          throw new Error('Please sign in first');
+        }
+
+        const email = currentUser.email;
         const password = passwordInput.value;
 
-        if (!email || !password) {
-          throw new Error('Please enter both email and password');
+        if (!password) {
+          throw new Error('Please enter your password');
         }
 
         // Disable button during processing
@@ -1423,9 +1669,9 @@
 
         const { signInWithEmailAndPassword } = window.authImports;
 
-        // Sign in with email and password
+        // Sign in with email and password (re-authenticate)
         const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
-        console.log('✅ Signed in with email/password:', userCredential.user.uid);
+        console.log('✅ Re-authenticated with password:', userCredential.user.uid);
 
         // Check if user is the admin or an approved admin
         const ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
@@ -1440,7 +1686,6 @@
         }
 
         if (!isMainAdmin && !isApprovedAdmin) {
-          await window.auth.signOut();
           throw new Error('Unauthorized: Not an admin account. Please request admin access.');
         }
 
@@ -1459,16 +1704,15 @@
         if (bulkImportBtn) bulkImportBtn.style.display = 'block';
 
         // Clear form
-        emailInput.value = '';
         passwordInput.value = '';
 
-        console.log('✅ Admin logged in successfully with email/password');
+        console.log('✅ Admin logged in successfully with password');
       } catch (error) {
         console.error('Email/Password authentication error:', error);
 
         // Handle specific error types
         if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-          adminError.textContent = 'Invalid email or password';
+          adminError.textContent = 'Invalid password';
         } else if (error.code === 'auth/too-many-requests') {
           adminError.textContent = 'Too many failed attempts. Please try again later.';
         } else if (error.code === 'auth/network-request-failed') {
@@ -1482,66 +1726,32 @@
       } finally {
         // Re-enable button
         adminEmailPasswordBtn.disabled = false;
-        adminEmailPasswordBtn.textContent = '🔑 Login with Email & Password';
+        adminEmailPasswordBtn.textContent = '🔑 Login with Password';
       }
     });
 
-    // Request Admin Access button handler
-    document.getElementById('requestAdminBtn').addEventListener('click', async () => {
+    // Submit Admin Request button handler
+    document.getElementById('submitAdminRequestBtn')?.addEventListener('click', async () => {
       const adminError = document.getElementById('adminError');
+      const submitBtn = document.getElementById('submitAdminRequestBtn');
+      const nameInput = document.getElementById('requestAdminName');
       adminError.style.display = 'none';
 
-      // Prompt for email and password
-      const email = prompt('Enter your email address for admin access request:');
-      if (!email) {
-        return; // User cancelled
-      }
-
-      const password = prompt('Create a password for your admin account:\n• Min 8 characters\n• Include uppercase letter\n• Include lowercase letter\n• Include number\n• Include special character (!@#$%...)');
-      if (!password) {
-        return; // User cancelled
-      }
-
-      // Validate password strength
-      if (password.length < 8) {
-        adminError.textContent = 'Password must be at least 8 characters';
-        adminError.style.display = 'block';
-        return;
-      }
-      if (!/[A-Z]/.test(password)) {
-        adminError.textContent = 'Password must contain at least one uppercase letter';
-        adminError.style.display = 'block';
-        return;
-      }
-      if (!/[a-z]/.test(password)) {
-        adminError.textContent = 'Password must contain at least one lowercase letter';
-        adminError.style.display = 'block';
-        return;
-      }
-      if (!/[0-9]/.test(password)) {
-        adminError.textContent = 'Password must contain at least one number';
-        adminError.style.display = 'block';
-        return;
-      }
-      if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-        adminError.textContent = 'Password must contain at least one special character (!@#$%^&*...)';
-        adminError.style.display = 'block';
-        return;
-      }
-
-      const confirmPassword = prompt('Confirm your password:');
-      if (password !== confirmPassword) {
-        adminError.textContent = 'Passwords do not match';
-        adminError.style.display = 'block';
-        return;
-      }
-
-      const name = prompt('Enter your full name:');
-      if (!name) {
-        return; // User cancelled
-      }
-
       try {
+        const currentUser = window.auth.currentUser;
+        if (!currentUser) {
+          throw new Error('Please sign in first');
+        }
+
+        const name = nameInput.value.trim();
+        if (!name) {
+          throw new Error('Please enter your name');
+        }
+
+        // Disable button during processing
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+
         // Check if Firebase is ready
         if (!window.db || !window.firestoreImports) {
           throw new Error('Firebase not initialized. Please refresh and try again.');
@@ -1551,27 +1761,34 @@
 
         // Submit admin request to Firestore
         await addDoc(collection(window.db, 'admin_requests'), {
-          email: email,
-          password: password,
+          email: currentUser.email,
           name: name,
+          uid: currentUser.uid,
           status: 'pending',
           requestedAt: new Date(),
-          ipAddress: 'N/A' // Could add IP tracking if needed
         });
 
-        adminError.textContent = '✅ Admin access request submitted! You will receive an email once approved.';
+        adminError.textContent = '✅ Admin access request submitted! You will be notified once approved.';
         adminError.style.color = 'var(--success)';
         adminError.style.display = 'block';
 
+        // Clear form
+        nameInput.value = '';
+
         setTimeout(() => {
+          adminModal.classList.remove('active');
           adminError.style.display = 'none';
           adminError.style.color = '';
-        }, 5000);
+        }, 3000);
 
       } catch (error) {
         console.error('Error submitting admin request:', error);
-        adminError.textContent = 'Failed to submit request. Please try again.';
+        adminError.textContent = error.message || 'Failed to submit request. Please try again.';
         adminError.style.display = 'block';
+      } finally {
+        // Re-enable button
+        submitBtn.disabled = false;
+        submitBtn.textContent = '📝 Submit Request';
       }
     });
 
@@ -2022,24 +2239,161 @@
         }
       }
 
-    // Tabs functionality
-    const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
-    const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+    // Card Navigation with GSAP Animation
+    const cardNav = document.getElementById('cardNav');
+    const hamburgerMenu = document.getElementById('hamburgerMenu');
+    const cardNavContent = document.getElementById('cardNavContent');
+    const navCards = document.querySelectorAll('.nav-card');
 
-    function activateTab(tab) {
-      tabs.forEach(t => t.setAttribute('aria-selected', String(t === tab)));
-      panels.forEach(p => p.classList.toggle('active', p.id === tab.getAttribute('aria-controls')));
-      tab.focus();
+    let isExpanded = false;
+    let animationTimeline = null;
+
+    // Calculate expanded height
+    function calculateExpandedHeight() {
+      const isMobile = window.matchMedia('(max-width: 768px)').matches;
+      if (isMobile) {
+        // Mobile: stack cards vertically
+        const topBarHeight = 60;
+        const padding = 16;
+        let totalCardHeight = 0;
+        navCards.forEach(card => {
+          const cardHeight = card.scrollHeight || 100;
+          totalCardHeight += cardHeight;
+        });
+        const gaps = (navCards.length - 1) * 10;
+        return topBarHeight + totalCardHeight + gaps + padding;
+      } else {
+        // Desktop: fixed height (4 cards now)
+        return 280;
+      }
     }
 
+    // Initialize GSAP timeline
+    function createTimeline() {
+      if (animationTimeline) {
+        animationTimeline.kill();
+      }
+
+      gsap.set(cardNav, { height: 70, overflow: 'hidden' });
+      gsap.set(navCards, { y: 30, opacity: 0 });
+
+      animationTimeline = gsap.timeline({ paused: true });
+
+      animationTimeline.to(cardNav, {
+        height: calculateExpandedHeight(),
+        duration: 0.4,
+        ease: 'power3.out'
+      });
+
+      animationTimeline.to(navCards, {
+        y: 0,
+        opacity: 1,
+        duration: 0.4,
+        stagger: 0.08,
+        ease: 'power3.out'
+      }, '-=0.2');
+
+      return animationTimeline;
+    }
+
+    // Initialize on load
+    window.addEventListener('load', () => {
+      createTimeline();
+    });
+
+    // Handle window resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (isExpanded) {
+          gsap.set(cardNav, { height: calculateExpandedHeight() });
+        }
+        createTimeline();
+        if (isExpanded) {
+          animationTimeline.progress(1);
+        }
+      }, 250);
+    });
+
+    // Toggle menu
+    function toggleMenu() {
+      if (!animationTimeline) {
+        createTimeline();
+      }
+
+      if (!isExpanded) {
+        hamburgerMenu.classList.add('open');
+        cardNav.classList.add('open');
+        isExpanded = true;
+        animationTimeline.play(0);
+      } else {
+        hamburgerMenu.classList.remove('open');
+        animationTimeline.eventCallback('onReverseComplete', () => {
+          cardNav.classList.remove('open');
+          isExpanded = false;
+        });
+        animationTimeline.reverse();
+      }
+    }
+
+    hamburgerMenu.addEventListener('click', toggleMenu);
+
+    // Tab navigation from card links
+    const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+    const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
+    const cardLinks = document.querySelectorAll('.nav-card-link[data-tab]');
+
+    function activateTab(tabId) {
+      const tab = document.getElementById(tabId);
+      if (!tab) return;
+
+      tabs.forEach(t => t.setAttribute('aria-selected', 'false'));
+      panels.forEach(p => p.classList.remove('active'));
+
+      tab.setAttribute('aria-selected', 'true');
+      const panelId = tab.getAttribute('aria-controls');
+      const panel = document.getElementById(panelId);
+      if (panel) {
+        panel.classList.add('active');
+      }
+
+      // Close menu after selection
+      if (isExpanded) {
+        toggleMenu();
+      }
+    }
+
+    // Handle card link clicks
+    cardLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        const tabId = link.getAttribute('data-tab');
+        if (tabId) {
+          e.preventDefault();
+          activateTab(tabId);
+
+          // Smooth scroll to content
+          setTimeout(() => {
+            document.querySelector('.tabs').scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }, 100);
+        }
+      });
+    });
+
+    // Old tab button functionality (still works)
     tabs.forEach(tab => {
-      tab.addEventListener('click', () => activateTab(tab));
+      tab.addEventListener('click', () => activateTab(tab.id));
       tab.addEventListener('keydown', (e) => {
         const i = tabs.indexOf(tab);
         if (e.key === 'ArrowRight') {
-          e.preventDefault(); activateTab(tabs[(i + 1) % tabs.length]);
+          e.preventDefault();
+          activateTab(tabs[(i + 1) % tabs.length].id);
         } else if (e.key === 'ArrowLeft') {
-          e.preventDefault(); activateTab(tabs[(i - 1 + tabs.length) % tabs.length]);
+          e.preventDefault();
+          activateTab(tabs[(i - 1 + tabs.length) % tabs.length].id);
         }
       });
     });
@@ -3334,11 +3688,52 @@
       const notificationsIcon = document.getElementById('notificationsIcon');
       const myTeamsTab = document.getElementById('tab-myteams');
 
+      // Card navigation elements
+      const navSignInBtn = document.getElementById('navSignInBtn');
+      const navUserProfile = document.getElementById('navUserProfile');
+      const navUserEmail = document.getElementById('navUserEmail');
+      const navUserButton = document.getElementById('navUserButton');
+      const navUserDropdown = document.getElementById('navUserDropdown');
+      const navSignOutBtn = document.getElementById('navSignOutBtn');
+
       if (user) {
         // User is signed in
         loginLink.style.display = 'none';
         userProfileChip.style.display = 'block';
         userDisplayName.textContent = user.displayName || user.email.split('@')[0];
+
+        // Show user profile in card navigation
+        if (navSignInBtn) navSignInBtn.style.display = 'none';
+        if (navUserProfile) navUserProfile.style.display = 'block';
+        if (navUserEmail) navUserEmail.textContent = user.email;
+
+        // Toggle dropdown when user button is clicked
+        if (navUserButton) {
+          navUserButton.onclick = (e) => {
+            e.stopPropagation();
+            navUserDropdown.style.display = navUserDropdown.style.display === 'none' ? 'block' : 'none';
+          };
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+          if (navUserDropdown && !navUserProfile.contains(e.target)) {
+            navUserDropdown.style.display = 'none';
+          }
+        });
+
+        // Handle sign out
+        if (navSignOutBtn) {
+          navSignOutBtn.onclick = async () => {
+            try {
+              await signOut(auth);
+              navUserDropdown.style.display = 'none';
+              window.location.href = 'index.html';
+            } catch (error) {
+              console.error('Error signing out:', error);
+            }
+          };
+        }
 
         // Click to go to login page (which will show profile)
         userProfileChip.onclick = () => {
@@ -3369,6 +3764,15 @@
 
               // Load team notifications
               loadTeamNotifications(user.uid);
+
+              // Update admin button text for players who aren't admins yet
+              if (!roles.includes('admin') && !isAdminMode) {
+                const adminBtn = document.getElementById('adminBtn');
+                if (adminBtn) {
+                  adminBtn.textContent = '🔐 Admin Access';
+                  adminBtn.title = 'Request admin access or login as admin';
+                }
+              }
             }
           }
         } catch (error) {
@@ -3381,8 +3785,227 @@
         if (myTeamsTab) myTeamsTab.style.display = 'none';
         if (notificationsIcon) notificationsIcon.style.display = 'none';
         window.currentUserData = null;
+
+        // Show sign in button in card navigation
+        if (navSignInBtn) navSignInBtn.style.display = 'block';
+        if (navUserProfile) navUserProfile.style.display = 'none';
       }
     });
+
+    // ============================================
+    // Previous Tournaments Functionality
+    // ============================================
+    const tournamentSelect = document.getElementById('tournamentSelect');
+    const previousTournamentData = document.getElementById('previousTournamentData');
+    const prevViewBtns = document.querySelectorAll('.prev-view-btn');
+
+    // Tournament selection handler
+    if (tournamentSelect) {
+      console.log('✅ Tournament select dropdown found');
+      tournamentSelect.addEventListener('change', async (e) => {
+        const selectedTournament = e.target.value;
+        console.log('📅 Tournament selected:', selectedTournament);
+
+        if (selectedTournament === 'fall-2025') {
+          console.log('🏀 Loading Fall 2025 data...');
+
+          // Show the data container
+          if (previousTournamentData) {
+            previousTournamentData.style.display = 'block';
+            console.log('✅ Data container shown');
+          }
+
+          // Update title
+          const titleEl = document.getElementById('selectedTournamentTitle');
+          if (titleEl) {
+            titleEl.textContent = 'Fall 2025 Tournament';
+          }
+
+          // Load tournament data (using current data as Fall 2025)
+          await loadPreviousTournamentData();
+        } else {
+          // Hide data if no selection
+          if (previousTournamentData) {
+            previousTournamentData.style.display = 'none';
+          }
+        }
+      });
+    } else {
+      console.log('❌ Tournament select dropdown NOT found');
+    }
+
+    // View switching for Previous Tournaments
+    prevViewBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const view = btn.dataset.view;
+
+        // Update active button
+        prevViewBtns.forEach(b => {
+          b.classList.remove('active');
+          b.style.background = '#f5f1e8';
+        });
+        btn.classList.add('active');
+        btn.style.background = 'var(--brand)';
+
+        // Show corresponding view
+        document.getElementById('prevStandingsView').style.display = view === 'standings' ? 'block' : 'none';
+        document.getElementById('prevBracketView').style.display = view === 'bracket' ? 'block' : 'none';
+        document.getElementById('prevScheduleView').style.display = view === 'schedule' ? 'block' : 'none';
+      });
+    });
+
+    // Load previous tournament data
+    async function loadPreviousTournamentData() {
+      try {
+        const { collection, getDocs, doc, getDoc } = window.firestoreImports;
+        const db = window.db;
+
+        console.log('📊 Loading previous tournament data...');
+
+        // Load teams for standings
+        const teamsSnapshot = await getDocs(collection(db, 'teams'));
+        const teams = [];
+        teamsSnapshot.forEach(teamDoc => {
+          teams.push({ id: teamDoc.id, ...teamDoc.data() });
+        });
+
+        console.log('✅ Loaded teams:', teams.length);
+
+        // Sort teams by wins, then point differential
+        teams.sort((a, b) => {
+          if (b.wins !== a.wins) return b.wins - a.wins;
+          return b.pointDiff - a.pointDiff;
+        });
+
+        // Calculate stats
+        const totalTeams = teams.length;
+        const totalPlayers = teams.reduce((sum, team) => sum + (team.roster?.length || 0), 0);
+        const champion = teams.length > 0 ? teams[0].name : 'TBD';
+
+        // Update stats display
+        document.getElementById('prevChampion').textContent = champion;
+        document.getElementById('prevTotalTeams').textContent = totalTeams;
+        document.getElementById('prevTotalGames').textContent = '63';
+        document.getElementById('prevTotalPlayers').textContent = totalPlayers;
+
+        // Load standings
+        const prevTeamsGrid = document.getElementById('prevTeamsGrid');
+        if (prevTeamsGrid) {
+          prevTeamsGrid.innerHTML = teams.map(team => `
+            <div class="team-card">
+              <div class="team-header">
+                <div class="avatar" aria-hidden="true">${team.icon || '🏀'}</div>
+                <div>
+                  <div class="team-name">${team.name}</div>
+                  <div class="team-seed">Seed: ${team.seed || 'N/A'}</div>
+                </div>
+              </div>
+              <div class="team-stats">
+                <div class="stat">
+                  <div class="label">Record</div>
+                  <div class="value">${team.wins}-${team.losses}</div>
+                </div>
+                <div class="stat">
+                  <div class="label">Point Diff</div>
+                  <div class="value ${team.pointDiff >= 0 ? 'positive' : 'negative'}">
+                    ${team.pointDiff >= 0 ? '+' : ''}${team.pointDiff}
+                  </div>
+                </div>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Load bracket
+        const bracketDoc = await getDoc(doc(db, 'tournament', 'bracket'));
+        if (bracketDoc.exists()) {
+          const bracketData = bracketDoc.data();
+          const prevBracketContainer = document.getElementById('prevBracketContainer');
+          if (prevBracketContainer && bracketData.rounds) {
+            renderPreviousBracket(bracketData.rounds, prevBracketContainer);
+          }
+        }
+
+        // Load schedule
+        const gamesSnapshot = await getDocs(collection(db, 'games'));
+        const games = [];
+        gamesSnapshot.forEach(gameDoc => {
+          games.push({ id: gameDoc.id, ...gameDoc.data() });
+        });
+
+        console.log('✅ Loaded games:', games.length);
+
+        // Sort by date
+        games.sort((a, b) => {
+          if (a.date !== b.date) return a.date.localeCompare(b.date);
+          return (a.time || '').localeCompare(b.time || '');
+        });
+
+        const prevScheduleTable = document.getElementById('prevScheduleTable');
+        if (prevScheduleTable) {
+          prevScheduleTable.innerHTML = games.map(game => `
+            <tr>
+              <td>${game.date || 'TBD'}</td>
+              <td>${game.team1} vs ${game.team2}</td>
+              <td>${game.time || 'TBD'}</td>
+              <td>${game.court || 'TBD'}</td>
+              <td>${game.round || 'Regular Season'}</td>
+              <td>${game.completed ? `${game.winner} (${game.score})` : 'Pending'}</td>
+            </tr>
+          `).join('');
+        }
+
+        console.log('✅ Previous tournament data loaded successfully!');
+
+      } catch (error) {
+        console.error('❌ Error loading previous tournament data:', error);
+      }
+    }
+
+    // Render bracket for previous tournaments
+    function renderPreviousBracket(rounds, container) {
+      container.innerHTML = rounds.map((round, roundIndex) => `
+        <div class="bracket-round">
+          <div class="bracket-round-title">${round.name}</div>
+          ${round.games.map(game => `
+            <div class="bracket-game">
+              <div class="bracket-team ${game.winner === game.team1 ? 'winner' : ''}">
+                ${game.team1 || 'TBD'}
+              </div>
+              <div class="bracket-team ${game.winner === game.team2 ? 'winner' : ''}">
+                ${game.team2 || 'TBD'}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    // ============================================
+    // Hero Button Smooth Scroll
+    // ============================================
+    const heroSignupBtn = document.getElementById('heroSignupBtn');
+    if (heroSignupBtn) {
+      heroSignupBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        // First, activate the signup tab
+        const signupTab = document.getElementById('tab-signup');
+        if (signupTab) {
+          signupTab.click();
+
+          // Wait for tab to switch, then scroll to the panel
+          setTimeout(() => {
+            const signupPanel = document.getElementById('panel-signup');
+            if (signupPanel) {
+              const yOffset = -100; // Offset for fixed navigation
+              const y = signupPanel.getBoundingClientRect().top + window.pageYOffset + yOffset;
+              window.scrollTo({ top: y, behavior: 'smooth' });
+            }
+          }, 100);
+        }
+      });
+    }
 
     }); // End of waitForFirebase
   </script>
