@@ -4077,6 +4077,15 @@
           }
         });
 
+        // Handle profile button click
+        const navProfileBtn = document.getElementById('navProfileBtn');
+        if (navProfileBtn) {
+          navProfileBtn.onclick = () => {
+            navUserDropdown.style.display = 'none';
+            window.location.href = 'profile.html';
+          };
+        }
+
         // Handle sign out
         if (navSignOutBtn) {
           navSignOutBtn.onclick = async () => {
@@ -4090,10 +4099,10 @@
           };
         }
 
-        // Click to go to login page (which will show profile)
+        // Click to go to profile page
         if (userProfileChip) {
           userProfileChip.onclick = () => {
-            window.location.href = 'login.html';
+            window.location.href = 'profile.html';
           };
         }
 
