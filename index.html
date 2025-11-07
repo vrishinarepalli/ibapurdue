@@ -1281,6 +1281,49 @@
       });
     }
 
+    // ============================================================================
+    // ADMIN CHECK HELPER - Fetches from Firestore (NO HARDCODED EMAILS)
+    // ============================================================================
+    async function isApprovedAdmin(email) {
+      try {
+        if (!email || !window.db || !window.firestoreImports) {
+          return false;
+        }
+
+        const { collection, query, where, getDocs, doc, getDoc } = window.firestoreImports;
+
+        // Check approved_admins collection
+        const approvedAdminsQuery = query(
+          collection(window.db, 'approved_admins'),
+          where('email', '==', email)
+        );
+
+        const snapshot = await getDocs(approvedAdminsQuery);
+
+        if (!snapshot.empty) {
+          console.log('✅ User is approved admin (from approved_admins):', email);
+          return true;
+        }
+
+        // Also check admin_requests collection for approved requests
+        const userUid = window.auth?.currentUser?.uid;
+        if (userUid) {
+          const requestDoc = await getDoc(doc(window.db, 'admin_requests', userUid));
+          if (requestDoc.exists() && requestDoc.data().status === 'approved') {
+            console.log('✅ User is approved admin (from admin_requests):', email);
+            return true;
+          }
+        }
+
+        console.log('❌ User is not an approved admin:', email);
+        return false;
+
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        return false;
+      }
+    }
+
     // Admin functionality - must be outside Firebase callback so button works immediately
     const adminBtn = document.getElementById('adminBtn');
     const adminModal = document.getElementById('adminModal');
@@ -1308,27 +1351,10 @@
           return;
         }
 
-        const APPROVED_ADMIN_EMAILS = [
-          'ibapurdue@gmail.com',
-          'vrishin123456789@gmail.com'
-        ];
+        // Check if user is approved admin (from Firestore)
+        const isUserApprovedAdmin = await isApprovedAdmin(currentUser.email);
 
-        let isApprovedAdmin = APPROVED_ADMIN_EMAILS.includes(currentUser.email);
-
-        // Also check if user has an approved admin request
-        if (!isApprovedAdmin && window.firestoreImports && window.db) {
-          try {
-            const { doc, getDoc } = window.firestoreImports;
-            const requestDoc = await getDoc(doc(window.db, 'admin_requests', currentUser.uid));
-            if (requestDoc.exists() && requestDoc.data().status === 'approved') {
-              isApprovedAdmin = true;
-            }
-          } catch (error) {
-            console.error('Error checking admin request:', error);
-          }
-        }
-
-        if (!isApprovedAdmin) {
+        if (!isUserApprovedAdmin) {
           // User is no longer an admin - clear session
           sessionStorage.removeItem('adminSessionToken');
           sessionStorage.removeItem('adminAuthMethod');
@@ -1369,28 +1395,10 @@
           return;
         }
 
-        // Check if user is an approved admin
-        const APPROVED_ADMIN_EMAILS = [
-          'ibapurdue@gmail.com',
-          'vrishin123456789@gmail.com'
-        ];
+        // Check if user is approved admin (from Firestore)
+        const isUserApprovedAdmin2 = await isApprovedAdmin(currentUser.email);
 
-        let isApprovedAdmin = APPROVED_ADMIN_EMAILS.includes(currentUser.email);
-
-        // Also check if user has an approved admin request
-        if (!isApprovedAdmin) {
-          try {
-            const { doc, getDoc } = window.firestoreImports;
-            const requestDoc = await getDoc(doc(window.db, 'admin_requests', currentUser.uid));
-            if (requestDoc.exists() && requestDoc.data().status === 'approved') {
-              isApprovedAdmin = true;
-            }
-          } catch (error) {
-            console.error('Error checking admin status:', error);
-          }
-        }
-
-        if (!isApprovedAdmin) {
+        if (!isUserApprovedAdmin2) {
           alert('You do not have admin privileges.\n\nYour Gmail (' + currentUser.email + ') is not in the approved admins list.\n\nPlease request admin access from your profile.');
           return;
         }
@@ -1720,27 +1728,10 @@
             throw new Error('Please sign in first');
           }
 
-          const APPROVED_ADMIN_EMAILS = [
-            'ibapurdue@gmail.com',
-            'vrishin123456789@gmail.com'
-          ];
+          // Check if user is approved admin (from Firestore)
+          const isUserApprovedAdmin3 = await isApprovedAdmin(currentUser.email);
 
-          let isApprovedAdmin = APPROVED_ADMIN_EMAILS.includes(currentUser.email);
-
-          // Also check if user has an approved admin request
-          if (!isApprovedAdmin) {
-            try {
-              const { doc, getDoc } = window.firestoreImports;
-              const requestDoc = await getDoc(doc(window.db, 'admin_requests', currentUser.uid));
-              if (requestDoc.exists() && requestDoc.data().status === 'approved') {
-                isApprovedAdmin = true;
-              }
-            } catch (error) {
-              console.error('Error checking admin request:', error);
-            }
-          }
-
-          if (!isApprovedAdmin) {
+          if (!isUserApprovedAdmin3) {
             throw new Error('Unauthorized: Not an admin account. Please request admin access.');
           }
 
@@ -1857,29 +1848,10 @@
         const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
         console.log('✅ Re-authenticated with password:', userCredential.user.uid);
 
-        // List of approved admin emails
-        const APPROVED_ADMIN_EMAILS = [
-          'ibapurdue@gmail.com',
-          'vrishin123456789@gmail.com'
-        ];
+        // Check if user is approved admin (from Firestore)
+        const isUserApprovedAdmin4 = await isApprovedAdmin(userCredential.user.email);
 
-        // Check if user's email is in the approved admin list
-        let isApprovedAdmin = APPROVED_ADMIN_EMAILS.includes(userCredential.user.email);
-
-        // Also check if user has an approved admin request
-        if (!isApprovedAdmin) {
-          try {
-            const { doc, getDoc } = window.firestoreImports;
-            const requestDoc = await getDoc(doc(window.db, 'admin_requests', userCredential.user.uid));
-            if (requestDoc.exists() && requestDoc.data().status === 'approved') {
-              isApprovedAdmin = true;
-            }
-          } catch (error) {
-            console.error('Error checking admin request:', error);
-          }
-        }
-
-        if (!isApprovedAdmin) {
+        if (!isUserApprovedAdmin4) {
           throw new Error('Unauthorized: Not an admin account. Please request admin access.');
         }
 
@@ -4152,24 +4124,8 @@
             }
           }
 
-          // List of approved admin emails (core admins)
-          const APPROVED_ADMIN_EMAILS = [
-            'ibapurdue@gmail.com',
-            'vrishin123456789@gmail.com'
-          ];
-
-          // Check if user's email is in the approved admin list
-          let isAdmin = APPROVED_ADMIN_EMAILS.includes(user.email);
-
-          // Also check if user has an approved admin request
-          if (!isAdmin) {
-            const { getDoc, doc } = window.firestoreImports;
-            const requestDoc = await getDoc(doc(window.db, 'admin_requests', user.uid));
-            if (requestDoc.exists() && requestDoc.data().status === 'approved') {
-              isAdmin = true;
-            }
-          }
-
+          // Check if user is approved admin (from Firestore)
+          const isAdmin = await isApprovedAdmin(user.email);
           console.log('Is admin check:', { email: user.email, isAdmin });
 
           // Show/hide admin button based on admin status

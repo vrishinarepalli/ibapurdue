@@ -17,14 +17,9 @@ const rpName = 'IBA Admin';
 const rpID = 'ibapurdue.online'; // Custom domain
 const origin = ['https://ibapurdue.online', 'https://iba-website-63cb3.web.app']; // Support both domains
 
-// List of approved admin emails (core admins)
-const APPROVED_ADMIN_EMAILS = [
-  'ibapurdue@gmail.com',
-  'vrishin123456789@gmail.com'
-];
-
 /**
  * Helper function to check if user is an approved admin
+ * Checks Firestore approved_admins collection - NO HARDCODED EMAILS
  */
 async function isAdmin(uid) {
   try {
@@ -32,17 +27,24 @@ async function isAdmin(uid) {
     const userRecord = await admin.auth().getUser(uid);
     const userEmail = userRecord.email;
 
-    // Check if user's email is in the approved admin list
-    if (APPROVED_ADMIN_EMAILS.includes(userEmail)) {
+    // Check if user's email is in the approved_admins collection
+    const approvedAdminsSnapshot = await db.collection('approved_admins')
+      .where('email', '==', userEmail)
+      .get();
+
+    if (!approvedAdminsSnapshot.empty) {
+      console.log('✅ User is approved admin (from approved_admins):', userEmail);
       return true;
     }
 
-    // Also check if user has an approved admin request
+    // Also check admin_requests collection for approved requests
     const requestDoc = await db.collection('admin_requests').doc(uid).get();
     if (requestDoc.exists && requestDoc.data().status === 'approved') {
+      console.log('✅ User is approved admin (from admin_requests):', userEmail);
       return true;
     }
 
+    console.log('❌ User is not an approved admin:', userEmail);
     return false;
   } catch (error) {
     console.error('Error checking admin status:', error);
