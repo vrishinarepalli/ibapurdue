@@ -453,6 +453,7 @@
   <script type="module">
     import { auth, authAPI, db, firestoreAPI } from './js/firebase-config.js';
     import { authenticateWebAuthn, enableAdminMode } from './js/auth.js';
+    import { setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
     const googleSignInBtn = document.getElementById('googleSignInBtn');
     const signOutBtn = document.getElementById('signOutBtn');
@@ -505,28 +506,51 @@
     authAPI.onAuthStateChanged(auth, async (user) => {
       currentUser = user;
 
+      console.log('🔐 Auth state changed. User:', user ? user.email : 'Not signed in');
+
       if (user) {
+        console.log('✅ User is signed in:', user.email);
+        console.log('   UID:', user.uid);
+        console.log('   Display Name:', user.displayName);
+        console.log('   Photo URL:', user.photoURL);
+
         // Check if user already has a profile
         try {
           const userDocRef = firestoreAPI.doc(db, 'users', user.uid);
+          console.log('📄 Fetching user document for UID:', user.uid);
+
           const userDoc = await firestoreAPI.getDoc(userDocRef);
+          console.log('📄 User document exists:', userDoc.exists());
+
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            console.log('📄 User document data:', userData);
+            console.log('📄 Has roles:', !!userData.roles);
+            console.log('📄 Roles array:', userData.roles);
+          }
 
           if (userDoc.exists() && userDoc.data().roles && userDoc.data().roles.length > 0) {
-            // Existing user - show profile
-            hideAllSections();
-            userSection.classList.add('show');
+            // Existing user - update last login and redirect to home page
+            console.log('✅ Existing user found. Redirecting to home page...');
 
-            userAvatar.src = user.photoURL || 'https://via.placeholder.com/80';
-            userName.textContent = user.displayName || 'User';
-            userEmail.textContent = user.email;
+            try {
+              // Update last login
+              await firestoreAPI.updateDoc(userDocRef, {
+                lastLogin: new Date().toISOString()
+              });
+              console.log('✅ Last login updated');
+            } catch (updateError) {
+              console.error('⚠️ Failed to update last login (non-critical):', updateError);
+            }
 
-            // Update last login
-            await firestoreAPI.updateDoc(userDocRef, {
-              lastLogin: new Date().toISOString()
-            });
+            // Redirect to main page
+            console.log('🔄 Redirecting to index.html...');
+            window.location.href = 'index.html';
           } else {
             // New user - automatically create player profile and redirect
-            await firestoreAPI.setDoc(userDocRef, {
+            console.log('🆕 New user. Creating player profile...');
+
+            const newUserData = {
               uid: user.uid,
               email: user.email,
               displayName: user.displayName,
@@ -534,18 +558,35 @@
               roles: ['player'], // Default to player role
               createdAt: new Date().toISOString(),
               lastLogin: new Date().toISOString()
-            });
+            };
 
-            console.log('✅ Player profile created automatically');
+            console.log('📝 Creating user document with data:', newUserData);
+
+            await firestoreAPI.setDoc(userDocRef, newUserData);
+
+            console.log('✅ Player profile created successfully');
+
+            // Verify the document was created
+            const verifyDoc = await firestoreAPI.getDoc(userDocRef);
+            console.log('✅ Verification - Document exists:', verifyDoc.exists());
+            if (verifyDoc.exists()) {
+              console.log('✅ Verification - Document data:', verifyDoc.data());
+            }
+
             // Redirect to main page
+            console.log('🔄 Redirecting to index.html...');
             window.location.href = 'index.html';
           }
         } catch (error) {
-          console.error('Error managing user profile:', error);
-          showError('Failed to create profile. Please try again.');
+          console.error('❌ Error managing user profile:', error);
+          console.error('❌ Error code:', error.code);
+          console.error('❌ Error message:', error.message);
+          console.error('❌ Error stack:', error.stack);
+          showError('Failed to create profile: ' + error.message);
         }
       } else {
         // User is signed out
+        console.log('🚪 User is signed out');
         hideAllSections();
         loginSection.style.display = 'block';
       }
@@ -554,15 +595,28 @@
     // Google Sign-In
     googleSignInBtn.addEventListener('click', async () => {
       try {
+        console.log('🔵 Google Sign-In button clicked');
+        console.log('🔵 Auth object:', auth);
+        console.log('🔵 GoogleAuthProvider:', authAPI.GoogleAuthProvider);
+        console.log('🔵 signInWithPopup:', authAPI.signInWithPopup);
+        console.log('🔵 setPersistence:', setPersistence);
+        console.log('🔵 browserLocalPersistence:', browserLocalPersistence);
+
         // Set persistence to LOCAL so user stays signed in
-        await authAPI.setPersistence(auth, authAPI.browserLocalPersistence);
+        await setPersistence(auth, browserLocalPersistence);
         console.log('✅ Auth persistence set to LOCAL');
 
         const provider = new authAPI.GoogleAuthProvider();
+        console.log('✅ Provider created:', provider);
+
         const result = await authAPI.signInWithPopup(auth, provider);
-        console.log('✅ Signed in:', result.user.email);
+        console.log('✅ Signed in successfully:', result.user.email);
+        console.log('✅ User object:', result.user);
       } catch (error) {
-        console.error('Sign-in error:', error);
+        console.error('❌ Sign-in error:', error);
+        console.error('❌ Error code:', error.code);
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Full error object:', JSON.stringify(error, null, 2));
         showError(error.message || 'Failed to sign in with Google');
       }
     });
