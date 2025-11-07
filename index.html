@@ -19,8 +19,8 @@
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
     import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
 
     const firebaseConfig = {
@@ -38,6 +38,13 @@
     const auth = getAuth(app);
     const functions = getFunctions(app);
 
+    // Set auth persistence to LOCAL so users stay signed in
+    setPersistence(auth, browserLocalPersistence).then(() => {
+      console.log('✅ Auth persistence set to LOCAL on index.html');
+    }).catch((error) => {
+      console.error('❌ Failed to set persistence:', error);
+    });
+
     // Admin UID - only this user can access admin functions
     const ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
 
@@ -46,8 +53,8 @@
     window.auth = auth;
     window.functions = functions;
     window.ADMIN_UID = ADMIN_UID;
-    window.firestoreImports = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc };
-    window.authImports = { signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken };
+    window.firestoreImports = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc, query, where };
+    window.authImports = { signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken, setPersistence, browserLocalPersistence };
     window.functionsImports = { httpsCallable };
   </script>
   
@@ -181,6 +188,10 @@
               <img id="navUserAvatar" src="" alt="User Avatar" class="nav-user-avatar" />
             </button>
             <div class="nav-user-dropdown" id="navUserDropdown" style="display: none;">
+              <button class="nav-dropdown-item" id="navProfileBtn">
+                <span>👤</span>
+                Profile
+              </button>
               <button class="nav-dropdown-item" id="navSignOutBtn">
                 <span>🚪</span>
                 Sign Out
@@ -321,6 +332,7 @@
         <button role="tab" id="tab-bracket" aria-selected="false" aria-controls="panel-bracket">Bracket</button>
         <button role="tab" id="tab-previous" aria-selected="false" aria-controls="panel-previous" style="display: none;">Previous Tournaments</button>
         <button role="tab" id="tab-myteams" aria-selected="false" aria-controls="panel-myteams" style="display: none;" class="player-only">My Teams</button>
+        <button role="tab" id="tab-adminrequests" aria-selected="false" aria-controls="panel-adminrequests" style="display: none;" class="admin-only">Admin Requests</button>
         <a href="about.html" style="text-decoration: none;">
           <button role="tab" style="background: transparent; border: none; cursor: pointer;">About Us</button>
         </a>
@@ -834,6 +846,31 @@
         </div>
       </section>
 
+      <!-- Admin Requests Panel -->
+      <section id="panel-adminrequests" class="tabpanel" role="tabpanel" aria-labelledby="tab-adminrequests">
+        <div style="margin-bottom: 2rem;">
+          <h2 style="color: var(--brand); margin-bottom: 1rem;">Admin Access Requests</h2>
+          <p style="color: var(--muted); margin-bottom: 2rem;">Review and manage admin access requests from users.</p>
+
+          <!-- Filter buttons -->
+          <div style="margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+            <button id="filterAll" class="admin-submit" style="padding: 0.5rem 1rem;">All Requests</button>
+            <button id="filterPending" class="admin-submit" style="padding: 0.5rem 1rem; background: #f39c12;">Pending</button>
+            <button id="filterApproved" class="admin-submit" style="padding: 0.5rem 1rem; background: var(--success);">Approved</button>
+            <button id="filterRejected" class="admin-submit" style="padding: 0.5rem 1rem; background: #e74c3c;">Rejected</button>
+          </div>
+
+          <!-- Requests container -->
+          <div id="adminRequestsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+            <!-- Admin requests will be populated here -->
+          </div>
+
+          <div id="noRequestsMessage" style="display: none; text-align: center; padding: 3rem; color: var(--muted);">
+            <p style="font-size: 1.1rem;">No admin requests found.</p>
+          </div>
+        </div>
+      </section>
+
       <section id="panel-faq" class="tabpanel" role="tabpanel" aria-labelledby="tab-faq">
         <div class="faq">
           <details>
@@ -1013,6 +1050,47 @@
       © <span id="y"></span> IBA — Questions? DM us on Instagram <a href="https://www.instagram.com/iba_purdue/" target="_blank" rel="noopener noreferrer" style="color: var(--text); text-decoration: underline;">@iba_purdue</a> or email <a href="mailto:ibapurdue@gmail.com" style="color: var(--text); text-decoration: underline;">ibapurdue@gmail.com</a>
     </footer>
 
+    <!-- Profile Modal -->
+    <div id="profileModal" class="admin-modal" style="display: none;">
+      <div class="admin-modal-content" style="max-width: 500px;">
+        <h3>My Profile</h3>
+
+        <div style="text-align: center; margin: 2rem 0;">
+          <img id="profileAvatar" src="" alt="Profile Avatar" style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--brand); object-fit: cover;" />
+        </div>
+
+        <div style="margin: 1.5rem 0;">
+          <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem;">Username</label>
+          <div id="profileUsername" style="padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;"></div>
+        </div>
+
+        <div style="margin: 1.5rem 0;">
+          <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem;">Email</label>
+          <div id="profileEmail" style="padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;"></div>
+        </div>
+
+        <div style="margin: 1.5rem 0;">
+          <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem;">My Team</label>
+          <div id="profileTeam" style="padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;">No team yet</div>
+        </div>
+
+        <!-- Admin Access Section -->
+        <div id="adminAccessSection" style="display: none; margin: 1.5rem 0; padding: 1rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px;">
+          <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem;">Admin Access</label>
+          <div id="adminRequestStatus" style="color: var(--text); font-size: 0.9rem; margin-bottom: 1rem;">
+            You don't have admin privileges.
+          </div>
+          <button type="button" class="admin-submit" id="requestAdminBtn" style="width: 100%; background: var(--brand);">
+            Request Admin Access
+          </button>
+        </div>
+
+        <div class="admin-buttons" style="margin-top: 2rem;">
+          <button type="button" class="admin-submit" id="profileCloseBtn" style="width: 100%;">Close</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Admin button -->
     <button class="admin-btn" id="adminBtn">Admin</button>
 
@@ -1181,6 +1259,28 @@
       }
     }
 
+    // Profile modal handlers
+    const profileModal = document.getElementById('profileModal');
+    const profileCloseBtn = document.getElementById('profileCloseBtn');
+
+    // Close profile modal
+    if (profileCloseBtn) {
+      profileCloseBtn.addEventListener('click', () => {
+        if (profileModal) {
+          profileModal.style.display = 'none';
+        }
+      });
+    }
+
+    // Close profile modal when clicking outside
+    if (profileModal) {
+      profileModal.addEventListener('click', (e) => {
+        if (e.target === profileModal) {
+          profileModal.style.display = 'none';
+        }
+      });
+    }
+
     // Admin functionality - must be outside Firebase callback so button works immediately
     const adminBtn = document.getElementById('adminBtn');
     const adminModal = document.getElementById('adminModal');
@@ -1193,12 +1293,51 @@
     let currentEditRow = null;
 
     // Check for existing admin session on page load
-    function checkAdminSession() {
+    async function checkAdminSession() {
       const sessionToken = sessionStorage.getItem('adminSessionToken');
       const sessionExpiry = sessionStorage.getItem('adminSessionExpiry');
 
       if (sessionToken && sessionExpiry && Date.now() < parseInt(sessionExpiry)) {
-        // Valid session exists - restore admin mode
+        // Verify user is still an approved admin
+        const currentUser = window.auth?.currentUser;
+        if (!currentUser) {
+          // Clear session if not logged in
+          sessionStorage.removeItem('adminSessionToken');
+          sessionStorage.removeItem('adminAuthMethod');
+          sessionStorage.removeItem('adminSessionExpiry');
+          return;
+        }
+
+        const APPROVED_ADMIN_EMAILS = [
+          'ibapurdue@gmail.com',
+          'vrishin123456789@gmail.com'
+        ];
+
+        let isApprovedAdmin = APPROVED_ADMIN_EMAILS.includes(currentUser.email);
+
+        // Also check if user has an approved admin request
+        if (!isApprovedAdmin && window.firestoreImports && window.db) {
+          try {
+            const { doc, getDoc } = window.firestoreImports;
+            const requestDoc = await getDoc(doc(window.db, 'admin_requests', currentUser.uid));
+            if (requestDoc.exists() && requestDoc.data().status === 'approved') {
+              isApprovedAdmin = true;
+            }
+          } catch (error) {
+            console.error('Error checking admin request:', error);
+          }
+        }
+
+        if (!isApprovedAdmin) {
+          // User is no longer an admin - clear session
+          sessionStorage.removeItem('adminSessionToken');
+          sessionStorage.removeItem('adminAuthMethod');
+          sessionStorage.removeItem('adminSessionExpiry');
+          console.log('❌ Admin session invalid - user not approved');
+          return;
+        }
+
+        // Valid session exists and user is approved - restore admin mode
         isAdminMode = true;
         document.body.classList.add('admin-mode');
         adminBtn.textContent = 'Logout';
@@ -1220,59 +1359,69 @@
     // Check for existing session when page loads
     checkAdminSession();
 
-    // Admin button click handler - show login modal
+    // Admin button click handler - check Gmail and approved list
     adminBtn.addEventListener('click', async () => {
       if (!isAdminMode) {
-        adminError.style.display = 'none';
-
-        // Check if user is logged in with Firebase Auth
-        const currentUser = window.auth.currentUser;
-
+        // Check if user is signed in with Google
+        const currentUser = window.auth?.currentUser;
         if (!currentUser) {
-          // Not logged in - show sign in prompt
-          document.getElementById('adminLoggedInView').style.display = 'none';
-          document.getElementById('adminNotLoggedInView').style.display = 'block';
-          adminModal.classList.add('active');
+          alert('Please sign in with Google first to access admin mode');
           return;
         }
 
-        // User is logged in - show their email
-        document.getElementById('adminCurrentEmail').textContent = currentUser.email;
-        document.getElementById('adminNotLoggedInView').style.display = 'none';
-        document.getElementById('adminLoggedInView').style.display = 'block';
+        // Check if user is an approved admin
+        const APPROVED_ADMIN_EMAILS = [
+          'ibapurdue@gmail.com',
+          'vrishin123456789@gmail.com'
+        ];
 
-        // Check if user's Gmail is registered as an admin
-        try {
-          const isMainAdmin = currentUser.uid === ADMIN_UID;
-          let isApprovedAdmin = false;
+        let isApprovedAdmin = APPROVED_ADMIN_EMAILS.includes(currentUser.email);
 
-          if (!isMainAdmin) {
-            const { getDoc, doc } = window.firestoreImports;
-            const approvedAdminDoc = await getDoc(doc(window.db, 'approved_admins', currentUser.uid));
-            isApprovedAdmin = approvedAdminDoc.exists();
+        // Also check if user has an approved admin request
+        if (!isApprovedAdmin) {
+          try {
+            const { doc, getDoc } = window.firestoreImports;
+            const requestDoc = await getDoc(doc(window.db, 'admin_requests', currentUser.uid));
+            if (requestDoc.exists() && requestDoc.data().status === 'approved') {
+              isApprovedAdmin = true;
+            }
+          } catch (error) {
+            console.error('Error checking admin status:', error);
           }
-
-          if (isMainAdmin || isApprovedAdmin) {
-            // User IS an admin - show verification options
-            document.getElementById('adminVerificationSection').style.display = 'block';
-            document.getElementById('adminRequestSection').style.display = 'none';
-          } else {
-            // User is NOT an admin - show request form
-            document.getElementById('adminVerificationSection').style.display = 'none';
-            document.getElementById('adminRequestSection').style.display = 'block';
-          }
-        } catch (error) {
-          console.error('Error checking admin status:', error);
-          adminError.textContent = 'Error checking admin status. Please try again.';
-          adminError.style.display = 'block';
         }
 
-        adminModal.classList.add('active');
+        if (!isApprovedAdmin) {
+          alert('You do not have admin privileges.\n\nYour Gmail (' + currentUser.email + ') is not in the approved admins list.\n\nPlease request admin access from your profile.');
+          return;
+        }
+
+        // User is approved - enable admin mode directly
+        console.log('✅ Admin verified:', currentUser.email);
+        isAdminMode = true;
+        document.body.classList.add('admin-mode');
+        adminBtn.textContent = 'Exit Admin';
+        adminBtn.style.background = 'var(--success)';
+        document.querySelectorAll('thead th:last-child').forEach(th => th.style.display = '');
+        const quickAddSection = document.querySelector('.quick-add-section');
+        if (quickAddSection) quickAddSection.style.display = 'block';
+        const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
+        if (bulkImportBtn) bulkImportBtn.style.display = 'block';
+
+        // Store session info
+        sessionStorage.setItem('adminSessionToken', 'gmail-' + Date.now());
+        sessionStorage.setItem('adminAuthMethod', 'gmail');
+        sessionStorage.setItem('adminSessionExpiry', Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+        console.log('✅ Admin mode enabled for', currentUser.email);
+        return;
+      } else {
+        // Disable admin mode (logout)
+        window.adminLogout();
       }
     });
 
     adminCancel.addEventListener('click', () => {
-      adminModal.classList.remove('active');
+      adminModal.style.display = 'none';
       // Clear form when closing
       document.getElementById('adminPassword').value = '';
       document.getElementById('requestAdminName').value = '';
@@ -1281,12 +1430,12 @@
 
     // Handle cancel for not logged in view
     document.getElementById('adminCancelNotLoggedIn')?.addEventListener('click', () => {
-      adminModal.classList.remove('active');
+      adminModal.style.display = 'none';
     });
 
     adminModal.addEventListener('click', (e) => {
       if (e.target === adminModal) {
-        adminModal.classList.remove('active');
+        adminModal.style.display = 'none';
         // Clear form when closing
         document.getElementById('adminPassword').value = '';
         document.getElementById('requestAdminName').value = '';
@@ -1565,8 +1714,38 @@
           console.log('Attempting biometric authentication...');
           await authenticateWebAuthn();
 
-          // Success - user is authenticated with biometrics
-          adminModal.classList.remove('active');
+          // Verify user is an approved admin
+          const currentUser = window.auth?.currentUser;
+          if (!currentUser) {
+            throw new Error('Please sign in first');
+          }
+
+          const APPROVED_ADMIN_EMAILS = [
+            'ibapurdue@gmail.com',
+            'vrishin123456789@gmail.com'
+          ];
+
+          let isApprovedAdmin = APPROVED_ADMIN_EMAILS.includes(currentUser.email);
+
+          // Also check if user has an approved admin request
+          if (!isApprovedAdmin) {
+            try {
+              const { doc, getDoc } = window.firestoreImports;
+              const requestDoc = await getDoc(doc(window.db, 'admin_requests', currentUser.uid));
+              if (requestDoc.exists() && requestDoc.data().status === 'approved') {
+                isApprovedAdmin = true;
+              }
+            } catch (error) {
+              console.error('Error checking admin request:', error);
+            }
+          }
+
+          if (!isApprovedAdmin) {
+            throw new Error('Unauthorized: Not an admin account. Please request admin access.');
+          }
+
+          // Success - user is authenticated with biometrics and is an approved admin
+          adminModal.style.display = 'none';
           isAdminMode = true;
           document.body.classList.add('admin-mode');
           adminBtn.textContent = 'Logout';
@@ -1576,6 +1755,11 @@
           if (quickAddSection) quickAddSection.style.display = 'block';
           const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
           if (bulkImportBtn) bulkImportBtn.style.display = 'block';
+
+          // Store session info
+          sessionStorage.setItem('adminSessionToken', 'biometric-' + Date.now());
+          sessionStorage.setItem('adminAuthMethod', 'biometric');
+          sessionStorage.setItem('adminSessionExpiry', Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
           console.log('✅ Admin logged in successfully with server-verified biometrics');
         } catch (authError) {
@@ -1673,26 +1857,36 @@
         const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
         console.log('✅ Re-authenticated with password:', userCredential.user.uid);
 
-        // Check if user is the admin or an approved admin
-        const ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
-        const isMainAdmin = userCredential.user.uid === ADMIN_UID;
+        // List of approved admin emails
+        const APPROVED_ADMIN_EMAILS = [
+          'ibapurdue@gmail.com',
+          'vrishin123456789@gmail.com'
+        ];
 
-        // Check if user is in approved_admins list
-        let isApprovedAdmin = false;
-        if (!isMainAdmin) {
-          const { doc, getDoc } = window.firestoreImports;
-          const approvedAdminDoc = await getDoc(doc(window.db, 'approved_admins', userCredential.user.uid));
-          isApprovedAdmin = approvedAdminDoc.exists();
+        // Check if user's email is in the approved admin list
+        let isApprovedAdmin = APPROVED_ADMIN_EMAILS.includes(userCredential.user.email);
+
+        // Also check if user has an approved admin request
+        if (!isApprovedAdmin) {
+          try {
+            const { doc, getDoc } = window.firestoreImports;
+            const requestDoc = await getDoc(doc(window.db, 'admin_requests', userCredential.user.uid));
+            if (requestDoc.exists() && requestDoc.data().status === 'approved') {
+              isApprovedAdmin = true;
+            }
+          } catch (error) {
+            console.error('Error checking admin request:', error);
+          }
         }
 
-        if (!isMainAdmin && !isApprovedAdmin) {
+        if (!isApprovedAdmin) {
           throw new Error('Unauthorized: Not an admin account. Please request admin access.');
         }
 
-        console.log('✅ Admin verified:', isMainAdmin ? 'Main Admin' : 'Approved Admin');
+        console.log('✅ Admin verified:', userCredential.user.email);
 
         // Success - enable admin mode
-        adminModal.classList.remove('active');
+        adminModal.style.display = 'none';
         isAdminMode = true;
         document.body.classList.add('admin-mode');
         adminBtn.textContent = 'Logout';
@@ -1702,6 +1896,11 @@
         if (quickAddSection) quickAddSection.style.display = 'block';
         const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
         if (bulkImportBtn) bulkImportBtn.style.display = 'block';
+
+        // Store session info
+        sessionStorage.setItem('adminSessionToken', 'email-' + Date.now());
+        sessionStorage.setItem('adminAuthMethod', 'email');
+        sessionStorage.setItem('adminSessionExpiry', Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
         // Clear form
         passwordInput.value = '';
@@ -2701,15 +2900,6 @@
       });
     }
 
-
-
-    // Update button click handler to support logout
-    adminBtn.addEventListener('click', () => {
-      if (isAdminMode) {
-        window.adminLogout();
-      }
-    });
-
     // Add game functionality
     const addGameBtn = document.getElementById('addGameBtn');
     const editGameModal = document.getElementById('editGameModal');
@@ -3680,6 +3870,181 @@
       loadAllTeams();
     });
 
+    // ============================================================================
+    // ADMIN REQUESTS MANAGEMENT
+    // ============================================================================
+
+    let currentFilter = 'all';
+
+    /**
+     * Load and display admin requests
+     */
+    async function loadAdminRequests(filterStatus = 'all') {
+      try {
+        const { collection, getDocs, query, where, orderBy } = window.firestoreImports;
+        const container = document.getElementById('adminRequestsContainer');
+        const noRequestsMessage = document.getElementById('noRequestsMessage');
+
+        if (!container) return;
+
+        container.innerHTML = '<p style="color: var(--muted);">Loading requests...</p>';
+
+        // Build query
+        let requestsQuery;
+        if (filterStatus === 'all') {
+          requestsQuery = query(
+            collection(db, 'admin_requests'),
+            orderBy('requestedAt', 'desc')
+          );
+        } else {
+          requestsQuery = query(
+            collection(db, 'admin_requests'),
+            where('status', '==', filterStatus),
+            orderBy('requestedAt', 'desc')
+          );
+        }
+
+        const snapshot = await getDocs(requestsQuery);
+
+        if (snapshot.empty) {
+          container.innerHTML = '';
+          noRequestsMessage.style.display = 'block';
+          return;
+        }
+
+        noRequestsMessage.style.display = 'none';
+        container.innerHTML = '';
+
+        snapshot.forEach((doc) => {
+          const request = doc.data();
+          const requestId = doc.id;
+
+          const card = document.createElement('div');
+          card.style.cssText = 'background: #0a1122; border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; position: relative;';
+
+          // Status color
+          let statusColor = '#f39c12';
+          if (request.status === 'approved') statusColor = 'var(--success)';
+          if (request.status === 'rejected') statusColor = '#e74c3c';
+
+          // Status badge
+          const statusBadge = `<div style="position: absolute; top: 1rem; right: 1rem; background: ${statusColor}; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.8rem; text-transform: uppercase; font-weight: 600;">${request.status}</div>`;
+
+          // Avatar
+          const avatarUrl = request.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(request.displayName || request.email.split('@')[0])}&background=CFB991&color=fff&size=128`;
+
+          card.innerHTML = `
+            ${statusBadge}
+            <div style="text-align: center; margin-bottom: 1rem;">
+              <img src="${avatarUrl}" alt="${request.displayName}" style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--brand); object-fit: cover; margin-bottom: 0.5rem;">
+              <h3 style="color: var(--text); margin: 0.5rem 0; font-size: 1.1rem;">${request.displayName || 'Unknown'}</h3>
+              <p style="color: var(--muted); font-size: 0.9rem; word-break: break-all;">${request.email}</p>
+            </div>
+
+            <div style="margin: 1rem 0; padding-top: 1rem; border-top: 1px solid var(--border);">
+              <p style="color: var(--muted); font-size: 0.85rem; margin: 0.25rem 0;">
+                <strong>Requested:</strong> ${new Date(request.requestedAt).toLocaleString()}
+              </p>
+              ${request.lastUpdated && request.lastUpdated !== request.requestedAt ? `
+                <p style="color: var(--muted); font-size: 0.85rem; margin: 0.25rem 0;">
+                  <strong>Last Updated:</strong> ${new Date(request.lastUpdated).toLocaleString()}
+                </p>
+              ` : ''}
+            </div>
+
+            ${request.status === 'pending' ? `
+              <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+                <button onclick="approveAdminRequest('${requestId}')" class="admin-submit" style="flex: 1; background: var(--success); padding: 0.5rem;">
+                  Approve
+                </button>
+                <button onclick="rejectAdminRequest('${requestId}')" class="admin-submit" style="flex: 1; background: #e74c3c; padding: 0.5rem;">
+                  Reject
+                </button>
+              </div>
+            ` : ''}
+          `;
+
+          container.appendChild(card);
+        });
+      } catch (error) {
+        console.error('Error loading admin requests:', error);
+        const container = document.getElementById('adminRequestsContainer');
+        if (container) {
+          container.innerHTML = '<p style="color: #e74c3c;">Error loading admin requests. Please try again.</p>';
+        }
+      }
+    }
+
+    /**
+     * Approve an admin request
+     */
+    window.approveAdminRequest = async function(requestId) {
+      if (!confirm('Are you sure you want to approve this admin request?')) return;
+
+      try {
+        const { doc, updateDoc } = window.firestoreImports;
+        await updateDoc(doc(db, 'admin_requests', requestId), {
+          status: 'approved',
+          lastUpdated: new Date().toISOString(),
+          approvedBy: auth.currentUser.uid
+        });
+
+        console.log('✅ Admin request approved');
+        loadAdminRequests(currentFilter);
+      } catch (error) {
+        console.error('Error approving admin request:', error);
+        alert('Failed to approve request. Please try again.');
+      }
+    };
+
+    /**
+     * Reject an admin request
+     */
+    window.rejectAdminRequest = async function(requestId) {
+      if (!confirm('Are you sure you want to reject this admin request?')) return;
+
+      try {
+        const { doc, updateDoc } = window.firestoreImports;
+        await updateDoc(doc(db, 'admin_requests', requestId), {
+          status: 'rejected',
+          lastUpdated: new Date().toISOString(),
+          rejectedBy: auth.currentUser.uid
+        });
+
+        console.log('❌ Admin request rejected');
+        loadAdminRequests(currentFilter);
+      } catch (error) {
+        console.error('Error rejecting admin request:', error);
+        alert('Failed to reject request. Please try again.');
+      }
+    };
+
+    // Filter button handlers
+    document.getElementById('filterAll')?.addEventListener('click', () => {
+      currentFilter = 'all';
+      loadAdminRequests('all');
+    });
+
+    document.getElementById('filterPending')?.addEventListener('click', () => {
+      currentFilter = 'pending';
+      loadAdminRequests('pending');
+    });
+
+    document.getElementById('filterApproved')?.addEventListener('click', () => {
+      currentFilter = 'approved';
+      loadAdminRequests('approved');
+    });
+
+    document.getElementById('filterRejected')?.addEventListener('click', () => {
+      currentFilter = 'rejected';
+      loadAdminRequests('rejected');
+    });
+
+    // Load admin requests when tab is clicked
+    document.getElementById('tab-adminrequests')?.addEventListener('click', () => {
+      loadAdminRequests(currentFilter);
+    });
+
     // Auth state listener for user profile display
     const { onAuthStateChanged, signOut } = window.authImports;
     onAuthStateChanged(auth, async (user) => {
@@ -3699,13 +4064,14 @@
 
       console.log('🔐 Auth state changed. User:', user ? user.email : 'Not signed in');
       console.log('Nav elements found:', { navSignInBtn: !!navSignInBtn, navUserProfile: !!navUserProfile, navUserAvatar: !!navUserAvatar });
+      console.log('Other elements found:', { loginLink: !!loginLink, userProfileChip: !!userProfileChip, userDisplayName: !!userDisplayName });
 
       if (user) {
         // User is signed in
         console.log('✅ User is signed in:', user.email);
-        loginLink.style.display = 'none';
-        userProfileChip.style.display = 'block';
-        userDisplayName.textContent = user.displayName || user.email.split('@')[0];
+        if (loginLink) loginLink.style.display = 'none';
+        if (userProfileChip) userProfileChip.style.display = 'block';
+        if (userDisplayName) userDisplayName.textContent = user.displayName || user.email.split('@')[0];
 
         // Show user profile in card navigation
         if (navSignInBtn) {
@@ -3753,9 +4119,11 @@
         }
 
         // Click to go to login page (which will show profile)
-        userProfileChip.onclick = () => {
-          window.location.href = 'login.html';
-        };
+        if (userProfileChip) {
+          userProfileChip.onclick = () => {
+            window.location.href = 'login.html';
+          };
+        }
 
         // Check if user has player role
         try {
@@ -3781,15 +4149,39 @@
 
               // Load team notifications
               loadTeamNotifications(user.uid);
+            }
+          }
 
-              // Update admin button text for players who aren't admins yet
-              if (!roles.includes('admin') && !isAdminMode) {
-                const adminBtn = document.getElementById('adminBtn');
-                if (adminBtn) {
-                  adminBtn.textContent = '🔐 Admin Access';
-                  adminBtn.title = 'Request admin access or login as admin';
-                }
-              }
+          // List of approved admin emails (core admins)
+          const APPROVED_ADMIN_EMAILS = [
+            'ibapurdue@gmail.com',
+            'vrishin123456789@gmail.com'
+          ];
+
+          // Check if user's email is in the approved admin list
+          let isAdmin = APPROVED_ADMIN_EMAILS.includes(user.email);
+
+          // Also check if user has an approved admin request
+          if (!isAdmin) {
+            const { getDoc, doc } = window.firestoreImports;
+            const requestDoc = await getDoc(doc(window.db, 'admin_requests', user.uid));
+            if (requestDoc.exists() && requestDoc.data().status === 'approved') {
+              isAdmin = true;
+            }
+          }
+
+          console.log('Is admin check:', { email: user.email, isAdmin });
+
+          // Show/hide admin button based on admin status
+          const adminBtn = document.getElementById('adminBtn');
+          if (adminBtn) {
+            if (isAdmin) {
+              adminBtn.style.display = 'flex';
+              adminBtn.textContent = 'Admin';
+              console.log('✅ User is admin - showing admin button');
+            } else {
+              adminBtn.style.display = 'none';
+              console.log('❌ User is not admin - hiding admin button');
             }
           }
         } catch (error) {
@@ -3798,11 +4190,17 @@
       } else {
         // User is signed out
         console.log('❌ User is signed out');
-        loginLink.style.display = 'block';
-        userProfileChip.style.display = 'none';
+        if (loginLink) loginLink.style.display = 'block';
+        if (userProfileChip) userProfileChip.style.display = 'none';
         if (myTeamsTab) myTeamsTab.style.display = 'none';
         if (notificationsIcon) notificationsIcon.style.display = 'none';
         window.currentUserData = null;
+
+        // Hide admin button when signed out
+        const adminBtn = document.getElementById('adminBtn');
+        if (adminBtn) {
+          adminBtn.style.display = 'none';
+        }
 
         // Show sign in button in card navigation
         if (navSignInBtn) {

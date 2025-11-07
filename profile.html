@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Profile - IBA Basketball</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, collection, query, where, getDocs, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBN0rfpzjredziJbPny-YfEgq4uE2l1hzE",
+      authDomain: "iba-website-63cb3.firebaseapp.com",
+      projectId: "iba-website-63cb3",
+      storageBucket: "iba-website-63cb3.firebasestorage.app",
+      messagingSenderId: "267064036667",
+      appId: "1:267064036667:web:4f9d28aac0d5ae4ca97b1e",
+      measurementId: "G-GGH99DCY07"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Set auth persistence
+    setPersistence(auth, browserLocalPersistence);
+
+    // Make Firebase available globally
+    window.db = db;
+    window.auth = auth;
+    window.firestoreImports = { collection, query, where, getDocs, doc, getDoc, setDoc };
+    window.authImports = { onAuthStateChanged, signOut, signInWithPopup, GoogleAuthProvider };
+
+    // Initialize authentication
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        // Redirect to home if not logged in
+        window.location.href = 'index.html';
+        return;
+      }
+
+      // Load user profile
+      await loadProfile(user);
+    });
+
+    async function loadProfile(user) {
+      // Update profile information
+      const profileAvatar = document.getElementById('profileAvatar');
+      const profileUsername = document.getElementById('profileUsername');
+      const profileEmail = document.getElementById('profileEmail');
+      const profileTeam = document.getElementById('profileTeam');
+      const adminAccessSection = document.getElementById('adminAccessSection');
+      const adminRequestStatus = document.getElementById('adminRequestStatus');
+      const requestAdminBtn = document.getElementById('requestAdminBtn');
+
+      // Set profile data
+      const avatarUrl = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email.split('@')[0])}&background=CFB991&color=fff&size=128`;
+      profileAvatar.src = avatarUrl;
+      profileAvatar.alt = user.displayName || user.email;
+
+      profileUsername.textContent = user.displayName || user.email.split('@')[0];
+      profileEmail.textContent = user.email;
+
+      // Load user's role from Firestore
+      const profileRole = document.getElementById('profileRole');
+      try {
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const roles = userData.roles || [];
+
+          if (roles.length > 0) {
+            profileRole.textContent = roles.map(role =>
+              role.charAt(0).toUpperCase() + role.slice(1)
+            ).join(', ');
+          } else {
+            profileRole.textContent = 'No role assigned';
+          }
+        } else {
+          profileRole.textContent = 'No role assigned';
+        }
+      } catch (error) {
+        console.error('Error loading user role:', error);
+        profileRole.textContent = 'Error loading role';
+      }
+
+      // Load user's team
+      try {
+        const teamsQuery = query(
+          collection(db, 'player_teams'),
+          where('members', 'array-contains', user.uid)
+        );
+        const teamsSnapshot = await getDocs(teamsQuery);
+
+        if (!teamsSnapshot.empty) {
+          const teamNames = teamsSnapshot.docs.map(doc => doc.data().teamName);
+          profileTeam.textContent = teamNames.join(', ');
+        } else {
+          profileTeam.textContent = 'No team yet';
+        }
+      } catch (error) {
+        console.error('Error loading team:', error);
+        profileTeam.textContent = 'Error loading team';
+      }
+
+      // Check admin status
+      const APPROVED_ADMIN_EMAILS = [
+        'ibapurdue@gmail.com',
+        'vrishin123456789@gmail.com'
+      ];
+
+      let isAdmin = APPROVED_ADMIN_EMAILS.includes(user.email);
+
+      // Also check if user has an approved admin request
+      if (!isAdmin) {
+        const requestDoc = await getDoc(doc(db, 'admin_requests', user.uid));
+        if (requestDoc.exists() && requestDoc.data().status === 'approved') {
+          isAdmin = true;
+        }
+      }
+
+      // Show admin badge if user is admin
+      const adminBadge = document.getElementById('adminBadge');
+      if (isAdmin && adminBadge) {
+        adminBadge.style.display = 'inline-block';
+      } else if (adminBadge) {
+        adminBadge.style.display = 'none';
+      }
+
+      // Show admin section if not admin
+      if (!isAdmin && adminAccessSection) {
+        adminAccessSection.style.display = 'block';
+
+        // Check if user has already requested admin access
+        try {
+          const requestDoc = await getDoc(doc(db, 'admin_requests', user.uid));
+
+          if (requestDoc.exists()) {
+            const requestData = requestDoc.data();
+            const status = requestData.status || 'pending';
+
+            if (status === 'pending') {
+              adminRequestStatus.textContent = 'Your admin access request is pending approval.';
+              adminRequestStatus.style.color = '#f39c12';
+              requestAdminBtn.disabled = true;
+              requestAdminBtn.textContent = 'Request Pending';
+              requestAdminBtn.style.opacity = '0.6';
+            } else if (status === 'approved') {
+              adminRequestStatus.textContent = 'Your admin access has been approved!';
+              adminRequestStatus.style.color = 'var(--success)';
+              requestAdminBtn.style.display = 'none';
+            } else if (status === 'rejected') {
+              adminRequestStatus.textContent = 'Your admin access request was rejected.';
+              adminRequestStatus.style.color = '#e74c3c';
+              requestAdminBtn.textContent = 'Request Again';
+              requestAdminBtn.disabled = false;
+              requestAdminBtn.style.opacity = '1';
+            }
+          } else {
+            adminRequestStatus.textContent = "You don't have admin privileges.";
+            adminRequestStatus.style.color = 'var(--text)';
+            requestAdminBtn.disabled = false;
+            requestAdminBtn.textContent = 'Request Admin Access';
+            requestAdminBtn.style.opacity = '1';
+          }
+        } catch (error) {
+          console.error('Error checking admin request status:', error);
+        }
+
+        // Handle admin request button click
+        requestAdminBtn.onclick = async () => {
+          try {
+            await setDoc(doc(db, 'admin_requests', user.uid), {
+              uid: user.uid,
+              email: user.email,
+              displayName: user.displayName || user.email.split('@')[0],
+              photoURL: user.photoURL || null,
+              status: 'pending',
+              requestedAt: new Date().toISOString(),
+              lastUpdated: new Date().toISOString()
+            });
+
+            adminRequestStatus.textContent = 'Your admin access request has been submitted!';
+            adminRequestStatus.style.color = '#f39c12';
+            requestAdminBtn.disabled = true;
+            requestAdminBtn.textContent = 'Request Pending';
+            requestAdminBtn.style.opacity = '0.6';
+
+            console.log('✅ Admin access request submitted');
+          } catch (error) {
+            console.error('Error requesting admin access:', error);
+            alert('Failed to submit admin request. Please try again.');
+          }
+        };
+      } else if (adminAccessSection) {
+        adminAccessSection.style.display = 'none';
+      }
+    }
+
+    // Sign out handler
+    document.addEventListener('DOMContentLoaded', () => {
+      const signOutBtn = document.getElementById('signOutBtn');
+      if (signOutBtn) {
+        signOutBtn.onclick = async () => {
+          try {
+            await signOut(auth);
+            window.location.href = 'index.html';
+          } catch (error) {
+            console.error('Error signing out:', error);
+          }
+        };
+      }
+
+      const backBtn = document.getElementById('backBtn');
+      if (backBtn) {
+        backBtn.onclick = () => {
+          window.location.href = 'index.html';
+        };
+      }
+    });
+  </script>
+</head>
+<body>
+  <div style="min-height: 100vh; background: var(--bg); padding: 2rem;">
+    <div style="max-width: 600px; margin: 0 auto;">
+      <!-- Header -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+        <button id="backBtn" style="padding: 0.75rem 1.5rem; background: var(--brand); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600;">
+          ← Back to Home
+        </button>
+        <button id="signOutBtn" style="padding: 0.75rem 1.5rem; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600;">
+          Sign Out
+        </button>
+      </div>
+
+      <!-- Profile Card -->
+      <div style="background: #0a1122; border: 1px solid var(--border); border-radius: 20px; padding: 2rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);">
+        <div style="position: relative;">
+          <h1 style="color: var(--brand); margin-bottom: 2rem; text-align: center; font-size: 2rem;">My Profile</h1>
+          <div id="adminBadge" style="display: none; position: absolute; top: 0; right: 0; background: var(--success); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase;">
+            Admin
+          </div>
+        </div>
+
+        <!-- Avatar -->
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <img id="profileAvatar" src="" alt="Profile Avatar" style="width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--brand); object-fit: cover;" />
+        </div>
+
+        <!-- Profile Information -->
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600;">Username</label>
+          <div id="profileUsername" style="padding: 1rem; background: #060d1a; border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 1.1rem;">Loading...</div>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600;">Email</label>
+          <div id="profileEmail" style="padding: 1rem; background: #060d1a; border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 1.1rem; word-break: break-all;">Loading...</div>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600;">Role</label>
+          <div id="profileRole" style="padding: 1rem; background: #060d1a; border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 1.1rem;">Loading...</div>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600;">My Team</label>
+          <div id="profileTeam" style="padding: 1rem; background: #060d1a; border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 1.1rem;">Loading...</div>
+        </div>
+
+        <!-- Admin Access Section -->
+        <div id="adminAccessSection" style="display: none; margin-top: 2rem; padding: 1.5rem; background: #060d1a; border: 1px solid var(--border); border-radius: 10px;">
+          <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.75rem; font-weight: 600;">Admin Access</label>
+          <div id="adminRequestStatus" style="color: var(--text); font-size: 1rem; margin-bottom: 1rem; line-height: 1.5;">
+            You don't have admin privileges.
+          </div>
+          <button type="button" id="requestAdminBtn" style="width: 100%; padding: 1rem; background: var(--brand); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: opacity 0.3s;">
+            Request Admin Access
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

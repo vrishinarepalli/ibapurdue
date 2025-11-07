@@ -173,7 +173,13 @@ export async function registerWebAuthn() {
     const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
     const user = userCredential.user;
 
-    if (user.uid !== ADMIN_UID) {
+    // List of approved admin emails
+    const APPROVED_ADMIN_EMAILS = [
+      'ibapurdue@gmail.com',
+      'vrishin123456789@gmail.com'
+    ];
+
+    if (!APPROVED_ADMIN_EMAILS.includes(user.email)) {
       await window.auth.signOut();
       throw new Error('You do not have admin privileges');
     }
@@ -352,7 +358,11 @@ export async function authenticateWebAuthn() {
 
       // Note: For write operations, user will need to also be signed in with Firebase Auth
       // Check if user is already signed in with Firebase
-      if (!window.auth.currentUser || window.auth.currentUser.uid !== ADMIN_UID) {
+      const APPROVED_ADMIN_EMAILS = [
+        'ibapurdue@gmail.com',
+        'vrishin123456789@gmail.com'
+      ];
+      if (!window.auth.currentUser || !APPROVED_ADMIN_EMAILS.includes(window.auth.currentUser.email)) {
         console.log('ℹ️ Note: You will need to sign in with email/password for write operations');
       }
 
@@ -391,7 +401,13 @@ export async function authenticateEmailPassword(email, password) {
     const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
     const user = userCredential.user;
 
-    if (user.uid !== ADMIN_UID) {
+    // List of approved admin emails
+    const APPROVED_ADMIN_EMAILS = [
+      'ibapurdue@gmail.com',
+      'vrishin123456789@gmail.com'
+    ];
+
+    if (!APPROVED_ADMIN_EMAILS.includes(user.email)) {
       await window.auth.signOut();
       throw new Error('You do not have admin privileges');
     }

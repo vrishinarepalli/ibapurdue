@@ -17,20 +17,37 @@ const rpName = 'IBA Admin';
 const rpID = 'ibapurdue.online'; // Custom domain
 const origin = ['https://ibapurdue.online', 'https://iba-website-63cb3.web.app']; // Support both domains
 
-// Admin UID
-const ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
+// List of approved admin emails (core admins)
+const APPROVED_ADMIN_EMAILS = [
+  'ibapurdue@gmail.com',
+  'vrishin123456789@gmail.com'
+];
 
 /**
- * Helper function to check if user is main admin or approved admin
+ * Helper function to check if user is an approved admin
  */
 async function isAdmin(uid) {
-  if (uid === ADMIN_UID) {
-    return true; // Main admin
-  }
+  try {
+    // Get user's email from their UID
+    const userRecord = await admin.auth().getUser(uid);
+    const userEmail = userRecord.email;
 
-  // Check if user is in approved_admins collection
-  const approvedAdminDoc = await db.collection('approved_admins').doc(uid).get();
-  return approvedAdminDoc.exists;
+    // Check if user's email is in the approved admin list
+    if (APPROVED_ADMIN_EMAILS.includes(userEmail)) {
+      return true;
+    }
+
+    // Also check if user has an approved admin request
+    const requestDoc = await db.collection('admin_requests').doc(uid).get();
+    if (requestDoc.exists && requestDoc.data().status === 'approved') {
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error('Error checking admin status:', error);
+    return false;
+  }
 }
 
 /**
@@ -400,18 +417,15 @@ exports.validateSessionToken = functions.https.onCall(async (data, context) => {
  * Check if user has admin privileges (helper function)
  */
 exports.checkAdminStatus = functions.https.onCall(async (data, context) => {
-  const ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
-
   if (!context.auth) {
     return { isAdmin: false };
   }
 
-  // Check if user is authenticated via WebAuthn custom token
-  const isAdmin = context.auth.uid === ADMIN_UID &&
-                  context.auth.token?.adminAuthenticated === true;
+  // Check if user's email is in the approved admin list
+  const userIsAdmin = await isAdmin(context.auth.uid);
 
   return {
-    isAdmin,
+    isAdmin: userIsAdmin,
     uid: context.auth.uid,
     authMethod: context.auth.token?.authMethod || 'unknown',
   };

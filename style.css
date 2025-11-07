@@ -96,7 +96,8 @@ body {
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     position: relative;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: visible;
     will-change: height;
 }
 
@@ -111,6 +112,7 @@ body {
     justify-content: space-between;
     padding: 0.5rem 1rem;
     z-index: 2;
+    overflow: visible;
 }
 
 .hamburger-menu {
@@ -226,6 +228,10 @@ body {
     border-radius: 50%;
 }
 
+#navUserProfile {
+    position: relative;
+}
+
 .nav-user-dropdown {
     position: absolute;
     top: calc(100% + 8px);
@@ -235,8 +241,8 @@ body {
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     min-width: 180px;
-    z-index: 1000;
-    overflow: hidden;
+    z-index: 99999;
+    overflow: visible;
 }
 
 .nav-dropdown-item {
