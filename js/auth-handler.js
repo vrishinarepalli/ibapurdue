@@ -6,6 +6,8 @@
  * Handles user authentication state and UI updates for the navigation
  */
 
+import { isApprovedAdmin } from './admin-check.js';
+
 export async function initializeAuthListener() {
   const { onAuthStateChanged, signOut } = window.authImports;
   const { doc, getDoc } = window.firestoreImports;
@@ -108,23 +110,8 @@ export async function initializeAuthListener() {
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
 
-        // List of approved admin emails (core admins)
-        const APPROVED_ADMIN_EMAILS = [
-          'ibapurdue@gmail.com',
-          'vrishin123456789@gmail.com'
-        ];
-
-        // Check if user's email is in the approved admin list
-        let isAdmin = APPROVED_ADMIN_EMAILS.includes(user.email);
-
-        // Also check if user has an approved admin request
-        if (!isAdmin) {
-          const requestDoc = await getDoc(doc(db, 'admin_requests', user.uid));
-          if (requestDoc.exists() && requestDoc.data().status === 'approved') {
-            isAdmin = true;
-          }
-        }
-
+        // Check if user is an approved admin (fetched from Firestore)
+        const isAdmin = await isApprovedAdmin(user.email);
         console.log('Is admin check:', { email: user.email, isAdmin });
 
         // Show/hide admin button and admin-only elements based on admin status

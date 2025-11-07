@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Setup Admin Collection - IBA</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #0a1122;
+      color: #fff;
+    }
+    .container {
+      background: #1a2332;
+      padding: 30px;
+      border-radius: 10px;
+      border: 1px solid #CFB991;
+    }
+    h1 { color: #CFB991; }
+    button {
+      background: #CFB991;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px 5px;
+      font-weight: 600;
+    }
+    button:hover { opacity: 0.8; }
+    .output {
+      background: #0a1122;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    .success { color: #2ecc71; }
+    .error { color: #e74c3c; }
+    .info { color: #3498db; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Setup Admin Collections</h1>
+    <p>This will create the necessary Firestore collections and add approved admins.</p>
+
+    <button onclick="setupCollections()">Setup Collections</button>
+    <button onclick="listApprovedAdmins()">List Approved Admins</button>
+    <button onclick="listAdminRequests()">List Admin Requests</button>
+
+    <div id="output" class="output"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBN0rfpzjredziJbPny-YfEgq4uE2l1hzE",
+      authDomain: "iba-website-63cb3.firebaseapp.com",
+      projectId: "iba-website-63cb3",
+      storageBucket: "iba-website-63cb3.firebasestorage.app",
+      messagingSenderId: "267064036667",
+      appId: "1:267064036667:web:4f9d28aac0d5ae4ca97b1e",
+      measurementId: "G-GGH99DCY07"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    window.db = db;
+    window.auth = auth;
+
+    function log(message, type = 'info') {
+      const output = document.getElementById('output');
+      const color = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+      output.innerHTML += `<span class="${color}">${message}</span>\n`;
+      console.log(message);
+    }
+
+    window.setupCollections = async function() {
+      const output = document.getElementById('output');
+      output.innerHTML = '';
+
+      try {
+        log('🚀 Starting setup...', 'info');
+        log('-----------------------------------', 'info');
+
+        // Check if user is signed in
+        if (!auth.currentUser) {
+          log('❌ Please sign in with Google first', 'error');
+          const provider = new GoogleAuthProvider();
+          await signInWithPopup(auth, provider);
+          log('✅ Signed in as: ' + auth.currentUser.email, 'success');
+        }
+
+        // Create approved_admins collection
+        log('\n📝 Creating approved_admins collection...', 'info');
+
+        const approvedAdmins = [
+          {
+            email: 'ibapurdue@gmail.com',
+            role: 'admin',
+            addedAt: new Date().toISOString(),
+            addedBy: auth.currentUser.email,
+            permissions: ['read', 'write', 'delete', 'manage_admins']
+          },
+          {
+            email: 'vrishin123456789@gmail.com',
+            role: 'admin',
+            addedAt: new Date().toISOString(),
+            addedBy: auth.currentUser.email,
+            permissions: ['read', 'write', 'delete', 'manage_admins']
+          }
+        ];
+
+        for (const admin of approvedAdmins) {
+          // Use email as document ID for easy lookup
+          const docId = admin.email.replace(/[.@]/g, '_');
+          await setDoc(doc(db, 'approved_admins', docId), admin);
+          log(`  ✅ Added: ${admin.email}`, 'success');
+        }
+
+        log('\n✅ Setup complete!', 'success');
+        log('-----------------------------------', 'info');
+        log('\nApproved admins:', 'info');
+        approvedAdmins.forEach(admin => {
+          log(`  • ${admin.email}`, 'info');
+        });
+
+        log('\n💡 Next steps:', 'info');
+        log('  1. Update frontend code to fetch from Firestore', 'info');
+        log('  2. Remove hardcoded email arrays', 'info');
+        log('  3. Deploy the changes', 'info');
+
+      } catch (error) {
+        log('\n❌ Error: ' + error.message, 'error');
+        console.error(error);
+      }
+    };
+
+    window.listApprovedAdmins = async function() {
+      const output = document.getElementById('output');
+      output.innerHTML = '';
+
+      try {
+        log('📋 Listing approved admins...', 'info');
+        log('-----------------------------------', 'info');
+
+        const querySnapshot = await getDocs(collection(db, 'approved_admins'));
+
+        if (querySnapshot.empty) {
+          log('No approved admins found.', 'info');
+        } else {
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            log(`\n📧 ${data.email}`, 'success');
+            log(`   ID: ${doc.id}`, 'info');
+            log(`   Role: ${data.role || 'N/A'}`, 'info');
+            log(`   Added: ${data.addedAt || 'N/A'}`, 'info');
+            log(`   Added By: ${data.addedBy || 'N/A'}`, 'info');
+          });
+        }
+
+      } catch (error) {
+        log('❌ Error: ' + error.message, 'error');
+        console.error(error);
+      }
+    };
+
+    window.listAdminRequests = async function() {
+      const output = document.getElementById('output');
+      output.innerHTML = '';
+
+      try {
+        log('📋 Listing admin requests...', 'info');
+        log('-----------------------------------', 'info');
+
+        const querySnapshot = await getDocs(collection(db, 'admin_requests'));
+
+        if (querySnapshot.empty) {
+          log('No admin requests found.', 'info');
+        } else {
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            log(`\n📧 ${data.email}`, 'info');
+            log(`   Status: ${data.status || 'N/A'}`, data.status === 'approved' ? 'success' : data.status === 'rejected' ? 'error' : 'info');
+            log(`   Requested: ${data.requestedAt || 'N/A'}`, 'info');
+          });
+        }
+
+      } catch (error) {
+        log('❌ Error: ' + error.message, 'error');
+        console.error(error);
+      }
+    };
+
+    // Auto sign-in check
+    window.addEventListener('load', () => {
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          log('✅ Signed in as: ' + user.email, 'success');
+        } else {
+          log('ℹ️ Not signed in. Click "Setup Collections" to sign in and continue.', 'info');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
