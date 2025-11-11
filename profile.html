@@ -9,6 +9,25 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 
+  <style>
+    /* Profile page specific styles */
+    #backBtn:hover, #signOutBtn:hover {
+      transform: translateY(-2px);
+    }
+
+    #requestAdminBtn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(207, 185, 145, 0.5) !important;
+    }
+
+    /* Responsive grid */
+    @media (max-width: 968px) {
+      .profile-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -69,30 +88,39 @@
       profileUsername.textContent = user.displayName || user.email.split('@')[0];
       profileEmail.textContent = user.email;
 
+      // Also update detail fields
+      const profileUsernameDetail = document.getElementById('profileUsernameDetail');
+      const profileEmailDetail = document.getElementById('profileEmailDetail');
+      if (profileUsernameDetail) profileUsernameDetail.textContent = user.displayName || user.email.split('@')[0];
+      if (profileEmailDetail) profileEmailDetail.textContent = user.email;
+
       // Load user's role from Firestore
       const profileRole = document.getElementById('profileRole');
+      const profileRoleDetail = document.getElementById('profileRoleDetail');
       try {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
           const roles = userData.roles || [];
 
-          if (roles.length > 0) {
-            profileRole.textContent = roles.map(role =>
-              role.charAt(0).toUpperCase() + role.slice(1)
-            ).join(', ');
-          } else {
-            profileRole.textContent = 'No role assigned';
-          }
+          const roleText = roles.length > 0
+            ? roles.map(role => role.charAt(0).toUpperCase() + role.slice(1)).join(', ')
+            : 'No role assigned';
+
+          if (profileRole) profileRole.textContent = roleText;
+          if (profileRoleDetail) profileRoleDetail.textContent = roleText;
         } else {
-          profileRole.textContent = 'No role assigned';
+          if (profileRole) profileRole.textContent = 'No role assigned';
+          if (profileRoleDetail) profileRoleDetail.textContent = 'No role assigned';
         }
       } catch (error) {
         console.error('Error loading user role:', error);
-        profileRole.textContent = 'Error loading role';
+        if (profileRole) profileRole.textContent = 'Error loading role';
+        if (profileRoleDetail) profileRoleDetail.textContent = 'Error loading role';
       }
 
       // Load user's team
+      const profileTeamDetail = document.getElementById('profileTeamDetail');
       try {
         const teamsQuery = query(
           collection(db, 'player_teams'),
@@ -100,15 +128,16 @@
         );
         const teamsSnapshot = await getDocs(teamsQuery);
 
-        if (!teamsSnapshot.empty) {
-          const teamNames = teamsSnapshot.docs.map(doc => doc.data().teamName);
-          profileTeam.textContent = teamNames.join(', ');
-        } else {
-          profileTeam.textContent = 'No team yet';
-        }
+        const teamText = !teamsSnapshot.empty
+          ? teamsSnapshot.docs.map(doc => doc.data().teamName).join(', ')
+          : 'No team yet';
+
+        if (profileTeam) profileTeam.textContent = teamText;
+        if (profileTeamDetail) profileTeamDetail.textContent = teamText;
       } catch (error) {
         console.error('Error loading team:', error);
-        profileTeam.textContent = 'Error loading team';
+        if (profileTeam) profileTeam.textContent = 'Error loading team';
+        if (profileTeamDetail) profileTeamDetail.textContent = 'Error loading team';
       }
 
       // Check admin status (from Firestore - NO HARDCODED EMAILS)
@@ -240,65 +269,118 @@
   </script>
 </head>
 <body>
-  <div style="min-height: 100vh; background: var(--bg); padding: 2rem;">
-    <div style="max-width: 600px; margin: 0 auto;">
-      <!-- Header -->
-      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
-        <button id="backBtn" style="padding: 0.75rem 1.5rem; background: var(--brand); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600;">
-          ← Back to Home
-        </button>
-        <button id="signOutBtn" style="padding: 0.75rem 1.5rem; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600;">
-          Sign Out
-        </button>
-      </div>
+  <!-- Hero Section -->
+  <section class="hero-section" style="position: relative; height: 180px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+    <div class="hero-bg" style="position: absolute; inset: 0; z-index: 0;">
+      <img src="images/basketball-court.jpeg" alt="Basketball Court" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'">
+      <div class="hero-overlay" style="position: absolute; inset: 0; background: linear-gradient(135deg, rgba(10, 17, 34, 0.95), rgba(207, 185, 145, 0.15));"></div>
+    </div>
+    <div style="position: relative; z-index: 1; text-align: center; color: white;">
+      <h1 style="font-size: 2.2rem; font-weight: 700; margin: 0; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">My Profile</h1>
+      <p style="font-size: 1rem; margin: 0.5rem 0 0 0; opacity: 0.9;">View and manage your account</p>
+    </div>
+    <!-- Wave transition -->
+    <div class="hero-wave" style="position: absolute; bottom: 0; left: 0; width: 100%; overflow: hidden; line-height: 0;">
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none" style="width: 100%; height: 50px;">
+        <path d="M0,0 C300,80 900,80 1200,0 L1200,120 L0,120 Z" fill="#fff"></path>
+      </svg>
+    </div>
+  </section>
 
-      <!-- Profile Card -->
-      <div style="background: #0a1122; border: 1px solid var(--border); border-radius: 20px; padding: 2rem; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);">
-        <div style="position: relative;">
-          <h1 style="color: var(--brand); margin-bottom: 2rem; text-align: center; font-size: 2rem;">My Profile</h1>
-          <div id="adminBadge" style="display: none; position: absolute; top: 0; right: 0; background: var(--success); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700; text-transform: uppercase;">
-            Admin
+  <div class="wrap" style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
+    <!-- Action Buttons -->
+    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-bottom: 2rem; flex-wrap: wrap;">
+      <button id="backBtn" style="padding: 0.75rem 1.5rem; background: var(--brand); color: #000; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: transform 0.2s;">
+        ← Back to Home
+      </button>
+      <button id="signOutBtn" style="padding: 0.75rem 1.5rem; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: transform 0.2s;">
+        🚪 Sign Out
+      </button>
+    </div>
+
+    <!-- Profile Content Grid -->
+    <div class="profile-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-bottom: 3rem;">
+
+      <!-- Left Column - Avatar & Quick Stats -->
+      <div>
+        <!-- Avatar Card -->
+        <div style="background: #0a1122; border: 1px solid var(--border); border-radius: 15px; padding: 2rem; text-align: center; margin-bottom: 1.5rem; position: relative;">
+          <div id="adminBadge" style="display: none; position: absolute; top: 1rem; right: 1rem; background: linear-gradient(135deg, var(--success), #27ae60); color: white; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3);">
+            ⭐ ADMIN
+          </div>
+          <div style="position: relative; display: inline-block; margin-bottom: 1rem;">
+            <img id="profileAvatar" src="" alt="Profile Avatar" style="width: 140px; height: 140px; border-radius: 50%; border: 5px solid var(--brand); object-fit: cover; box-shadow: 0 4px 15px rgba(207, 185, 145, 0.3);" />
+          </div>
+          <h2 id="profileUsername" style="color: var(--brand); margin: 0 0 0.5rem 0; font-size: 1.5rem;">Loading...</h2>
+          <p id="profileEmail" style="color: var(--muted); font-size: 0.9rem; margin: 0; word-break: break-all;">Loading...</p>
+        </div>
+
+        <!-- Quick Stats Card -->
+        <div style="background: linear-gradient(135deg, #0a1122, #0d1a2d); border: 1px solid var(--brand); border-radius: 15px; padding: 1.5rem;">
+          <h3 style="color: var(--brand); margin: 0 0 1rem 0; font-size: 1.1rem; border-bottom: 2px solid var(--brand); padding-bottom: 0.5rem;">📊 Quick Stats</h3>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: rgba(207, 185, 145, 0.05); border-radius: 8px;">
+              <span style="color: var(--muted); font-size: 0.9rem;">Role:</span>
+              <span id="profileRole" style="color: var(--text); font-weight: 600; font-size: 0.9rem;">Loading...</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: rgba(207, 185, 145, 0.05); border-radius: 8px;">
+              <span style="color: var(--muted); font-size: 0.9rem;">Team:</span>
+              <span id="profileTeam" style="color: var(--text); font-weight: 600; font-size: 0.9rem;">Loading...</span>
+            </div>
           </div>
         </div>
+      </div>
 
-        <!-- Avatar -->
-        <div style="text-align: center; margin-bottom: 2rem;">
-          <img id="profileAvatar" src="" alt="Profile Avatar" style="width: 120px; height: 120px; border-radius: 50%; border: 4px solid var(--brand); object-fit: cover;" />
-        </div>
+      <!-- Right Column - Detailed Information -->
+      <div style="display: flex; flex-direction: column; gap: 1.5rem;">
 
-        <!-- Profile Information -->
-        <div style="margin-bottom: 1.5rem;">
-          <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600;">Username</label>
-          <div id="profileUsername" style="padding: 1rem; background: #060d1a; border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 1.1rem;">Loading...</div>
-        </div>
+        <!-- Account Information -->
+        <div style="background: #0a1122; border: 1px solid var(--border); border-radius: 15px; padding: 2rem;">
+          <h3 style="color: var(--brand); margin: 0 0 1.5rem 0; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1.5rem;">👤</span>
+            Account Information
+          </h3>
 
-        <div style="margin-bottom: 1.5rem;">
-          <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600;">Email</label>
-          <div id="profileEmail" style="padding: 1rem; background: #060d1a; border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 1.1rem; word-break: break-all;">Loading...</div>
-        </div>
+          <div style="display: grid; gap: 1.5rem;">
+            <div style="border-left: 3px solid var(--brand); padding-left: 1rem;">
+              <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Username</label>
+              <div id="profileUsernameDetail" style="color: var(--text); font-size: 1.1rem; font-weight: 500;">Loading...</div>
+            </div>
 
-        <div style="margin-bottom: 1.5rem;">
-          <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600;">Role</label>
-          <div id="profileRole" style="padding: 1rem; background: #060d1a; border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 1.1rem;">Loading...</div>
-        </div>
+            <div style="border-left: 3px solid var(--brand); padding-left: 1rem;">
+              <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Email Address</label>
+              <div id="profileEmailDetail" style="color: var(--text); font-size: 1.1rem; word-break: break-all; font-weight: 500;">Loading...</div>
+            </div>
 
-        <div style="margin-bottom: 1.5rem;">
-          <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600;">My Team</label>
-          <div id="profileTeam" style="padding: 1rem; background: #060d1a; border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 1.1rem;">Loading...</div>
+            <div style="border-left: 3px solid var(--brand); padding-left: 1rem;">
+              <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Account Role</label>
+              <div id="profileRoleDetail" style="color: var(--text); font-size: 1.1rem; font-weight: 500;">Loading...</div>
+            </div>
+
+            <div style="border-left: 3px solid var(--brand); padding-left: 1rem;">
+              <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Current Team</label>
+              <div id="profileTeamDetail" style="color: var(--text); font-size: 1.1rem; font-weight: 500;">Loading...</div>
+            </div>
+          </div>
         </div>
 
         <!-- Admin Access Section -->
-        <div id="adminAccessSection" style="display: none; margin-top: 2rem; padding: 1.5rem; background: #060d1a; border: 1px solid var(--border); border-radius: 10px;">
-          <label style="display: block; color: var(--muted); font-size: 0.85rem; margin-bottom: 0.75rem; font-weight: 600;">Admin Access</label>
-          <div id="adminRequestStatus" style="color: var(--text); font-size: 1rem; margin-bottom: 1rem; line-height: 1.5;">
+        <div id="adminAccessSection" style="display: none; background: linear-gradient(135deg, #0a1122, #1a0a22); border: 2px solid var(--brand); border-radius: 15px; padding: 2rem;">
+          <h3 style="color: var(--brand); margin: 0 0 1rem 0; font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1.5rem;">🔐</span>
+            Admin Access
+          </h3>
+          <div id="adminRequestStatus" style="color: var(--text); font-size: 1rem; margin-bottom: 1.5rem; line-height: 1.6; padding: 1rem; background: rgba(207, 185, 145, 0.1); border-radius: 8px; border-left: 3px solid var(--brand);">
             You don't have admin privileges.
           </div>
-          <button type="button" id="requestAdminBtn" style="width: 100%; padding: 1rem; background: var(--brand); color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: opacity 0.3s;">
-            Request Admin Access
+          <button type="button" id="requestAdminBtn" style="width: 100%; padding: 1rem 1.5rem; background: linear-gradient(135deg, var(--brand), #d4be9c); color: #000; border: none; border-radius: 10px; cursor: pointer; font-size: 1.05rem; font-weight: 700; transition: all 0.3s; box-shadow: 0 4px 15px rgba(207, 185, 145, 0.3);">
+            🚀 Request Admin Access
           </button>
         </div>
+
       </div>
     </div>
+
   </div>
 </body>
 </html>
