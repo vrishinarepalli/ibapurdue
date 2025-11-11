@@ -440,8 +440,6 @@
       }
 
       const teamName = document.getElementById('teamName').value.trim();
-      const teamDescription = document.getElementById('teamDescription').value.trim();
-      const teamIcon = document.getElementById('teamIcon').value.trim() || '🏀';
 
       if (!teamName) {
         alert('Please enter a team name.');
@@ -452,8 +450,8 @@
         // Create team
         await addDoc(collection(db, 'player_teams'), {
           teamName: teamName,
-          description: teamDescription,
-          icon: teamIcon,
+          description: '',
+          icon: '🏀',
           captain: currentUser.uid,
           captainName: currentUser.displayName || currentUser.email,
           members: [currentUser.uid],
@@ -462,7 +460,26 @@
           createdAt: serverTimestamp()
         });
 
-        alert('✅ Team created successfully!');
+        // Add captain role to user
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userRef);
+
+        if (userDoc.exists()) {
+          // User exists, add captain role using arrayUnion to avoid duplicates
+          await updateDoc(userRef, {
+            roles: arrayUnion('captain', 'player')
+          });
+        } else {
+          // User doesn't exist, create with captain and player roles
+          await setDoc(userRef, {
+            email: currentUser.email,
+            displayName: currentUser.displayName || currentUser.email,
+            roles: ['captain', 'player'],
+            createdAt: serverTimestamp()
+          });
+        }
+
+        alert('✅ Team created successfully! You are now a team captain.');
         document.getElementById('createTeamModal').classList.remove('active');
         document.getElementById('createTeamForm').reset();
         await loadTeams();
@@ -509,14 +526,6 @@
         <div class="form-group">
           <label for="teamName">Team Name *</label>
           <input type="text" id="teamName" required placeholder="Enter team name">
-        </div>
-        <div class="form-group">
-          <label for="teamDescription">Description</label>
-          <textarea id="teamDescription" rows="4" placeholder="Tell others about your team..."></textarea>
-        </div>
-        <div class="form-group">
-          <label for="teamIcon">Team Icon (emoji)</label>
-          <input type="text" id="teamIcon" placeholder="🏀" maxlength="2">
         </div>
         <div class="form-actions">
           <button type="button" class="btn-secondary" data-close-modal>Cancel</button>

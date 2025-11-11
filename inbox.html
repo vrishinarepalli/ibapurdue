@@ -164,7 +164,7 @@
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp, arrayUnion, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, addDoc, setDoc, serverTimestamp, arrayUnion, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
     const firebaseConfig = {
@@ -353,6 +353,23 @@
         // Get team data for notification
         const teamDoc = await getDoc(teamRef);
         const teamData = teamDoc.data();
+
+        // Add player role to user
+        const userRef = doc(db, 'users', userId);
+        const userDoc = await getDoc(userRef);
+
+        if (userDoc.exists()) {
+          // User exists, add player role using arrayUnion to avoid duplicates
+          await updateDoc(userRef, {
+            roles: arrayUnion('player')
+          });
+        } else {
+          // User doesn't exist, create with player role
+          await setDoc(doc(db, 'users', userId), {
+            roles: ['player'],
+            createdAt: serverTimestamp()
+          });
+        }
 
         // Send notification to user
         await addDoc(collection(db, 'notifications'), {
