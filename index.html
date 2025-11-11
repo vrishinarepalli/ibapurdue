@@ -315,11 +315,11 @@
         <p>Total Games</p>
       </div>
       <div class="stat-card">
-        <h3 id="playersCount">0</h3>
+        <h3 id="playersCount">100+</h3>
         <p>Players</p>
       </div>
       <div class="stat-card">
-        <h3 id="championName" style="font-size: 1.5rem;">TBD</h3>
+        <h3 id="championName" style="font-size: 1.5rem;">Club Ballers</h3>
         <p>Champion</p>
       </div>
     </section>
@@ -330,7 +330,8 @@
         <button role="tab" id="tab-schedule" aria-selected="false" aria-controls="panel-schedule">Schedule</button>
         <button role="tab" id="tab-teams" aria-selected="false" aria-controls="panel-teams">Teams</button>
         <button role="tab" id="tab-bracket" aria-selected="false" aria-controls="panel-bracket">Bracket</button>
-        <button role="tab" id="tab-previous" aria-selected="false" aria-controls="panel-previous" style="display: none;">Previous Tournaments</button>
+        <!-- Previous Tournaments tab - Hidden for future use -->
+        <!-- <button role="tab" id="tab-previous" aria-selected="false" aria-controls="panel-previous" style="display: none;">Previous Tournaments</button> -->
         <button role="tab" id="tab-myteams" aria-selected="false" aria-controls="panel-myteams" style="display: none;" class="player-only">My Teams</button>
         <button role="tab" id="tab-adminrequests" aria-selected="false" aria-controls="panel-adminrequests" style="display: none;" class="admin-only">Admin Requests</button>
         <a href="about.html" style="text-decoration: none;">
@@ -713,6 +714,8 @@
         </div>
       </section>
 
+      <!-- Previous Tournaments panel - Hidden for future use -->
+      <!--
       <section id="panel-previous" class="tabpanel" role="tabpanel" aria-labelledby="tab-previous">
         <h2 style="color: var(--brand); margin-bottom: 1.5rem;">Previous Tournaments</h2>
 
@@ -748,7 +751,6 @@
             </div>
           </div>
 
-          <!-- Tabs for different views -->
           <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
             <button class="prev-view-btn active" data-view="standings" style="padding: 0.5rem 1rem; border: none; background: var(--brand); color: #000; border-radius: 4px; cursor: pointer; font-weight: 600;">Final Standings</button>
             <button class="prev-view-btn" data-view="bracket" style="padding: 0.5rem 1rem; border: none; background: #f5f1e8; color: #222; border-radius: 4px; cursor: pointer; font-weight: 600;">Bracket</button>
@@ -758,7 +760,6 @@
           <div id="prevStandingsView" class="prev-view">
             <h3 style="margin-bottom: 1rem;">Final Standings</h3>
             <div class="grid" id="prevTeamsGrid">
-              <!-- Teams will be loaded here -->
             </div>
           </div>
 
@@ -766,7 +767,6 @@
             <h3 style="margin-bottom: 1rem;">Tournament Bracket</h3>
             <div style="overflow-x: auto;">
               <div class="bracket-container" id="prevBracketContainer">
-                <!-- Bracket will be loaded here -->
               </div>
             </div>
           </div>
@@ -786,7 +786,6 @@
                   </tr>
                 </thead>
                 <tbody id="prevScheduleTable">
-                  <!-- Schedule will be loaded here -->
                 </tbody>
               </table>
             </div>
@@ -797,6 +796,7 @@
           <p>Select a tournament from the dropdown above to view its data.</p>
         </div>
       </section>
+      -->
 
       <section id="panel-myteams" class="tabpanel" role="tabpanel" aria-labelledby="tab-myteams">
         <div style="margin-bottom: 2rem;">
@@ -4180,8 +4180,9 @@
     });
 
     // ============================================
-    // Previous Tournaments Functionality
+    // Previous Tournaments Functionality - Hidden for future use
     // ============================================
+    /*
     const tournamentSelect = document.getElementById('tournamentSelect');
     const previousTournamentData = document.getElementById('previousTournamentData');
     const prevViewBtns = document.querySelectorAll('.prev-view-btn');
@@ -4367,6 +4368,7 @@
         </div>
       `).join('');
     }
+    */
 
     // ============================================
     // Hero Button Smooth Scroll
