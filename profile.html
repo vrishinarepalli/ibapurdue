@@ -250,53 +250,20 @@
       }
     }
 
-    // Navigation handlers
+    // Navigation and button handlers
     document.addEventListener('DOMContentLoaded', () => {
-      // Update navigation profile
-      const navUserProfile = document.getElementById('navUserProfile');
-      const navSignInBtn = document.getElementById('navSignInBtn');
-      const navUserAvatar = document.getElementById('navUserAvatar');
-      const navUserButton = document.getElementById('navUserButton');
-      const navUserDropdown = document.getElementById('navUserDropdown');
-
-      if (navUserProfile && navSignInBtn && navUserAvatar) {
-        navSignInBtn.style.display = 'none';
-        navUserProfile.style.display = 'block';
-
-        const avatarUrl = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email.split('@')[0])}&background=CFB991&color=fff&size=128`;
-        navUserAvatar.src = avatarUrl;
-
-        // Toggle dropdown
-        if (navUserButton) {
-          navUserButton.onclick = (e) => {
-            e.stopPropagation();
-            if (navUserDropdown) {
-              const isVisible = navUserDropdown.style.display === 'block';
-              navUserDropdown.style.display = isVisible ? 'none' : 'block';
-            }
-          };
-        }
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-          if (navUserDropdown && navUserProfile && !navUserProfile.contains(e.target)) {
-            navUserDropdown.style.display = 'none';
-          }
-        });
-      }
-
-      // Handle dropdown actions
-      const navProfileBtn = document.getElementById('navProfileBtn');
-      if (navProfileBtn) {
-        navProfileBtn.onclick = () => {
-          // Already on profile page, just close dropdown
-          navUserDropdown.style.display = 'none';
+      // Back button
+      const backBtn = document.getElementById('backBtn');
+      if (backBtn) {
+        backBtn.onclick = () => {
+          window.location.href = 'index.html';
         };
       }
 
-      const navSignOutBtn = document.getElementById('navSignOutBtn');
-      if (navSignOutBtn) {
-        navSignOutBtn.onclick = async () => {
+      // Sign out button
+      const signOutBtn = document.getElementById('signOutBtn');
+      if (signOutBtn) {
+        signOutBtn.onclick = async () => {
           try {
             await signOut(auth);
             console.log('✅ Signed out successfully');
@@ -350,25 +317,6 @@
             </div>
           </div>
 
-          <a href="login.html" id="navSignInBtn" style="text-decoration: none; display: none;">
-            <button class="card-nav-cta-button">Sign In</button>
-          </a>
-
-          <div id="navUserProfile" style="display: none; position: relative;">
-            <button class="card-nav-user-button" id="navUserButton">
-              <img id="navUserAvatar" src="" alt="User Avatar" class="nav-user-avatar" />
-            </button>
-            <div class="nav-user-dropdown" id="navUserDropdown" style="display: none;">
-              <button class="nav-dropdown-item" id="navProfileBtn">
-                <span>👤</span>
-                Profile
-              </button>
-              <button class="nav-dropdown-item" id="navSignOutBtn">
-                <span>🚪</span>
-                Sign Out
-              </button>
-            </div>
-          </div>
         </div>
 
         <div class="card-nav-content" id="cardNavContent">
@@ -429,7 +377,16 @@
       </nav>
   </div>
 
-  <div class="wrap" style="max-width: 1200px; margin: 0 auto; padding: 2rem; padding-top: 1rem;">
+  <div class="wrap" style="max-width: 1200px; margin: 0 auto; padding: 2rem; padding-top: 6rem;">
+    <!-- Action Buttons -->
+    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-bottom: 2rem; flex-wrap: wrap;">
+      <button id="backBtn" style="padding: 0.75rem 1.5rem; background: var(--brand); color: #000; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: transform 0.2s;">
+        ← Back to Home
+      </button>
+      <button id="signOutBtn" style="padding: 0.75rem 1.5rem; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: transform 0.2s;">
+        🚪 Sign Out
+      </button>
+    </div>
 
     <!-- Profile Content Grid -->
     <div class="profile-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-bottom: 3rem;">
