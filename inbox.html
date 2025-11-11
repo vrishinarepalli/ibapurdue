@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inbox - IBA Basketball</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .inbox-container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .notification-card {
+      background: linear-gradient(135deg, #f8f5f0, #faf7f2);
+      border: 2px solid var(--brand);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      position: relative;
+      transition: all 0.3s;
+    }
+
+    .notification-card.unread {
+      border-left: 5px solid var(--brand);
+      background: linear-gradient(135deg, #fffbf5, #faf7f2);
+    }
+
+    .notification-card:hover {
+      box-shadow: 0 4px 20px rgba(207, 185, 145, 0.2);
+    }
+
+    .notification-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+
+    .notification-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #0a1122;
+      margin: 0;
+    }
+
+    .notification-time {
+      font-size: 0.85rem;
+      color: #999;
+    }
+
+    .notification-message {
+      color: #666;
+      line-height: 1.6;
+      margin: 0.5rem 0;
+    }
+
+    .notification-actions {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .btn-approve {
+      background: var(--success);
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .btn-approve:hover {
+      background: #27ae60;
+      transform: translateY(-1px);
+    }
+
+    .btn-reject {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .btn-reject:hover {
+      background: #c0392b;
+      transform: translateY(-1px);
+    }
+
+    .btn-mark-read {
+      background: #f0ebe3;
+      color: #0a1122;
+      border: 1px solid #ddd;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .btn-mark-read:hover {
+      background: var(--brand);
+    }
+
+    .empty-inbox {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: #999;
+    }
+
+    .empty-inbox-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+
+    .filter-tabs {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 0.5rem;
+    }
+
+    .filter-tab {
+      background: none;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      color: #666;
+      border-radius: 8px 8px 0 0;
+      transition: all 0.2s;
+    }
+
+    .filter-tab.active {
+      background: var(--brand);
+      color: #000;
+    }
+
+    .unread-badge {
+      background: #e74c3c;
+      color: white;
+      font-size: 0.75rem;
+      padding: 0.25rem 0.5rem;
+      border-radius: 10px;
+      margin-left: 0.5rem;
+    }
+  </style>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, collection, query, where, getDocs, doc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp, arrayUnion, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBN0rfpzjredziJbPny-YfEgq4uE2l1hzE",
+      authDomain: "iba-website-63cb3.firebaseapp.com",
+      projectId: "iba-website-63cb3",
+      storageBucket: "iba-website-63cb3.firebasestorage.app",
+      messagingSenderId: "267064036667",
+      appId: "1:267064036667:web:4f9d28aac0d5ae4ca97b1e",
+      measurementId: "G-GGH99DCY07"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    let currentUser = null;
+    let currentFilter = 'all';
+    let notifications = [];
+    let messageTemplates = {};
+
+    // Initialize
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.href = 'index.html';
+        return;
+      }
+      currentUser = user;
+      await loadMessageTemplates();
+      await loadNotifications();
+    });
+
+    // Load message templates from Firestore
+    async function loadMessageTemplates() {
+      try {
+        const templatesSnapshot = await getDocs(collection(db, 'message_templates'));
+        templatesSnapshot.forEach(doc => {
+          messageTemplates[doc.id] = doc.data().template;
+        });
+      } catch (error) {
+        console.error('Error loading message templates:', error);
+      }
+    }
+
+    // Load notifications
+    async function loadNotifications() {
+      const notificationsContainer = document.getElementById('notificationsContainer');
+      notificationsContainer.innerHTML = '<p style="text-align: center; color: #666;">Loading notifications...</p>';
+
+      try {
+        // Load notifications
+        const notificationsQuery = query(
+          collection(db, 'notifications'),
+          where('userId', '==', currentUser.uid),
+          orderBy('createdAt', 'desc')
+        );
+        const notificationsSnapshot = await getDocs(notificationsQuery);
+        notifications = notificationsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        // Load team join requests for teams where user is captain
+        const requestsQuery = query(
+          collection(db, 'team_requests'),
+          where('status', '==', 'pending')
+        );
+        const requestsSnapshot = await getDocs(requestsQuery);
+
+        for (const requestDoc of requestsSnapshot.docs) {
+          const request = requestDoc.data();
+          // Check if current user is captain of this team
+          const teamDoc = await getDoc(doc(db, 'player_teams', request.teamId));
+          if (teamDoc.exists() && teamDoc.data().captain === currentUser.uid) {
+            // Add request as notification
+            notifications.push({
+              id: requestDoc.id,
+              type: 'team_request_action',
+              title: 'Team Join Request',
+              message: fillTemplate('team_join_request', {
+                userName: request.userName,
+                teamName: request.teamName
+              }),
+              teamId: request.teamId,
+              requesterId: request.userId,
+              requesterName: request.userName,
+              read: false,
+              createdAt: request.createdAt,
+              isRequest: true
+            });
+          }
+        }
+
+        // Sort by date
+        notifications.sort((a, b) => {
+          const aTime = a.createdAt?.toMillis() || 0;
+          const bTime = b.createdAt?.toMillis() || 0;
+          return bTime - aTime;
+        });
+
+        renderNotifications();
+        updateUnreadCount();
+
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+        notificationsContainer.innerHTML = '<p style="text-align: center; color: #e74c3c;">Error loading notifications. Please try again.</p>';
+      }
+    }
+
+    // Fill message template
+    function fillTemplate(templateId, variables) {
+      let template = messageTemplates[templateId] || 'Notification: {{message}}';
+      for (const [key, value] of Object.entries(variables)) {
+        template = template.replace(new RegExp(`{{${key}}}`, 'g'), value);
+      }
+      return template;
+    }
+
+    // Render notifications
+    function renderNotifications() {
+      const notificationsContainer = document.getElementById('notificationsContainer');
+
+      let filteredNotifications = notifications;
+      if (currentFilter === 'unread') {
+        filteredNotifications = notifications.filter(n => !n.read);
+      } else if (currentFilter === 'requests') {
+        filteredNotifications = notifications.filter(n => n.isRequest);
+      }
+
+      if (filteredNotifications.length === 0) {
+        notificationsContainer.innerHTML = `
+          <div class="empty-inbox">
+            <div class="empty-inbox-icon">📭</div>
+            <h3 style="color: #666; margin: 0 0 0.5rem 0;">No ${currentFilter === 'all' ? '' : currentFilter} notifications</h3>
+            <p style="color: #999;">You're all caught up!</p>
+          </div>
+        `;
+        return;
+      }
+
+      notificationsContainer.innerHTML = filteredNotifications.map(notification => {
+        const timeAgo = getTimeAgo(notification.createdAt);
+        const unreadClass = !notification.read ? 'unread' : '';
+
+        return `
+          <div class="notification-card ${unreadClass}">
+            <div class="notification-header">
+              <h3 class="notification-title">${notification.title}</h3>
+              <span class="notification-time">${timeAgo}</span>
+            </div>
+            <p class="notification-message">${notification.message}</p>
+            <div class="notification-actions">
+              ${notification.isRequest ? `
+                <button class="btn-approve" onclick="approveJoinRequest('${notification.id}', '${notification.teamId}', '${notification.requesterId}', '${notification.requesterName}')">
+                  ✓ Approve
+                </button>
+                <button class="btn-reject" onclick="rejectJoinRequest('${notification.id}', '${notification.teamId}', '${notification.requesterId}')">
+                  ✗ Reject
+                </button>
+              ` : !notification.read ? `
+                <button class="btn-mark-read" onclick="markAsRead('${notification.id}')">
+                  Mark as Read
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Approve join request
+    window.approveJoinRequest = async function(requestId, teamId, userId, userName) {
+      try {
+        // Update team - add member
+        const teamRef = doc(db, 'player_teams', teamId);
+        await updateDoc(teamRef, {
+          members: arrayUnion(userId)
+        });
+
+        // Update request status
+        const requestRef = doc(db, 'team_requests', requestId);
+        await updateDoc(requestRef, {
+          status: 'approved'
+        });
+
+        // Get team data for notification
+        const teamDoc = await getDoc(teamRef);
+        const teamData = teamDoc.data();
+
+        // Send notification to user
+        await addDoc(collection(db, 'notifications'), {
+          userId: userId,
+          type: 'team_request_approved',
+          title: 'Team Request Approved',
+          message: fillTemplate('team_request_approved', {
+            teamName: teamData.teamName
+          }),
+          teamId: teamId,
+          read: false,
+          createdAt: serverTimestamp()
+        });
+
+        alert('✅ Request approved! User added to team.');
+        await loadNotifications();
+
+      } catch (error) {
+        console.error('Error approving request:', error);
+        alert('Error approving request. Please try again.');
+      }
+    };
+
+    // Reject join request
+    window.rejectJoinRequest = async function(requestId, teamId, userId) {
+      try {
+        // Update request status
+        const requestRef = doc(db, 'team_requests', requestId);
+        await updateDoc(requestRef, {
+          status: 'rejected'
+        });
+
+        // Get team data for notification
+        const teamDoc = await getDoc(doc(db, 'player_teams', teamId));
+        const teamData = teamDoc.data();
+
+        // Send notification to user
+        await addDoc(collection(db, 'notifications'), {
+          userId: userId,
+          type: 'team_request_rejected',
+          title: 'Team Request Update',
+          message: fillTemplate('team_request_rejected', {
+            teamName: teamData.teamName
+          }),
+          teamId: teamId,
+          read: false,
+          createdAt: serverTimestamp()
+        });
+
+        alert('Request rejected.');
+        await loadNotifications();
+
+      } catch (error) {
+        console.error('Error rejecting request:', error);
+        alert('Error rejecting request. Please try again.');
+      }
+    };
+
+    // Mark notification as read
+    window.markAsRead = async function(notificationId) {
+      try {
+        await updateDoc(doc(db, 'notifications', notificationId), {
+          read: true
+        });
+        await loadNotifications();
+      } catch (error) {
+        console.error('Error marking as read:', error);
+      }
+    };
+
+    // Filter notifications
+    window.filterNotifications = function(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+      renderNotifications();
+    };
+
+    // Update unread count
+    function updateUnreadCount() {
+      const unreadCount = notifications.filter(n => !n.read).length;
+      const unreadBadge = document.getElementById('unreadCount');
+      if (unreadCount > 0) {
+        unreadBadge.textContent = unreadCount;
+        unreadBadge.style.display = 'inline-block';
+      } else {
+        unreadBadge.style.display = 'none';
+      }
+    }
+
+    // Get time ago string
+    function getTimeAgo(timestamp) {
+      if (!timestamp) return 'Just now';
+      const now = new Date();
+      const time = timestamp.toDate();
+      const diffMs = now - time;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return time.toLocaleDateString();
+    }
+
+    // Back button
+    document.getElementById('backBtn').addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
+  </script>
+</head>
+<body>
+  <div class="inbox-container">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h1 style="color: #0a1122; margin: 0 0 0.5rem 0;">
+          📬 Inbox
+          <span id="unreadCount" class="unread-badge" style="display: none;">0</span>
+        </h1>
+        <p style="color: #666; margin: 0;">Your team notifications and messages</p>
+      </div>
+      <button id="backBtn" style="background: #f0ebe3; color: #0a1122; border: 2px solid var(--brand); padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600;">
+        ← Back to Home
+      </button>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+      <button class="filter-tab active" data-filter="all" onclick="filterNotifications('all')">All</button>
+      <button class="filter-tab" data-filter="unread" onclick="filterNotifications('unread')">Unread</button>
+      <button class="filter-tab" data-filter="requests" onclick="filterNotifications('requests')">Team Requests</button>
+    </div>
+
+    <!-- Notifications Container -->
+    <div id="notificationsContainer">
+      <p style="text-align: center; color: #666;">Loading notifications...</p>
+    </div>
+  </div>
+</body>
+</html>

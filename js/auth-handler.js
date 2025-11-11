@@ -10,7 +10,7 @@ import { isApprovedAdmin } from './admin-check.js';
 
 export async function initializeAuthListener() {
   const { onAuthStateChanged, signOut } = window.authImports;
-  const { doc, getDoc } = window.firestoreImports;
+  const { doc, getDoc, collection, query, where, getDocs } = window.firestoreImports;
   const auth = window.auth;
   const db = window.db;
 
@@ -20,6 +20,8 @@ export async function initializeAuthListener() {
     const userDisplayName = document.getElementById('userDisplayName');
     const notificationsIcon = document.getElementById('notificationsIcon');
     const myTeamsTab = document.getElementById('tab-myteams');
+    const inboxLink = document.getElementById('inboxLink');
+    const inboxBadge = document.getElementById('inboxBadge');
 
     // Card navigation elements
     const navSignInBtn = document.getElementById('navSignInBtn');
@@ -146,6 +148,25 @@ export async function initializeAuthListener() {
           if (roles.includes('player')) {
             if (myTeamsTab) myTeamsTab.style.display = 'block';
             if (notificationsIcon) notificationsIcon.style.display = 'block';
+            if (inboxLink) inboxLink.style.display = 'block';
+
+            // Load unread notification count
+            try {
+              const notificationsQuery = query(
+                collection(db, 'notifications'),
+                where('userId', '==', user.uid),
+                where('read', '==', false)
+              );
+              const notificationsSnapshot = await getDocs(notificationsQuery);
+              const unreadCount = notificationsSnapshot.size;
+
+              if (inboxBadge && unreadCount > 0) {
+                inboxBadge.textContent = unreadCount;
+                inboxBadge.style.display = 'inline-block';
+              }
+            } catch (error) {
+              console.error('Error loading notification count:', error);
+            }
 
             // Store current user data globally for team management
             window.currentUserData = {
@@ -168,6 +189,8 @@ export async function initializeAuthListener() {
       if (userProfileChip) userProfileChip.style.display = 'none';
       if (myTeamsTab) myTeamsTab.style.display = 'none';
       if (notificationsIcon) notificationsIcon.style.display = 'none';
+      if (inboxLink) inboxLink.style.display = 'none';
+      if (inboxBadge) inboxBadge.style.display = 'none';
       window.currentUserData = null;
 
       // Hide admin button when signed out

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>All Teams - IBA Basketball</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .teams-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .team-card {
+      background: linear-gradient(135deg, #f8f5f0, #faf7f2);
+      border: 2px solid var(--brand);
+      border-radius: 15px;
+      padding: 1.5rem;
+      transition: all 0.3s;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(207, 185, 145, 0.15);
+    }
+
+    .team-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 30px rgba(207, 185, 145, 0.3);
+    }
+
+    .team-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .team-icon {
+      font-size: 3rem;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(207, 185, 145, 0.2);
+      border-radius: 12px;
+    }
+
+    .team-info h3 {
+      margin: 0;
+      color: #0a1122;
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .team-captain {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 0.25rem;
+    }
+
+    .team-stats {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(207, 185, 145, 0.3);
+    }
+
+    .stat-item {
+      flex: 1;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--brand);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #666;
+      text-transform: uppercase;
+      margin-top: 0.25rem;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--brand), #d4be9c);
+      color: #000;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(207, 185, 145, 0.4);
+    }
+
+    .btn-secondary {
+      background: #f0ebe3;
+      color: #0a1122;
+      border: 2px solid var(--brand);
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: var(--brand);
+      color: #000;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 15px;
+      padding: 2rem;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #0a1122;
+      font-weight: 600;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--brand);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1rem;
+      justify-content: flex-end;
+      margin-top: 2rem;
+    }
+
+    @media (max-width: 768px) {
+      .teams-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, collection, query, where, getDocs, doc, getDoc, setDoc, addDoc, serverTimestamp, updateDoc, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBN0rfpzjredziJbPny-YfEgq4uE2l1hzE",
+      authDomain: "iba-website-63cb3.firebaseapp.com",
+      projectId: "iba-website-63cb3",
+      storageBucket: "iba-website-63cb3.firebasestorage.app",
+      messagingSenderId: "267064036667",
+      appId: "1:267064036667:web:4f9d28aac0d5ae4ca97b1e",
+      measurementId: "G-GGH99DCY07"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    window.db = db;
+    window.auth = auth;
+
+    let currentUser = null;
+
+    // Initialize
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      if (!user) {
+        document.getElementById('createTeamBtn').style.display = 'none';
+      }
+      await loadTeams();
+    });
+
+    // Load all teams
+    async function loadTeams() {
+      const teamsGrid = document.getElementById('teamsGrid');
+      teamsGrid.innerHTML = '<p style="text-align: center; color: #666;">Loading teams...</p>';
+
+      try {
+        const teamsSnapshot = await getDocs(collection(db, 'player_teams'));
+        const teams = [];
+
+        for (const teamDoc of teamsSnapshot.docs) {
+          const teamData = teamDoc.data();
+          teams.push({
+            id: teamDoc.id,
+            ...teamData
+          });
+        }
+
+        if (teams.length === 0) {
+          teamsGrid.innerHTML = '<p style="text-align: center; color: #666;">No teams yet. Be the first to create one!</p>';
+          return;
+        }
+
+        teamsGrid.innerHTML = teams.map(team => `
+          <div class="team-card" onclick="viewTeamDetails('${team.id}')">
+            <div class="team-header">
+              <div class="team-icon">${team.icon || '🏀'}</div>
+              <div class="team-info">
+                <h3>${team.teamName || 'Unnamed Team'}</h3>
+                <div class="team-captain">👑 Captain: ${team.captainName || 'Unknown'}</div>
+              </div>
+            </div>
+            <p style="color: #666; font-size: 0.9rem; margin: 0.5rem 0;">${team.description || 'No description provided.'}</p>
+            <div class="team-stats">
+              <div class="stat-item">
+                <div class="stat-value">${team.members?.length || 0}</div>
+                <div class="stat-label">Members</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-value">${team.wins || 0}-${team.losses || 0}</div>
+                <div class="stat-label">Record</div>
+              </div>
+            </div>
+          </div>
+        `).join('');
+
+      } catch (error) {
+        console.error('Error loading teams:', error);
+        teamsGrid.innerHTML = '<p style="text-align: center; color: #e74c3c;">Error loading teams. Please try again.</p>';
+      }
+    }
+
+    // View team details
+    window.viewTeamDetails = function(teamId) {
+      const modal = document.getElementById('teamDetailsModal');
+      modal.classList.add('active');
+      loadTeamDetails(teamId);
+    };
+
+    async function loadTeamDetails(teamId) {
+      const modalBody = document.getElementById('teamDetailsBody');
+      modalBody.innerHTML = '<p style="text-align: center;">Loading...</p>';
+
+      try {
+        const teamDoc = await getDoc(doc(db, 'player_teams', teamId));
+        if (!teamDoc.exists()) {
+          modalBody.innerHTML = '<p style="color: #e74c3c;">Team not found.</p>';
+          return;
+        }
+
+        const team = teamDoc.data();
+        const isMember = currentUser && team.members?.includes(currentUser.uid);
+        const isCaptain = currentUser && team.captain === currentUser.uid;
+
+        // Check if user already has a pending request
+        let hasPendingRequest = false;
+        if (currentUser) {
+          const requestsSnapshot = await getDocs(
+            query(collection(db, 'team_requests'),
+              where('teamId', '==', teamId),
+              where('userId', '==', currentUser.uid),
+              where('status', '==', 'pending'))
+          );
+          hasPendingRequest = !requestsSnapshot.empty;
+        }
+
+        modalBody.innerHTML = `
+          <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">${team.icon || '🏀'}</div>
+            <h2 style="color: #0a1122; margin: 0 0 0.5rem 0;">${team.teamName || 'Unnamed Team'}</h2>
+            <p style="color: #666;">👑 Captain: ${team.captainName || 'Unknown'}</p>
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <h3 style="color: #0a1122; margin-bottom: 0.5rem;">Description</h3>
+            <p style="color: #666;">${team.description || 'No description provided.'}</p>
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <h3 style="color: #0a1122; margin-bottom: 0.5rem;">Team Stats</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+              <div style="background: rgba(207, 185, 145, 0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--brand);">${team.members?.length || 0}</div>
+                <div style="font-size: 0.85rem; color: #666;">Members</div>
+              </div>
+              <div style="background: rgba(207, 185, 145, 0.1); padding: 1rem; border-radius: 8px; text-align: center;">
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--brand);">${team.wins || 0}-${team.losses || 0}</div>
+                <div style="font-size: 0.85rem; color: #666;">Record</div>
+              </div>
+            </div>
+          </div>
+
+          ${!currentUser ? `
+            <p style="text-align: center; color: #666; padding: 1rem; background: rgba(207, 185, 145, 0.1); border-radius: 8px;">
+              Please sign in to request to join this team.
+            </p>
+          ` : isMember ? `
+            <p style="text-align: center; color: var(--success); padding: 1rem; background: rgba(46, 204, 113, 0.1); border-radius: 8px; font-weight: 600;">
+              ✅ You are a member of this team
+            </p>
+          ` : hasPendingRequest ? `
+            <p style="text-align: center; color: #f39c12; padding: 1rem; background: rgba(243, 156, 18, 0.1); border-radius: 8px; font-weight: 600;">
+              ⏳ Your join request is pending
+            </p>
+          ` : `
+            <button class="btn-primary" style="width: 100%;" onclick="requestToJoinTeam('${teamId}')">
+              🚀 Request to Join Team
+            </button>
+          `}
+        `;
+
+      } catch (error) {
+        console.error('Error loading team details:', error);
+        modalBody.innerHTML = '<p style="color: #e74c3c;">Error loading team details.</p>';
+      }
+    }
+
+    // Request to join team
+    window.requestToJoinTeam = async function(teamId) {
+      if (!currentUser) {
+        alert('Please sign in to request to join a team.');
+        return;
+      }
+
+      try {
+        const teamDoc = await getDoc(doc(db, 'player_teams', teamId));
+        const team = teamDoc.data();
+
+        // Create join request
+        await addDoc(collection(db, 'team_requests'), {
+          teamId: teamId,
+          teamName: team.teamName,
+          userId: currentUser.uid,
+          userName: currentUser.displayName || currentUser.email,
+          userEmail: currentUser.email,
+          status: 'pending',
+          createdAt: serverTimestamp()
+        });
+
+        // Send notification to captain
+        await addDoc(collection(db, 'notifications'), {
+          userId: team.captain,
+          type: 'team_join_request',
+          title: 'New Team Join Request',
+          message: `${currentUser.displayName || currentUser.email} wants to join ${team.teamName}`,
+          teamId: teamId,
+          requesterId: currentUser.uid,
+          read: false,
+          createdAt: serverTimestamp()
+        });
+
+        alert('✅ Join request sent! The team captain will be notified.');
+        document.getElementById('teamDetailsModal').classList.remove('active');
+
+      } catch (error) {
+        console.error('Error sending join request:', error);
+        alert('Error sending join request. Please try again.');
+      }
+    };
+
+    // Create team modal
+    document.getElementById('createTeamBtn').addEventListener('click', () => {
+      if (!currentUser) {
+        alert('Please sign in to create a team.');
+        window.location.href = 'index.html';
+        return;
+      }
+      document.getElementById('createTeamModal').classList.add('active');
+    });
+
+    // Close modals
+    document.querySelectorAll('.modal').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+        }
+      });
+    });
+
+    document.querySelectorAll('[data-close-modal]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+      });
+    });
+
+    // Create team form
+    document.getElementById('createTeamForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!currentUser) {
+        alert('Please sign in to create a team.');
+        return;
+      }
+
+      const teamName = document.getElementById('teamName').value.trim();
+      const teamDescription = document.getElementById('teamDescription').value.trim();
+      const teamIcon = document.getElementById('teamIcon').value.trim() || '🏀';
+
+      if (!teamName) {
+        alert('Please enter a team name.');
+        return;
+      }
+
+      try {
+        // Create team
+        await addDoc(collection(db, 'player_teams'), {
+          teamName: teamName,
+          description: teamDescription,
+          icon: teamIcon,
+          captain: currentUser.uid,
+          captainName: currentUser.displayName || currentUser.email,
+          members: [currentUser.uid],
+          wins: 0,
+          losses: 0,
+          createdAt: serverTimestamp()
+        });
+
+        alert('✅ Team created successfully!');
+        document.getElementById('createTeamModal').classList.remove('active');
+        document.getElementById('createTeamForm').reset();
+        await loadTeams();
+
+      } catch (error) {
+        console.error('Error creating team:', error);
+        alert('Error creating team. Please try again.');
+      }
+    });
+
+    // Back button
+    document.getElementById('backBtn').addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
+
+    window.loadTeams = loadTeams;
+  </script>
+</head>
+<body>
+  <div class="wrap" style="max-width: 1400px; margin: 0 auto; padding: 2rem;">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+      <div>
+        <h1 style="color: #0a1122; margin: 0 0 0.5rem 0;">🏀 All Teams</h1>
+        <p style="color: #666; margin: 0;">Browse teams and request to join</p>
+      </div>
+      <div style="display: flex; gap: 1rem;">
+        <button id="backBtn" class="btn-secondary">← Back to Home</button>
+        <button id="createTeamBtn" class="btn-primary">+ Create Team</button>
+      </div>
+    </div>
+
+    <!-- Teams Grid -->
+    <div id="teamsGrid" class="teams-grid">
+      <p style="text-align: center; color: #666;">Loading teams...</p>
+    </div>
+  </div>
+
+  <!-- Create Team Modal -->
+  <div id="createTeamModal" class="modal">
+    <div class="modal-content">
+      <h2 style="color: #0a1122; margin: 0 0 1.5rem 0;">Create New Team</h2>
+      <form id="createTeamForm">
+        <div class="form-group">
+          <label for="teamName">Team Name *</label>
+          <input type="text" id="teamName" required placeholder="Enter team name">
+        </div>
+        <div class="form-group">
+          <label for="teamDescription">Description</label>
+          <textarea id="teamDescription" rows="4" placeholder="Tell others about your team..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="teamIcon">Team Icon (emoji)</label>
+          <input type="text" id="teamIcon" placeholder="🏀" maxlength="2">
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" data-close-modal>Cancel</button>
+          <button type="submit" class="btn-primary">Create Team</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Team Details Modal -->
+  <div id="teamDetailsModal" class="modal">
+    <div class="modal-content">
+      <div id="teamDetailsBody">
+        <p style="text-align: center;">Loading...</p>
+      </div>
+      <div style="margin-top: 2rem; text-align: right;">
+        <button class="btn-secondary" data-close-modal>Close</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

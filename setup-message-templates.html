@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Setup Message Templates - IBA</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #0a1122;
+      color: #fff;
+    }
+    .container {
+      background: #1a2332;
+      padding: 30px;
+      border-radius: 10px;
+      border: 1px solid #CFB991;
+    }
+    h1 { color: #CFB991; }
+    button {
+      background: #CFB991;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px 5px;
+      font-weight: 600;
+    }
+    button:hover { opacity: 0.8; }
+    .output {
+      background: #0a1122;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    .success { color: #2ecc71; }
+    .error { color: #e74c3c; }
+    .info { color: #3498db; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Setup Message Templates</h1>
+    <p>This will create message templates in Firestore for notifications.</p>
+
+    <button onclick="setupTemplates()">Setup Templates</button>
+
+    <div id="output" class="output"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, collection, doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBN0rfpzjredziJbPny-YfEgq4uE2l1hzE",
+      authDomain: "iba-website-63cb3.firebaseapp.com",
+      projectId: "iba-website-63cb3",
+      storageBucket: "iba-website-63cb3.firebasestorage.app",
+      messagingSenderId: "267064036667",
+      appId: "1:267064036667:web:4f9d28aac0d5ae4ca97b1e",
+      measurementId: "G-GGH99DCY07"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    function log(message, type = 'info') {
+      const output = document.getElementById('output');
+      const color = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+      output.innerHTML += `<span class="${color}">${message}</span>\n`;
+      console.log(message);
+    }
+
+    window.setupTemplates = async function() {
+      const output = document.getElementById('output');
+      output.innerHTML = '';
+
+      try {
+        log('🚀 Starting template setup...', 'info');
+        log('-----------------------------------', 'info');
+
+        // Check if user is signed in
+        if (!auth.currentUser) {
+          log('❌ Please sign in with Google first', 'error');
+          const provider = new GoogleAuthProvider();
+          await signInWithPopup(auth, provider);
+          log('✅ Signed in as: ' + auth.currentUser.email, 'success');
+        }
+
+        // Define message templates
+        const templates = {
+          'team_join_request': {
+            template: '{{userName}} wants to join {{teamName}}. Review this request in your inbox.',
+            description: 'Sent to team captain when someone requests to join'
+          },
+          'team_request_approved': {
+            template: 'Your request to join {{teamName}} has been approved! Welcome to the team!',
+            description: 'Sent to user when their join request is approved'
+          },
+          'team_request_rejected': {
+            template: 'Your request to join {{teamName}} was not approved at this time.',
+            description: 'Sent to user when their join request is rejected'
+          },
+          'team_member_removed': {
+            template: 'You have been removed from {{teamName}}.',
+            description: 'Sent to user when removed from a team'
+          },
+          'team_disbanded': {
+            template: '{{teamName}} has been disbanded by the captain.',
+            description: 'Sent to all members when team is disbanded'
+          },
+          'new_team_member': {
+            template: '{{userName}} has joined {{teamName}}!',
+            description: 'Sent to all team members when someone new joins'
+          }
+        };
+
+        log('\n📝 Creating message templates...', 'info');
+
+        for (const [templateId, data] of Object.entries(templates)) {
+          await setDoc(doc(db, 'message_templates', templateId), {
+            template: data.template,
+            description: data.description,
+            createdAt: new Date().toISOString()
+          });
+          log(`  ✅ Created: ${templateId}`, 'success');
+        }
+
+        log('\n✅ Setup complete!', 'success');
+        log('-----------------------------------', 'info');
+        log('\nCreated templates:', 'info');
+        Object.keys(templates).forEach(id => {
+          log(`  • ${id}`, 'info');
+        });
+
+      } catch (error) {
+        log('\n❌ Error: ' + error.message, 'error');
+        console.error(error);
+      }
+    };
+
+    // Auto sign-in check
+    window.addEventListener('load', () => {
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          log('✅ Signed in as: ' + user.email, 'success');
+        } else {
+          log('ℹ️ Not signed in. Click "Setup Templates" to sign in and continue.', 'info');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
