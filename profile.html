@@ -250,57 +250,186 @@
       }
     }
 
-    // Sign out handler
+    // Navigation handlers
     document.addEventListener('DOMContentLoaded', () => {
-      const signOutBtn = document.getElementById('signOutBtn');
-      if (signOutBtn) {
-        signOutBtn.onclick = async () => {
+      // Update navigation profile
+      const navUserProfile = document.getElementById('navUserProfile');
+      const navSignInBtn = document.getElementById('navSignInBtn');
+      const navUserAvatar = document.getElementById('navUserAvatar');
+      const navUserButton = document.getElementById('navUserButton');
+      const navUserDropdown = document.getElementById('navUserDropdown');
+
+      if (navUserProfile && navSignInBtn && navUserAvatar) {
+        navSignInBtn.style.display = 'none';
+        navUserProfile.style.display = 'block';
+
+        const avatarUrl = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email.split('@')[0])}&background=CFB991&color=fff&size=128`;
+        navUserAvatar.src = avatarUrl;
+
+        // Toggle dropdown
+        if (navUserButton) {
+          navUserButton.onclick = (e) => {
+            e.stopPropagation();
+            if (navUserDropdown) {
+              const isVisible = navUserDropdown.style.display === 'block';
+              navUserDropdown.style.display = isVisible ? 'none' : 'block';
+            }
+          };
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+          if (navUserDropdown && navUserProfile && !navUserProfile.contains(e.target)) {
+            navUserDropdown.style.display = 'none';
+          }
+        });
+      }
+
+      // Handle dropdown actions
+      const navProfileBtn = document.getElementById('navProfileBtn');
+      if (navProfileBtn) {
+        navProfileBtn.onclick = () => {
+          // Already on profile page, just close dropdown
+          navUserDropdown.style.display = 'none';
+        };
+      }
+
+      const navSignOutBtn = document.getElementById('navSignOutBtn');
+      if (navSignOutBtn) {
+        navSignOutBtn.onclick = async () => {
           try {
             await signOut(auth);
+            console.log('✅ Signed out successfully');
             window.location.href = 'index.html';
           } catch (error) {
             console.error('Error signing out:', error);
           }
         };
       }
-
-      const backBtn = document.getElementById('backBtn');
-      if (backBtn) {
-        backBtn.onclick = () => {
-          window.location.href = 'index.html';
-        };
-      }
     });
+
+    // Hamburger menu toggle
+    const hamburgerMenu = document.getElementById('hamburgerMenu');
+    const cardNavContent = document.getElementById('cardNavContent');
+    const cardNav = document.getElementById('cardNav');
+
+    if (hamburgerMenu && cardNavContent && cardNav) {
+      hamburgerMenu.addEventListener('click', () => {
+        const isOpen = cardNav.classList.contains('nav-open');
+        if (isOpen) {
+          cardNav.classList.remove('nav-open');
+        } else {
+          cardNav.classList.add('nav-open');
+        }
+      });
+
+      // Close menu when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!cardNav.contains(e.target)) {
+          cardNav.classList.remove('nav-open');
+        }
+      });
+    }
   </script>
 </head>
 <body>
-  <!-- Hero Section -->
-  <section class="hero-section" style="position: relative; height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-    <div class="hero-bg" style="position: absolute; inset: 0; z-index: 0;">
-      <img src="images/basketball-court.jpeg" alt="Basketball Court" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.style.display='none'">
-      <div class="hero-overlay" style="position: absolute; inset: 0; background: linear-gradient(135deg, rgba(10, 17, 34, 0.95), rgba(207, 185, 145, 0.15));"></div>
-    </div>
-    <div style="position: relative; z-index: 1; text-align: center; color: white;">
-      <h1 style="font-size: 1.6rem; font-weight: 700; margin: 0; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">My Profile</h1>
-    </div>
-    <!-- Wave transition -->
-    <div class="hero-wave" style="position: absolute; bottom: 0; left: 0; width: 100%; overflow: hidden; line-height: 0;">
-      <svg viewBox="0 0 1200 120" preserveAspectRatio="none" style="width: 100%; height: 35px;">
-        <path d="M0,0 C300,80 900,80 1200,0 L1200,120 L0,120 Z" fill="#fff"></path>
-      </svg>
-    </div>
-  </section>
+  <!-- Card Navigation -->
+  <div class="card-nav-container">
+      <nav class="card-nav" id="cardNav">
+        <div class="card-nav-top">
+          <div class="hamburger-menu" id="hamburgerMenu">
+            <div class="hamburger-line"></div>
+            <div class="hamburger-line"></div>
+          </div>
 
-  <div class="wrap" style="max-width: 1200px; margin: 0 auto; padding: 2rem;">
-    <!-- Action Buttons -->
-    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-bottom: 2rem; flex-wrap: wrap;">
-      <button id="backBtn" style="padding: 0.75rem 1.5rem; background: var(--brand); color: #000; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: transform 0.2s;">
-        ← Back to Home
-      </button>
-      <button id="signOutBtn" style="padding: 0.75rem 1.5rem; background: #e74c3c; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: transform 0.2s;">
-        🚪 Sign Out
-      </button>
-    </div>
+          <div class="nav-logo-container">
+            <img src="images/iba-logo.png" alt="IBA Logo" class="nav-logo-img" />
+            <div class="nav-title-text">
+              <span class="nav-title-main">My Profile</span>
+              <span class="nav-title-sub">IBA Purdue</span>
+            </div>
+          </div>
+
+          <a href="login.html" id="navSignInBtn" style="text-decoration: none; display: none;">
+            <button class="card-nav-cta-button">Sign In</button>
+          </a>
+
+          <div id="navUserProfile" style="display: none; position: relative;">
+            <button class="card-nav-user-button" id="navUserButton">
+              <img id="navUserAvatar" src="" alt="User Avatar" class="nav-user-avatar" />
+            </button>
+            <div class="nav-user-dropdown" id="navUserDropdown" style="display: none;">
+              <button class="nav-dropdown-item" id="navProfileBtn">
+                <span>👤</span>
+                Profile
+              </button>
+              <button class="nav-dropdown-item" id="navSignOutBtn">
+                <span>🚪</span>
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-nav-content" id="cardNavContent">
+          <!-- Tournament Card -->
+          <div class="nav-card" style="background: linear-gradient(135deg, #CFB991 0%, #D4BE9C 100%); color: #000;">
+            <div class="nav-card-label">Tournament</div>
+            <div class="nav-card-links">
+              <a href="index.html" class="nav-card-link">
+                <span>→</span>
+                Current Season
+              </a>
+              <a href="index.html#schedule" class="nav-card-link">
+                <span>→</span>
+                Schedule
+              </a>
+              <a href="index.html#bracket" class="nav-card-link">
+                <span>→</span>
+                Bracket
+              </a>
+            </div>
+          </div>
+
+          <!-- Teams Card -->
+          <div class="nav-card" style="background: linear-gradient(135deg, #D9C6A7 0%, #E4D4B8 100%); color: #000;">
+            <div class="nav-card-label">Teams</div>
+            <div class="nav-card-links">
+              <a href="teams.html" class="nav-card-link">
+                <span>→</span>
+                All Teams
+              </a>
+              <a href="inbox.html" class="nav-card-link player-only" id="inboxLink" style="display: none; position: relative;">
+                <span>→</span>
+                Inbox
+                <span id="inboxBadge" style="display: none; position: absolute; top: -5px; right: 10px; background: #e74c3c; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; font-weight: 700;"></span>
+              </a>
+            </div>
+          </div>
+
+          <!-- Info Card -->
+          <div class="nav-card" style="background: linear-gradient(135deg, #EFE3C9 0%, #F5EDDA 100%); color: #000;">
+            <div class="nav-card-label">Info</div>
+            <div class="nav-card-links">
+              <a href="about.html" class="nav-card-link">
+                <span>→</span>
+                About Us
+              </a>
+              <a href="index.html#faq" class="nav-card-link">
+                <span>→</span>
+                FAQ
+              </a>
+              <a href="index.html#contact" class="nav-card-link">
+                <span>→</span>
+                Contact
+              </a>
+            </div>
+          </div>
+        </div>
+      </nav>
+  </div>
+
+  <div class="wrap" style="max-width: 1200px; margin: 0 auto; padding: 2rem; padding-top: 1rem;">
 
     <!-- Profile Content Grid -->
     <div class="profile-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-bottom: 3rem;">
