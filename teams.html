@@ -369,6 +369,31 @@
       }
 
       try {
+        // Check if user is already in a team
+        const userTeamsQuery = query(
+          collection(db, 'player_teams'),
+          where('members', 'array-contains', currentUser.uid)
+        );
+        const userTeamsSnapshot = await getDocs(userTeamsQuery);
+
+        if (!userTeamsSnapshot.empty) {
+          alert('❌ You are already a member of a team. Please leave your current team before joining another one.');
+          return;
+        }
+
+        // Check if user has too many pending requests
+        const pendingRequestsQuery = query(
+          collection(db, 'team_requests'),
+          where('userId', '==', currentUser.uid),
+          where('status', '==', 'pending')
+        );
+        const pendingRequestsSnapshot = await getDocs(pendingRequestsQuery);
+
+        if (pendingRequestsSnapshot.size >= 3) {
+          alert('❌ You have too many pending join requests. Please wait for responses before sending more requests.');
+          return;
+        }
+
         const teamDoc = await getDoc(doc(db, 'player_teams', teamId));
         const team = teamDoc.data();
 
@@ -447,6 +472,48 @@
       }
 
       try {
+        // Check if user is already captain of a team
+        const captainTeamsQuery = query(
+          collection(db, 'player_teams'),
+          where('captain', '==', currentUser.uid)
+        );
+        const captainTeamsSnapshot = await getDocs(captainTeamsQuery);
+
+        if (!captainTeamsSnapshot.empty) {
+          alert('❌ You can only be the captain of one team at a time. Please disband your current team before creating a new one.');
+          return;
+        }
+
+        // Check if team name already exists
+        const teamNameQuery = query(
+          collection(db, 'player_teams'),
+          where('teamName', '==', teamName)
+        );
+        const teamNameSnapshot = await getDocs(teamNameQuery);
+
+        if (!teamNameSnapshot.empty) {
+          alert('❌ A team with this name already exists. Please choose a different name.');
+          return;
+        }
+
+        // Check for rate limiting in user document
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          const lastTeamCreated = userData.lastTeamCreated?.toMillis() || 0;
+          const currentTime = Date.now();
+          const hoursSinceLastCreation = (currentTime - lastTeamCreated) / (1000 * 60 * 60);
+
+          // Require 1 hour cooldown between team creations
+          if (hoursSinceLastCreation < 1 && lastTeamCreated > 0) {
+            const minutesRemaining = Math.ceil((1 - hoursSinceLastCreation) * 60);
+            alert(`❌ Please wait ${minutesRemaining} minute(s) before creating another team. This helps prevent spam.`);
+            return;
+          }
+        }
+
         // Create team
         await addDoc(collection(db, 'player_teams'), {
           teamName: teamName,
@@ -460,14 +527,12 @@
           createdAt: serverTimestamp()
         });
 
-        // Add captain role to user
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userDoc = await getDoc(userRef);
-
+        // Update user document with captain role and timestamp
         if (userDoc.exists()) {
-          // User exists, add captain role using arrayUnion to avoid duplicates
+          // User exists, add captain role and update timestamp
           await updateDoc(userRef, {
-            roles: arrayUnion('captain', 'player')
+            roles: arrayUnion('captain', 'player'),
+            lastTeamCreated: serverTimestamp()
           });
         } else {
           // User doesn't exist, create with captain and player roles
@@ -475,6 +540,7 @@
             email: currentUser.email,
             displayName: currentUser.displayName || currentUser.email,
             roles: ['captain', 'player'],
+            lastTeamCreated: serverTimestamp(),
             createdAt: serverTimestamp()
           });
         }
