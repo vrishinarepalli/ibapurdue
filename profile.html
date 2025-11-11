@@ -273,30 +273,31 @@
           }
         };
       }
+
+      // Hamburger menu toggle
+      const hamburgerMenu = document.getElementById('hamburgerMenu');
+      const cardNavContent = document.getElementById('cardNavContent');
+      const cardNav = document.getElementById('cardNav');
+
+      if (hamburgerMenu && cardNavContent && cardNav) {
+        hamburgerMenu.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const isOpen = cardNav.classList.contains('nav-open');
+          if (isOpen) {
+            cardNav.classList.remove('nav-open');
+          } else {
+            cardNav.classList.add('nav-open');
+          }
+        });
+
+        // Close menu when clicking outside
+        document.addEventListener('click', (e) => {
+          if (!cardNav.contains(e.target)) {
+            cardNav.classList.remove('nav-open');
+          }
+        });
+      }
     });
-
-    // Hamburger menu toggle
-    const hamburgerMenu = document.getElementById('hamburgerMenu');
-    const cardNavContent = document.getElementById('cardNavContent');
-    const cardNav = document.getElementById('cardNav');
-
-    if (hamburgerMenu && cardNavContent && cardNav) {
-      hamburgerMenu.addEventListener('click', () => {
-        const isOpen = cardNav.classList.contains('nav-open');
-        if (isOpen) {
-          cardNav.classList.remove('nav-open');
-        } else {
-          cardNav.classList.add('nav-open');
-        }
-      });
-
-      // Close menu when clicking outside
-      document.addEventListener('click', (e) => {
-        if (!cardNav.contains(e.target)) {
-          cardNav.classList.remove('nav-open');
-        }
-      });
-    }
   </script>
 </head>
 <body>
