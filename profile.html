@@ -145,6 +145,31 @@
         if (profileTeamDetail) profileTeamDetail.textContent = 'Error loading team';
       }
 
+      // Load unread notification count
+      try {
+        const notificationsQuery = query(
+          collection(db, 'notifications'),
+          where('userId', '==', user.uid),
+          where('read', '==', false)
+        );
+        const notificationsSnapshot = await getDocs(notificationsQuery);
+        const unreadCount = notificationsSnapshot.size;
+
+        const inboxUnreadCount = document.getElementById('inboxUnreadCount');
+        const inboxUnreadBadge = document.getElementById('inboxUnreadBadge');
+
+        if (inboxUnreadCount) {
+          inboxUnreadCount.textContent = unreadCount;
+        }
+
+        if (inboxUnreadBadge && unreadCount > 0) {
+          inboxUnreadBadge.textContent = unreadCount;
+          inboxUnreadBadge.style.display = 'inline-block';
+        }
+      } catch (error) {
+        console.error('Error loading notifications:', error);
+      }
+
       // Check admin status (from Firestore - NO HARDCODED EMAILS)
       let isAdmin = false;
       try {
@@ -417,6 +442,23 @@
             <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: rgba(207, 185, 145, 0.2); border-radius: 8px; border: 1px solid rgba(207, 185, 145, 0.3);">
               <span style="color: #666; font-size: 0.9rem; font-weight: 600;">Team:</span>
               <span id="profileTeam" style="color: #0a1122; font-weight: 700; font-size: 0.9rem;">Loading...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inbox/Notifications Card -->
+        <div id="inboxCard" style="background: linear-gradient(135deg, #f8f5f0, #f0ebe3); border: 2px solid var(--brand); border-radius: 15px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(207, 185, 145, 0.15); cursor: pointer; transition: all 0.3s;" onclick="window.location.href='inbox.html'" onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 6px 25px rgba(207, 185, 145, 0.25)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 20px rgba(207, 185, 145, 0.15)'">
+          <h3 style="color: #0a1122; margin: 0 0 1rem 0; font-size: 1.1rem; border-bottom: 2px solid var(--brand); padding-bottom: 0.5rem; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+            📬 Inbox
+            <span id="inboxUnreadBadge" style="display: none; background: #e74c3c; color: white; font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 12px; font-weight: 700;"></span>
+          </h3>
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: rgba(207, 185, 145, 0.2); border-radius: 8px; border: 1px solid rgba(207, 185, 145, 0.3);">
+              <span style="color: #666; font-size: 0.9rem; font-weight: 600;">Unread:</span>
+              <span id="inboxUnreadCount" style="color: #e74c3c; font-weight: 700; font-size: 0.9rem;">0</span>
+            </div>
+            <div style="text-align: center; padding: 0.5rem;">
+              <span style="color: var(--brand); font-weight: 600; font-size: 0.9rem;">📩 View All Messages →</span>
             </div>
           </div>
         </div>
