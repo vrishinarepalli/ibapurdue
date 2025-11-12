@@ -1249,3 +1249,38 @@ footer { text-align: center; color: #606063; font-size: .85rem; margin: 1.25rem 
     background: var(--success) !important;
     color: #0b0f1a !important;
 }
+/* ============================================================================
+   CIRCULAR GALLERY STYLES
+   ============================================================================ */
+.circular-gallery-section {
+    width: 100%;
+    height: 600px;
+    position: relative;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.circular-gallery-container {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    cursor: grab;
+    position: relative;
+}
+
+.circular-gallery-container:active {
+    cursor: grabbing;
+}
+
+.circular-gallery-container canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+@media (max-width: 768px) {
+    .circular-gallery-section {
+        height: 400px;
+    }
+}
