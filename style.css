@@ -1257,8 +1257,9 @@ footer { text-align: center; color: #606063; font-size: .85rem; margin: 1.25rem 
     height: 600px;
     position: relative;
     margin: 0;
-    padding: 0;
+    padding: 2rem 0;
     overflow: hidden;
+    background: linear-gradient(135deg, #f8f5f0, #faf7f2);
 }
 
 .circular-gallery-container {
