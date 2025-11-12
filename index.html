@@ -4807,9 +4807,18 @@
 
     // Check if user is admin and show admin button
     onAuthStateChanged(auth, async (user) => {
+      const captainEmailField = document.getElementById('tournamentCaptainEmail');
+
       if (user) {
         // Destructure Firestore functions
         const { query, collection, where, getDocs } = window.firestoreImports;
+
+        // Autofill captain email with logged-in user's email
+        if (captainEmailField && user.email) {
+          captainEmailField.value = user.email;
+          captainEmailField.setAttribute('readonly', 'true');
+          captainEmailField.style.backgroundColor = 'rgba(207, 185, 145, 0.1)';
+        }
 
         // Check if admin
         try {
@@ -4824,6 +4833,13 @@
           }
         } catch (error) {
           console.error('Error checking admin status:', error);
+        }
+      } else {
+        // User is not signed in - make email field editable
+        if (captainEmailField) {
+          captainEmailField.removeAttribute('readonly');
+          captainEmailField.style.backgroundColor = '#ffffff';
+          captainEmailField.value = '';
         }
       }
     });
