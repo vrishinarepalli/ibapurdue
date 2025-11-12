@@ -3627,6 +3627,9 @@
 
     // Load team notifications for captain
     async function loadTeamNotifications(uid) {
+      // Destructure Firestore functions
+      const { collection, query, where, getDocs } = window.firestoreImports;
+
       try {
         const requestsRef = collection(db, 'team_join_requests');
         const q = query(requestsRef, where('captainUid', '==', uid), where('status', '==', 'pending'));
