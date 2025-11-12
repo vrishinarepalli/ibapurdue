@@ -5141,14 +5141,21 @@
       }
 
       createRenderer() {
-        this.renderer = new Renderer({
-          alpha: true,
-          antialias: true,
-          dpr: Math.min(window.devicePixelRatio || 1, 2)
-        });
-        this.gl = this.renderer.gl;
-        this.gl.clearColor(0, 0, 0, 0);
-        this.container.appendChild(this.gl.canvas);
+        try {
+          this.renderer = new Renderer({
+            alpha: true,
+            antialias: true,
+            dpr: Math.min(window.devicePixelRatio || 1, 2)
+          });
+          this.gl = this.renderer.gl;
+          this.gl.clearColor(0, 0, 0, 0);
+          this.container.appendChild(this.gl.canvas);
+          console.log('✅ Circular gallery WebGL renderer created successfully');
+        } catch (error) {
+          console.error('❌ Error creating WebGL renderer:', error);
+          // Add fallback message
+          this.container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #0a1122; font-size: 1.2rem;">WebGL not supported on this device. Please try a different browser.</div>';
+        }
       }
 
       createCamera() {
@@ -5293,18 +5300,24 @@
 
     // Initialize with IBA league stats
     window.addEventListener('DOMContentLoaded', () => {
+      console.log('🏀 Initializing IBA circular gallery...');
       // Wait a bit for the page to settle
       setTimeout(() => {
-        window.initCircularGallery([
-          { image: 'https://picsum.photos/seed/basketball1/800/600?grayscale', text: '200+ Regular Season Games' },
-          { image: 'https://picsum.photos/seed/basketball2/800/600?grayscale', text: '50+ Playoff Games' },
-          { image: 'https://picsum.photos/seed/basketball3/800/600?grayscale', text: '3 Champions So Far' },
-          { image: 'https://picsum.photos/seed/basketball4/800/600?grayscale', text: '50+ Unique Teams' },
-          { image: 'https://picsum.photos/seed/basketball5/800/600?grayscale', text: '150+ Unique Players' },
-          { image: 'https://picsum.photos/seed/basketball6/800/600?grayscale', text: '$630 in Prizes' },
-          { image: 'https://picsum.photos/seed/basketball7/800/600?grayscale', text: 'Longest Game: 1hr 4min' },
-          { image: 'https://picsum.photos/seed/basketball8/800/600?grayscale', text: '67 Elite Freaks vs Tandoori Towers' }
-        ]);
+        try {
+          window.initCircularGallery([
+            { image: 'https://picsum.photos/seed/basketball1/800/600?grayscale', text: '200+ Regular Season Games' },
+            { image: 'https://picsum.photos/seed/basketball2/800/600?grayscale', text: '50+ Playoff Games' },
+            { image: 'https://picsum.photos/seed/basketball3/800/600?grayscale', text: '3 Champions So Far' },
+            { image: 'https://picsum.photos/seed/basketball4/800/600?grayscale', text: '50+ Unique Teams' },
+            { image: 'https://picsum.photos/seed/basketball5/800/600?grayscale', text: '150+ Unique Players' },
+            { image: 'https://picsum.photos/seed/basketball6/800/600?grayscale', text: '$630 in Prizes' },
+            { image: 'https://picsum.photos/seed/basketball7/800/600?grayscale', text: 'Longest Game: 1hr 4min' },
+            { image: 'https://picsum.photos/seed/basketball8/800/600?grayscale', text: '67 Elite Freaks vs Tandoori Towers' }
+          ]);
+          console.log('✅ Circular gallery initialized successfully');
+        } catch (error) {
+          console.error('❌ Error initializing circular gallery:', error);
+        }
       }, 500);
     });
   </script>
