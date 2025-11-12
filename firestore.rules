@@ -155,15 +155,15 @@ service cloud.firestore {
       // Anyone can read active entries
       allow read: if resource.data.status == 'active';
 
-      // Authenticated users can create entries
-      allow create: if isSignedIn() &&
-                      request.resource.data.userId == request.auth.uid;
+      // Anyone can create entries (no authentication required)
+      // Add size limit to prevent abuse
+      allow create: if request.resource.data.size() < 10000;
 
-      // Users can update their own entries, admins can update any
-      allow update: if isOwner(resource.data.userId) || isAdmin();
+      // Only admins can update entries
+      allow update: if isAdmin();
 
-      // Users can delete their own entries, admins can delete any
-      allow delete: if isOwner(resource.data.userId) || isAdmin();
+      // Only admins can delete entries
+      allow delete: if isAdmin();
     }
 
     // Contact messages - anyone can create (rate limited recommended), only admins can read

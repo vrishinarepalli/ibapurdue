@@ -4604,12 +4604,7 @@
         e.preventDefault();
 
         // Destructure Firestore functions
-        const { updateDoc, doc, addDoc, collection } = window.firestoreImports;
-
-        if (!auth.currentUser) {
-          alert('Please sign in to submit a tournament entry.');
-          return;
-        }
+        const { addDoc, collection } = window.firestoreImports;
 
         const teamName = document.getElementById('tournamentTeamName').value.trim();
         const captainName = document.getElementById('tournamentCaptainName').value.trim();
@@ -4630,7 +4625,7 @@
         try {
           const submitBtn = document.getElementById('submitTournamentBtn');
           submitBtn.disabled = true;
-          submitBtn.textContent = isEditMode ? 'Updating...' : 'Submitting...';
+          submitBtn.textContent = 'Submitting...';
 
           const entryData = {
             teamName,
@@ -4639,30 +4634,18 @@
             captainPhone,
             playerNames,
             notes,
-            userId: auth.currentUser.uid,
-            userEmail: auth.currentUser.email,
             status: 'active',
+            createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           };
 
-          if (isEditMode && currentSubmissionId) {
-            // Update existing submission
-            await updateDoc(doc(db, 'tournament_entries', currentSubmissionId), entryData);
-            alert('✅ Your tournament entry has been updated!');
-          } else {
-            // Create new submission
-            entryData.createdAt = new Date().toISOString();
-            await addDoc(collection(db, 'tournament_entries'), entryData);
-            alert('✅ Your tournament entry has been submitted!');
-          }
+          // Create new submission
+          await addDoc(collection(db, 'tournament_entries'), entryData);
+          alert('✅ Your tournament entry has been submitted!');
 
           // Reset form
           tournamentForm.reset();
-          isEditMode = false;
           submitBtn.textContent = 'Submit Tournament Entry';
-
-          // Reload submission status
-          await loadUserTournamentSubmission();
 
         } catch (error) {
           console.error('Error submitting tournament entry:', error);
@@ -4827,17 +4810,6 @@
       if (user) {
         // Destructure Firestore functions
         const { query, collection, where, getDocs } = window.firestoreImports;
-
-        // Autofill captain email with logged-in user's email
-        const captainEmailField = document.getElementById('tournamentCaptainEmail');
-        if (captainEmailField && user.email) {
-          captainEmailField.value = user.email;
-          captainEmailField.setAttribute('readonly', 'true');
-          captainEmailField.style.backgroundColor = 'rgba(207, 185, 145, 0.1)';
-        }
-
-        // Load user's submission
-        await loadUserTournamentSubmission();
 
         // Check if admin
         try {
