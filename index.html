@@ -4149,6 +4149,9 @@
     // Auth state listener for user profile display
     const { onAuthStateChanged, signOut } = window.authImports;
     onAuthStateChanged(auth, async (user) => {
+      // Destructure Firestore functions for use in this callback
+      const { doc, getDoc, query, where, collection, getDocs } = window.firestoreImports;
+
       const loginLink = document.getElementById('loginLink');
       const userProfileChip = document.getElementById('userProfileChip');
       const userDisplayName = document.getElementById('userDisplayName');
@@ -4535,6 +4538,9 @@
     async function loadUserTournamentSubmission() {
       if (!auth.currentUser) return;
 
+      // Destructure Firestore functions
+      const { query, collection, where, getDocs, doc, updateDoc } = window.firestoreImports;
+
       try {
         const submissionsQuery = query(
           collection(db, 'tournament_entries'),
@@ -4579,6 +4585,9 @@
     if (tournamentForm) {
       tournamentForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        // Destructure Firestore functions
+        const { updateDoc, doc, addDoc, collection } = window.firestoreImports;
 
         if (!auth.currentUser) {
           alert('Please sign in to submit a tournament entry.');
@@ -4654,6 +4663,9 @@
       editBtn.addEventListener('click', async () => {
         if (!currentSubmissionId) return;
 
+        // Destructure Firestore functions
+        const { getDoc, doc } = window.firestoreImports;
+
         try {
           const submissionDoc = await getDoc(doc(db, 'tournament_entries', currentSubmissionId));
           if (submissionDoc.exists()) {
@@ -4698,6 +4710,9 @@
           return;
         }
 
+        // Destructure Firestore functions
+        const { updateDoc, doc } = window.firestoreImports;
+
         try {
           await updateDoc(doc(db, 'tournament_entries', currentSubmissionId), {
             status: 'withdrawn',
@@ -4716,6 +4731,9 @@
 
     // Show all submissions (admin only)
     window.showAllSubmissions = async function() {
+      // Destructure Firestore functions
+      const { query, collection, where, getDocs } = window.firestoreImports;
+
       try {
         const submissionsQuery = query(
           collection(db, 'tournament_entries'),
@@ -4790,6 +4808,9 @@
     // Check if user is admin and show admin button
     onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // Destructure Firestore functions
+        const { query, collection, where, getDocs } = window.firestoreImports;
+
         // Autofill captain email with logged-in user's email
         const captainEmailField = document.getElementById('tournamentCaptainEmail');
         if (captainEmailField && user.email) {
