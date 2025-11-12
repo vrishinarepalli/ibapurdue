@@ -301,7 +301,7 @@
       <div class="hero-content">
         <h2>The Court. The Teams. The Glory</h2>
         <p>IBA Fall 2025 • Regular Season & Playoffs</p>
-        <a href="#panel-signup" class="hero-btn" id="heroSignupBtn">Spring Season Entry Form</a>
+        <a href="#panel-signup" class="hero-btn" id="heroSignupBtn">Winter Mini Tournament</a>
       </div>
       <!-- Wave transition -->
       <div class="hero-wave">
@@ -347,7 +347,7 @@
         </a>
         <button role="tab" id="tab-faq" aria-selected="false" aria-controls="panel-faq">FAQ</button>
         <button role="tab" id="tab-contact" aria-selected="false" aria-controls="panel-contact">Contact Us</button>
-        <button role="tab" id="tab-signup" aria-selected="false" aria-controls="panel-signup">✍️ Spring Season</button>
+        <button role="tab" id="tab-signup" aria-selected="false" aria-controls="panel-signup">❄️ Winter Tournament</button>
       </div>
 
       <section id="panel-current" class="tabpanel active" role="tabpanel" aria-labelledby="tab-current">
@@ -973,28 +973,85 @@
       <section id="panel-signup" class="tabpanel" role="tabpanel" aria-labelledby="tab-signup">
         <div style="max-width: 900px; margin: 0 auto;">
           <h2 style="font-size: 1.75rem; font-weight: 700; margin: 0 0 1rem 0; background: linear-gradient(90deg, var(--brand), var(--brand-2)); background-clip: text; -webkit-background-clip: text; color: transparent; -webkit-text-fill-color: transparent;">
-            IBA Spring 2026 Sign Up
+            IBA Winter Mini Tournament 2025
           </h2>
           <p style="color: var(--muted); margin-bottom: 1.5rem;">
-            Fill out the form below to register your team for the upcoming Spring season.
+            Sign up your team for the Winter Mini Tournament! You can edit or withdraw your submission at any time.
           </p>
 
-          <!-- Embedded Google Form -->
-          <iframe
-            src="https://docs.google.com/forms/d/e/1FAIpQLSdSgQEZ-64_6u9oL6Cmm6F9K_VmmXX15xB09HqUCZJyYd70Nw/viewform?embedded=true"
-            width="100%" height="900" frameborder="0" marginheight="0" marginwidth="0"
-            style="border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
-            Loading…
-          </iframe>
+          <!-- User's Current Submission Status -->
+          <div id="userSubmissionStatus" style="display: none; margin-bottom: 2rem; padding: 1.5rem; background: var(--card); border: 2px solid var(--brand); border-radius: 12px;">
+            <h3 style="color: var(--brand); margin: 0 0 1rem 0; font-size: 1.2rem;">Your Submission</h3>
+            <div id="submissionDetails" style="color: var(--text);"></div>
+            <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+              <button id="editSubmissionBtn" class="hero-btn" style="flex: 1; padding: 0.75rem;">Edit Submission</button>
+              <button id="withdrawSubmissionBtn" style="flex: 1; padding: 0.75rem; background: #e74c3c; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Withdraw</button>
+            </div>
+          </div>
 
-          <!-- Backup Button -->
-          <div style="text-align: center; margin-top: 1.5rem;">
-            <a href="https://forms.gle/WEoHNYVmDbJYJgua6" target="_blank" rel="noopener noreferrer"
-               style="display: inline-block; padding: 0.75rem 1.5rem; background: linear-gradient(90deg, var(--brand), var(--brand-2)); color: white; font-weight: 600; border-radius: 12px; text-decoration: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); transition: all 0.2s ease;"
-               onmouseover="this.style.transform='scale(1.05)'"
-               onmouseout="this.style.transform='scale(1)'">
-              Open Form in New Tab
-            </a>
+          <!-- Admin View All Submissions Button -->
+          <div id="adminSubmissionsBtn" style="display: none; margin-bottom: 2rem;">
+            <button onclick="showAllSubmissions()" style="width: 100%; padding: 1rem; background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: #000; border: none; border-radius: 12px; font-weight: 700; font-size: 1.1rem; cursor: pointer;">
+              👑 View All Tournament Submissions (Admin)
+            </button>
+          </div>
+
+          <!-- Tournament Entry Form -->
+          <div id="tournamentEntryForm" style="background: var(--card); padding: 2rem; border-radius: 12px; border: 1px solid var(--border);">
+            <form id="winterTournamentForm">
+              <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; color: var(--text); font-weight: 600; margin-bottom: 0.5rem;">Team Name *</label>
+                <input type="text" id="tournamentTeamName" required placeholder="Enter your team name"
+                  style="width: 100%; padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;" />
+              </div>
+
+              <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; color: var(--text); font-weight: 600; margin-bottom: 0.5rem;">Captain Name *</label>
+                <input type="text" id="tournamentCaptainName" required placeholder="Enter captain's name"
+                  style="width: 100%; padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;" />
+              </div>
+
+              <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; color: var(--text); font-weight: 600; margin-bottom: 0.5rem;">Captain Email *</label>
+                <input type="email" id="tournamentCaptainEmail" required placeholder="Enter captain's email"
+                  style="width: 100%; padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;" />
+              </div>
+
+              <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; color: var(--text); font-weight: 600; margin-bottom: 0.5rem;">Captain Phone *</label>
+                <input type="tel" id="tournamentCaptainPhone" required placeholder="Enter captain's phone number"
+                  style="width: 100%; padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;" />
+              </div>
+
+              <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; color: var(--text); font-weight: 600; margin-bottom: 0.5rem;">Team Size *</label>
+                <select id="tournamentTeamSize" required
+                  style="width: 100%; padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;">
+                  <option value="">Select team size</option>
+                  <option value="3">3 players</option>
+                  <option value="4">4 players</option>
+                  <option value="5">5 players</option>
+                </select>
+              </div>
+
+              <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; color: var(--text); font-weight: 600; margin-bottom: 0.5rem;">Player Names *</label>
+                <textarea id="tournamentPlayerNames" required rows="4" placeholder="Enter all player names (one per line)"
+                  style="width: 100%; padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem; resize: vertical;"></textarea>
+                <small style="color: var(--muted); font-size: 0.85rem;">List all players in your team, one name per line</small>
+              </div>
+
+              <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; color: var(--text); font-weight: 600; margin-bottom: 0.5rem;">Additional Notes (Optional)</label>
+                <textarea id="tournamentNotes" rows="3" placeholder="Any additional information or special requests"
+                  style="width: 100%; padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem; resize: vertical;"></textarea>
+              </div>
+
+              <button type="submit" id="submitTournamentBtn"
+                style="width: 100%; padding: 1rem; background: linear-gradient(90deg, var(--brand), var(--brand-2)); color: white; font-weight: 700; font-size: 1.1rem; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
+                Submit Tournament Entry
+              </button>
+            </form>
           </div>
         </div>
       </section>
@@ -4403,6 +4460,283 @@
         }
       });
     }
+
+    // ============================================
+    // Winter Tournament Entry System
+    // ============================================
+    let currentSubmissionId = null;
+    let isEditMode = false;
+
+    // Load user's existing submission
+    async function loadUserTournamentSubmission() {
+      if (!auth.currentUser) return;
+
+      try {
+        const submissionsQuery = query(
+          collection(db, 'tournament_entries'),
+          where('userId', '==', auth.currentUser.uid),
+          where('status', '==', 'active')
+        );
+        const snapshot = await getDocs(submissionsQuery);
+
+        if (!snapshot.empty) {
+          const submission = snapshot.docs[0];
+          currentSubmissionId = submission.id;
+          const data = submission.data();
+
+          // Show submission status
+          document.getElementById('userSubmissionStatus').style.display = 'block';
+          document.getElementById('tournamentEntryForm').style.display = 'none';
+
+          // Display submission details
+          document.getElementById('submissionDetails').innerHTML = `
+            <div style="display: grid; gap: 1rem;">
+              <div><strong>Team Name:</strong> ${data.teamName}</div>
+              <div><strong>Captain:</strong> ${data.captainName}</div>
+              <div><strong>Email:</strong> ${data.captainEmail}</div>
+              <div><strong>Phone:</strong> ${data.captainPhone}</div>
+              <div><strong>Team Size:</strong> ${data.teamSize} players</div>
+              <div><strong>Players:</strong><br/><pre style="margin: 0.5rem 0; padding: 0.5rem; background: #0a1122; border-radius: 4px;">${data.playerNames}</pre></div>
+              ${data.notes ? `<div><strong>Notes:</strong> ${data.notes}</div>` : ''}
+              <div style="color: var(--muted); font-size: 0.85rem;">Submitted: ${new Date(data.createdAt).toLocaleDateString()}</div>
+            </div>
+          `;
+        } else {
+          // No submission, show form
+          document.getElementById('userSubmissionStatus').style.display = 'none';
+          document.getElementById('tournamentEntryForm').style.display = 'block';
+        }
+      } catch (error) {
+        console.error('Error loading submission:', error);
+      }
+    }
+
+    // Submit tournament entry
+    const tournamentForm = document.getElementById('winterTournamentForm');
+    if (tournamentForm) {
+      tournamentForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        if (!auth.currentUser) {
+          alert('Please sign in to submit a tournament entry.');
+          return;
+        }
+
+        const teamName = document.getElementById('tournamentTeamName').value.trim();
+        const captainName = document.getElementById('tournamentCaptainName').value.trim();
+        const captainEmail = document.getElementById('tournamentCaptainEmail').value.trim();
+        const captainPhone = document.getElementById('tournamentCaptainPhone').value.trim();
+        const teamSize = document.getElementById('tournamentTeamSize').value;
+        const playerNames = document.getElementById('tournamentPlayerNames').value.trim();
+        const notes = document.getElementById('tournamentNotes').value.trim();
+
+        try {
+          const submitBtn = document.getElementById('submitTournamentBtn');
+          submitBtn.disabled = true;
+          submitBtn.textContent = isEditMode ? 'Updating...' : 'Submitting...';
+
+          const entryData = {
+            teamName,
+            captainName,
+            captainEmail,
+            captainPhone,
+            teamSize,
+            playerNames,
+            notes,
+            userId: auth.currentUser.uid,
+            userEmail: auth.currentUser.email,
+            status: 'active',
+            updatedAt: new Date().toISOString()
+          };
+
+          if (isEditMode && currentSubmissionId) {
+            // Update existing submission
+            await updateDoc(doc(db, 'tournament_entries', currentSubmissionId), entryData);
+            alert('✅ Your tournament entry has been updated!');
+          } else {
+            // Create new submission
+            entryData.createdAt = new Date().toISOString();
+            await addDoc(collection(db, 'tournament_entries'), entryData);
+            alert('✅ Your tournament entry has been submitted!');
+          }
+
+          // Reset form
+          tournamentForm.reset();
+          isEditMode = false;
+          submitBtn.textContent = 'Submit Tournament Entry';
+
+          // Reload submission status
+          await loadUserTournamentSubmission();
+
+        } catch (error) {
+          console.error('Error submitting tournament entry:', error);
+          alert('Error submitting entry. Please try again.');
+        } finally {
+          const submitBtn = document.getElementById('submitTournamentBtn');
+          submitBtn.disabled = false;
+        }
+      });
+    }
+
+    // Edit submission
+    const editBtn = document.getElementById('editSubmissionBtn');
+    if (editBtn) {
+      editBtn.addEventListener('click', async () => {
+        if (!currentSubmissionId) return;
+
+        try {
+          const submissionDoc = await getDoc(doc(db, 'tournament_entries', currentSubmissionId));
+          if (submissionDoc.exists()) {
+            const data = submissionDoc.data();
+
+            // Fill form with existing data
+            document.getElementById('tournamentTeamName').value = data.teamName;
+            document.getElementById('tournamentCaptainName').value = data.captainName;
+            document.getElementById('tournamentCaptainEmail').value = data.captainEmail;
+            document.getElementById('tournamentCaptainPhone').value = data.captainPhone;
+            document.getElementById('tournamentTeamSize').value = data.teamSize;
+            document.getElementById('tournamentPlayerNames').value = data.playerNames;
+            document.getElementById('tournamentNotes').value = data.notes || '';
+
+            // Show form, hide status
+            document.getElementById('userSubmissionStatus').style.display = 'none';
+            document.getElementById('tournamentEntryForm').style.display = 'block';
+
+            // Update button text
+            document.getElementById('submitTournamentBtn').textContent = 'Update Tournament Entry';
+            isEditMode = true;
+          }
+        } catch (error) {
+          console.error('Error loading submission for edit:', error);
+          alert('Error loading submission. Please try again.');
+        }
+      });
+    }
+
+    // Withdraw submission
+    const withdrawBtn = document.getElementById('withdrawSubmissionBtn');
+    if (withdrawBtn) {
+      withdrawBtn.addEventListener('click', async () => {
+        if (!currentSubmissionId) return;
+
+        if (!confirm('Are you sure you want to withdraw your tournament entry?')) {
+          return;
+        }
+
+        try {
+          await updateDoc(doc(db, 'tournament_entries', currentSubmissionId), {
+            status: 'withdrawn',
+            withdrawnAt: new Date().toISOString()
+          });
+
+          alert('✅ Your tournament entry has been withdrawn.');
+          currentSubmissionId = null;
+          await loadUserTournamentSubmission();
+        } catch (error) {
+          console.error('Error withdrawing submission:', error);
+          alert('Error withdrawing submission. Please try again.');
+        }
+      });
+    }
+
+    // Show all submissions (admin only)
+    window.showAllSubmissions = async function() {
+      try {
+        const submissionsQuery = query(
+          collection(db, 'tournament_entries'),
+          where('status', '==', 'active')
+        );
+        const snapshot = await getDocs(submissionsQuery);
+
+        const submissions = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+
+        // Create modal to display submissions
+        const modal = document.createElement('div');
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 2rem;';
+
+        const content = document.createElement('div');
+        content.style.cssText = 'background: var(--card); border: 2px solid var(--brand); border-radius: 12px; padding: 2rem; max-width: 1200px; max-height: 90vh; overflow-y: auto; width: 100%;';
+
+        content.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="margin: 0; color: var(--brand);">Tournament Submissions (${submissions.length})</h2>
+            <button onclick="this.closest('div[style*=\"position: fixed\"]').remove()" style="background: none; border: none; color: var(--text); font-size: 2rem; cursor: pointer; line-height: 1;">&times;</button>
+          </div>
+
+          ${submissions.length === 0 ? '<p style="color: var(--muted); text-align: center;">No submissions yet.</p>' : `
+            <div style="display: grid; gap: 1.5rem;">
+              ${submissions.map(sub => `
+                <div style="background: #0a1122; padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border);">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                      <strong style="color: var(--brand);">Team Name:</strong> ${sub.teamName}
+                    </div>
+                    <div>
+                      <strong style="color: var(--brand);">Team Size:</strong> ${sub.teamSize} players
+                    </div>
+                    <div>
+                      <strong style="color: var(--brand);">Captain:</strong> ${sub.captainName}
+                    </div>
+                    <div>
+                      <strong style="color: var(--brand);">Email:</strong> ${sub.captainEmail}
+                    </div>
+                    <div>
+                      <strong style="color: var(--brand);">Phone:</strong> ${sub.captainPhone}
+                    </div>
+                    <div>
+                      <strong style="color: var(--brand);">Submitted:</strong> ${new Date(sub.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div style="margin-top: 1rem;">
+                    <strong style="color: var(--brand);">Players:</strong>
+                    <pre style="margin: 0.5rem 0; padding: 0.5rem; background: var(--card); border-radius: 4px; white-space: pre-wrap;">${sub.playerNames}</pre>
+                  </div>
+                  ${sub.notes ? `
+                    <div style="margin-top: 1rem;">
+                      <strong style="color: var(--brand);">Notes:</strong>
+                      <p style="margin: 0.5rem 0; color: var(--muted);">${sub.notes}</p>
+                    </div>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+          `}
+        `;
+
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+
+      } catch (error) {
+        console.error('Error loading all submissions:', error);
+        alert('Error loading submissions. Please try again.');
+      }
+    };
+
+    // Check if user is admin and show admin button
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        // Load user's submission
+        await loadUserTournamentSubmission();
+
+        // Check if admin
+        try {
+          const approvedAdminsQuery = query(
+            collection(db, 'approved_admins'),
+            where('email', '==', user.email)
+          );
+          const snapshot = await getDocs(approvedAdminsQuery);
+
+          if (!snapshot.empty || user.uid === ADMIN_UID) {
+            document.getElementById('adminSubmissionsBtn').style.display = 'block';
+          }
+        } catch (error) {
+          console.error('Error checking admin status:', error);
+        }
+      }
+    });
 
     }); // End of waitForFirebase
   </script>

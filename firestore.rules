@@ -2,20 +2,36 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Helper function to check if user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user is the document owner
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
     // Helper function to check if user is main admin
     function isMainAdmin() {
       return request.auth != null && request.auth.uid == 'seZ01FolJbSajEKTIsljwGtYHGD3';
     }
 
-    // Helper function to check if user is an approved admin
-    function isApprovedAdmin() {
-      return request.auth != null &&
-             exists(/databases/$(database)/documents/approved_admins/$(request.auth.uid));
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return isSignedIn() && (
+        isMainAdmin() ||
+        exists(/databases/$(database)/documents/approved_admins/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/admin_requests/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/admin_requests/$(request.auth.uid)).data.status == 'approved')
+      );
     }
 
-    // Helper function to check if user is any admin (main or approved)
-    function isAdmin() {
-      return isMainAdmin() || isApprovedAdmin();
+    // Helper function to check if user is team captain
+    function isTeamCaptain(teamId) {
+      return isSignedIn() &&
+             exists(/databases/$(database)/documents/player_teams/$(teamId)) &&
+             get(/databases/$(database)/documents/player_teams/$(teamId)).data.captain == request.auth.uid;
     }
 
     // Admin biometric credentials - only accessible by server-side functions
@@ -33,40 +49,121 @@ service cloud.firestore {
       allow read, write: if false; // Only Cloud Functions can access
     }
 
-    // Admin requests - authenticated users can create, only main admin can read/update
-    match /admin_requests/{requestId} {
-      allow create: if request.auth != null; // Authenticated users can request admin access
-      allow read, update, delete: if isMainAdmin(); // Only main admin can manage requests
+    // Users collection - only user can read/write their own document
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      // Users can update their own profile but CANNOT modify roles
+      // Admins can update any user including roles
+      allow update: if (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['roles'])) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
-    // Approved admins - authenticated users can check if they're approved
+    // Admin requests collection
+    match /admin_requests/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Approved admins collection - read-only for all authenticated users
     match /approved_admins/{adminId} {
-      allow read: if request.auth != null; // Any authenticated user can check if they're approved
-      allow write: if isMainAdmin(); // Only main admin can approve/remove admins
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
 
-    // Games collection - read by anyone, write only by admins
+    // Player teams collection
+    match /player_teams/{teamId} {
+      // Anyone can read teams
+      allow read: if true;
+
+      // Only authenticated users can create teams
+      allow create: if isSignedIn() &&
+                      request.resource.data.captain == request.auth.uid &&
+                      request.resource.data.members[0] == request.auth.uid;
+
+      // Only team captain or admin can update/delete team
+      allow update: if isTeamCaptain(teamId) || isAdmin();
+      allow delete: if isTeamCaptain(teamId) || isAdmin();
+    }
+
+    // Team join requests
+    match /team_requests/{requestId} {
+      // Users can read their own requests
+      // Team captains can read requests for their teams
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isTeamCaptain(resource.data.teamId) ||
+        isAdmin()
+      );
+
+      // Only authenticated users can create requests
+      allow create: if isSignedIn() &&
+                      request.resource.data.userId == request.auth.uid;
+
+      // Only team captain can update request status
+      allow update: if isTeamCaptain(resource.data.teamId) || isAdmin();
+
+      // Users can delete their own pending requests
+      allow delete: if isOwner(resource.data.userId) ||
+                      isTeamCaptain(resource.data.teamId) ||
+                      isAdmin();
+    }
+
+    // Notifications collection
+    match /notifications/{notificationId} {
+      // Users can only read their own notifications
+      allow read: if isOwner(resource.data.userId);
+
+      // Anyone authenticated can create notifications (for team requests, etc.)
+      allow create: if isSignedIn();
+
+      // Users can update (mark as read) their own notifications
+      allow update: if isOwner(resource.data.userId);
+
+      // Users can delete their own notifications
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // Message templates - read by all, write by admins only
+    match /message_templates/{templateId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Games collection
     match /games/{gameId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Teams collection - read by anyone, write only by admins
+    // Teams collection (for team stats/standings)
     match /teams/{teamId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Bracket collection - read by anyone, write only by admins
-    match /bracket/{bracketId} {
+    // Tournament bracket
+    match /tournament/{document=**} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Tournament collection - read by anyone, write only by admins
-    match /tournament/{document=**} {
-      allow read: if true;
-      allow write: if isAdmin();
+    // Tournament entries (Winter Mini Tournament)
+    match /tournament_entries/{entryId} {
+      // Anyone can read active entries
+      allow read: if resource.data.status == 'active';
+
+      // Authenticated users can create entries
+      allow create: if isSignedIn() &&
+                      request.resource.data.userId == request.auth.uid;
+
+      // Users can update their own entries, admins can update any
+      allow update: if isOwner(resource.data.userId) || isAdmin();
+
+      // Users can delete their own entries, admins can delete any
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
     }
 
     // Contact messages - anyone can create (rate limited recommended), only admins can read
@@ -82,32 +179,6 @@ service cloud.firestore {
       // Only allow specific document updates (e.g., visitor_count)
       // Prevent spam by restricting to authenticated users
       allow write: if request.auth != null && document == 'visitor_count';
-    }
-
-    // Users collection - users can read all profiles but only edit their own
-    match /users/{userId} {
-      allow read: if true; // Anyone can read user profiles
-      allow create: if request.auth != null && request.auth.uid == userId; // Users can create their own profile
-      // Users can update their own profile but CANNOT modify roles
-      // Admins can update any user including roles
-      allow update: if (request.auth != null && request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['roles'])) || isAdmin();
-      allow delete: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Player teams - authenticated users can create, read all, captains can update their own
-    match /player_teams/{teamId} {
-      allow read: if true; // Anyone can read teams
-      allow create: if request.auth != null; // Authenticated users can create teams
-      allow update: if request.auth != null && request.auth.uid == resource.data.captainUid; // Only captain can update
-      allow delete: if request.auth != null && request.auth.uid == resource.data.captainUid; // Only captain can delete
-    }
-
-    // Team join requests - players can create, captains can read/update requests for their teams
-    match /team_join_requests/{requestId} {
-      allow create: if request.auth != null; // Authenticated users can create join requests
-      allow read: if request.auth != null; // Authenticated users can read join requests
-      allow update: if request.auth != null && request.auth.uid == resource.data.captainUid; // Only captain can update
-      allow delete: if request.auth != null && (request.auth.uid == resource.data.captainUid || request.auth.uid == resource.data.playerUid); // Captain or requester can delete
     }
   }
 }
