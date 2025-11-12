@@ -173,16 +173,25 @@
       // Check admin status (from Firestore - NO HARDCODED EMAILS)
       let isAdmin = false;
       try {
-        // Check approved_admins collection
-        const approvedAdminsQuery = query(
-          collection(db, 'approved_admins'),
-          where('email', '==', user.email)
-        );
-        const snapshot = await getDocs(approvedAdminsQuery);
-
-        if (!snapshot.empty) {
+        // Check if user is main admin (matches the UID in firestore.rules)
+        const MAIN_ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
+        if (user.uid === MAIN_ADMIN_UID) {
           isAdmin = true;
-          console.log('✅ User is approved admin (from approved_admins):', user.email);
+          console.log('✅ User is main admin:', user.email);
+        }
+
+        // Check approved_admins collection
+        if (!isAdmin) {
+          const approvedAdminsQuery = query(
+            collection(db, 'approved_admins'),
+            where('email', '==', user.email)
+          );
+          const snapshot = await getDocs(approvedAdminsQuery);
+
+          if (!snapshot.empty) {
+            isAdmin = true;
+            console.log('✅ User is approved admin (from approved_admins):', user.email);
+          }
         }
 
         // Also check admin_requests collection for approved requests

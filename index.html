@@ -1413,6 +1413,14 @@
         }
 
         const { collection, query, where, getDocs, doc, getDoc } = window.firestoreImports;
+        const userUid = window.auth?.currentUser?.uid;
+
+        // Check if user is main admin (matches the UID in firestore.rules)
+        const MAIN_ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
+        if (userUid === MAIN_ADMIN_UID) {
+          console.log('✅ User is main admin:', email);
+          return true;
+        }
 
         // Check approved_admins collection
         const approvedAdminsQuery = query(
@@ -1428,7 +1436,6 @@
         }
 
         // Also check admin_requests collection for approved requests
-        const userUid = window.auth?.currentUser?.uid;
         if (userUid) {
           const requestDoc = await getDoc(doc(window.db, 'admin_requests', userUid));
           if (requestDoc.exists() && requestDoc.data().status === 'approved') {
