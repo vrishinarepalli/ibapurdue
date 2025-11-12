@@ -5291,16 +5291,19 @@
       }
     }
 
-    // Initialize with default items (will be replaced when user provides stats)
+    // Initialize with IBA league stats
     window.addEventListener('DOMContentLoaded', () => {
       // Wait a bit for the page to settle
       setTimeout(() => {
         window.initCircularGallery([
-          { image: 'https://picsum.photos/seed/1/800/600?grayscale', text: 'IBA League' },
-          { image: 'https://picsum.photos/seed/2/800/600?grayscale', text: 'Basketball' },
-          { image: 'https://picsum.photos/seed/3/800/600?grayscale', text: 'Community' },
-          { image: 'https://picsum.photos/seed/4/800/600?grayscale', text: 'Competition' },
-          { image: 'https://picsum.photos/seed/5/800/600?grayscale', text: 'Champions' }
+          { image: 'https://picsum.photos/seed/basketball1/800/600?grayscale', text: '200+ Regular Season Games' },
+          { image: 'https://picsum.photos/seed/basketball2/800/600?grayscale', text: '50+ Playoff Games' },
+          { image: 'https://picsum.photos/seed/basketball3/800/600?grayscale', text: '3 Champions So Far' },
+          { image: 'https://picsum.photos/seed/basketball4/800/600?grayscale', text: '50+ Unique Teams' },
+          { image: 'https://picsum.photos/seed/basketball5/800/600?grayscale', text: '150+ Unique Players' },
+          { image: 'https://picsum.photos/seed/basketball6/800/600?grayscale', text: '$630 in Prizes' },
+          { image: 'https://picsum.photos/seed/basketball7/800/600?grayscale', text: 'Longest Game: 1hr 4min' },
+          { image: 'https://picsum.photos/seed/basketball8/800/600?grayscale', text: '67 Elite Freaks vs Tandoori Towers' }
         ]);
       }, 500);
     });
