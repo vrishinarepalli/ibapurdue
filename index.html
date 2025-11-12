@@ -16,9 +16,6 @@
   <!-- GSAP for animations -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
 
-  <!-- OGL for WebGL circular gallery -->
-  <script type="module" src="https://cdn.jsdelivr.net/npm/ogl@1/dist/ogl.mjs"></script>
-
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
@@ -4835,7 +4832,16 @@
 
   <!-- Circular Gallery Implementation -->
   <script type="module">
-    import { Camera, Mesh, Plane, Program, Renderer, Texture, Transform } from 'https://cdn.jsdelivr.net/npm/ogl@1/dist/ogl.mjs';
+    console.log('📦 Loading OGL library...');
+    try {
+      const { Camera, Mesh, Plane, Program, Renderer, Texture, Transform } = await import('https://cdn.jsdelivr.net/npm/ogl@1/dist/ogl.mjs');
+      console.log('✅ OGL library loaded successfully');
+      initializeGallery(Camera, Mesh, Plane, Program, Renderer, Texture, Transform);
+    } catch (error) {
+      console.error('❌ Failed to load OGL library:', error);
+    }
+
+    function initializeGallery(Camera, Mesh, Plane, Program, Renderer, Texture, Transform) {
 
     // Initialize the circular gallery when the container is ready
     window.initCircularGallery = function(items) {
@@ -5320,6 +5326,8 @@
         }
       }, 500);
     });
+
+    } // End initializeGallery function
   </script>
 </body>
 </html>
