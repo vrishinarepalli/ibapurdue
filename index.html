@@ -980,12 +980,12 @@
           </p>
 
           <!-- User's Current Submission Status -->
-          <div id="userSubmissionStatus" style="display: none; margin-bottom: 2rem; padding: 1.5rem; background: var(--card); border: 2px solid var(--brand); border-radius: 12px;">
-            <h3 style="color: var(--brand); margin: 0 0 1rem 0; font-size: 1.2rem;">Your Submission</h3>
-            <div id="submissionDetails" style="color: var(--text);"></div>
+          <div id="userSubmissionStatus" style="display: none; margin-bottom: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #f8f5f0, #faf7f2); border: 2px solid var(--brand); border-radius: 12px; box-shadow: 0 4px 20px rgba(207, 185, 145, 0.15);">
+            <h3 style="color: #0a1122; margin: 0 0 1rem 0; font-size: 1.2rem; font-weight: 700; border-bottom: 2px solid var(--brand); padding-bottom: 0.5rem;">Your Submission</h3>
+            <div id="submissionDetails" style="color: #0a1122;"></div>
             <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-              <button id="editSubmissionBtn" class="hero-btn" style="flex: 1; padding: 0.75rem;">Edit Submission</button>
-              <button id="withdrawSubmissionBtn" style="flex: 1; padding: 0.75rem; background: #e74c3c; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Withdraw</button>
+              <button id="editSubmissionBtn" style="flex: 1; padding: 0.75rem; background: var(--brand); color: #000; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Edit Submission</button>
+              <button id="withdrawSubmissionBtn" style="flex: 1; padding: 0.75rem; background: #e74c3c; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">Withdraw</button>
             </div>
           </div>
 
@@ -997,58 +997,76 @@
           </div>
 
           <!-- Tournament Entry Form -->
-          <div id="tournamentEntryForm" style="background: var(--card); padding: 2rem; border-radius: 12px; border: 1px solid var(--border);">
+          <div id="tournamentEntryForm" style="background: linear-gradient(135deg, #f8f5f0, #faf7f2); padding: 2rem; border-radius: 12px; border: 2px solid var(--brand); box-shadow: 0 4px 20px rgba(207, 185, 145, 0.15);">
             <form id="winterTournamentForm">
               <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; color: var(--text); font-weight: 600; margin-bottom: 0.5rem;">Team Name *</label>
+                <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Team Name *</label>
                 <input type="text" id="tournamentTeamName" required placeholder="Enter your team name"
-                  style="width: 100%; padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;" />
+                  style="width: 100%; padding: 0.75rem; background: #ffffff; border: 2px solid rgba(207, 185, 145, 0.4); border-radius: 8px; color: #0a1122; font-size: 1rem; transition: all 0.2s;"
+                  onfocus="this.style.borderColor='var(--brand)'; this.style.boxShadow='0 0 0 3px rgba(207, 185, 145, 0.1)'"
+                  onblur="this.style.borderColor='rgba(207, 185, 145, 0.4)'; this.style.boxShadow='none'" />
               </div>
 
               <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; color: var(--text); font-weight: 600; margin-bottom: 0.5rem;">Captain Name *</label>
+                <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Captain Name *</label>
                 <input type="text" id="tournamentCaptainName" required placeholder="Enter captain's name"
-                  style="width: 100%; padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;" />
+                  style="width: 100%; padding: 0.75rem; background: #ffffff; border: 2px solid rgba(207, 185, 145, 0.4); border-radius: 8px; color: #0a1122; font-size: 1rem; transition: all 0.2s;"
+                  onfocus="this.style.borderColor='var(--brand)'; this.style.boxShadow='0 0 0 3px rgba(207, 185, 145, 0.1)'"
+                  onblur="this.style.borderColor='rgba(207, 185, 145, 0.4)'; this.style.boxShadow='none'" />
               </div>
 
               <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; color: var(--text); font-weight: 600; margin-bottom: 0.5rem;">Captain Email *</label>
+                <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Captain Email *</label>
                 <input type="email" id="tournamentCaptainEmail" required placeholder="Enter captain's email"
-                  style="width: 100%; padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;" />
+                  style="width: 100%; padding: 0.75rem; background: #ffffff; border: 2px solid rgba(207, 185, 145, 0.4); border-radius: 8px; color: #0a1122; font-size: 1rem; transition: all 0.2s;"
+                  onfocus="this.style.borderColor='var(--brand)'; this.style.boxShadow='0 0 0 3px rgba(207, 185, 145, 0.1)'"
+                  onblur="this.style.borderColor='rgba(207, 185, 145, 0.4)'; this.style.boxShadow='none'" />
               </div>
 
               <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; color: var(--text); font-weight: 600; margin-bottom: 0.5rem;">Captain Phone *</label>
-                <input type="tel" id="tournamentCaptainPhone" required placeholder="Enter captain's phone number"
-                  style="width: 100%; padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;" />
+                <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Captain Instagram *</label>
+                <input type="text" id="tournamentCaptainPhone" required placeholder="@username"
+                  style="width: 100%; padding: 0.75rem; background: #ffffff; border: 2px solid rgba(207, 185, 145, 0.4); border-radius: 8px; color: #0a1122; font-size: 1rem; transition: all 0.2s;"
+                  onfocus="this.style.borderColor='var(--brand)'; this.style.boxShadow='0 0 0 3px rgba(207, 185, 145, 0.1)'"
+                  onblur="this.style.borderColor='rgba(207, 185, 145, 0.4)'; this.style.boxShadow='none'" />
               </div>
 
               <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; color: var(--text); font-weight: 600; margin-bottom: 0.5rem;">Team Size *</label>
-                <select id="tournamentTeamSize" required
-                  style="width: 100%; padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem;">
-                  <option value="">Select team size</option>
-                  <option value="3">3 players</option>
-                  <option value="4">4 players</option>
-                  <option value="5">5 players</option>
-                </select>
+                <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Player 1 Name *</label>
+                <input type="text" id="tournamentPlayer1" required placeholder="Enter first player name"
+                  style="width: 100%; padding: 0.75rem; background: #ffffff; border: 2px solid rgba(207, 185, 145, 0.4); border-radius: 8px; color: #0a1122; font-size: 1rem; transition: all 0.2s;"
+                  onfocus="this.style.borderColor='var(--brand)'; this.style.boxShadow='0 0 0 3px rgba(207, 185, 145, 0.1)'"
+                  onblur="this.style.borderColor='rgba(207, 185, 145, 0.4)'; this.style.boxShadow='none'" />
               </div>
 
               <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; color: var(--text); font-weight: 600; margin-bottom: 0.5rem;">Player Names *</label>
-                <textarea id="tournamentPlayerNames" required rows="4" placeholder="Enter all player names (one per line)"
-                  style="width: 100%; padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem; resize: vertical;"></textarea>
-                <small style="color: var(--muted); font-size: 0.85rem;">List all players in your team, one name per line</small>
+                <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Player 2 Name *</label>
+                <input type="text" id="tournamentPlayer2" required placeholder="Enter second player name"
+                  style="width: 100%; padding: 0.75rem; background: #ffffff; border: 2px solid rgba(207, 185, 145, 0.4); border-radius: 8px; color: #0a1122; font-size: 1rem; transition: all 0.2s;"
+                  onfocus="this.style.borderColor='var(--brand)'; this.style.boxShadow='0 0 0 3px rgba(207, 185, 145, 0.1)'"
+                  onblur="this.style.borderColor='rgba(207, 185, 145, 0.4)'; this.style.boxShadow='none'" />
               </div>
 
               <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; color: var(--text); font-weight: 600; margin-bottom: 0.5rem;">Additional Notes (Optional)</label>
-                <textarea id="tournamentNotes" rows="3" placeholder="Any additional information or special requests"
-                  style="width: 100%; padding: 0.75rem; background: #0a1122; border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 1rem; resize: vertical;"></textarea>
+                <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Player 3 Name (Optional)</label>
+                <input type="text" id="tournamentPlayer3" placeholder="Enter third player name (optional)"
+                  style="width: 100%; padding: 0.75rem; background: #ffffff; border: 2px solid rgba(207, 185, 145, 0.4); border-radius: 8px; color: #0a1122; font-size: 1rem; transition: all 0.2s;"
+                  onfocus="this.style.borderColor='var(--brand)'; this.style.boxShadow='0 0 0 3px rgba(207, 185, 145, 0.1)'"
+                  onblur="this.style.borderColor='rgba(207, 185, 145, 0.4)'; this.style.boxShadow='none'" />
+              </div>
+
+              <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Additional Notes (Optional)</label>
+                <textarea id="tournamentNotes" rows="3" placeholder="Any additional information"
+                  style="width: 100%; padding: 0.75rem; background: #ffffff; border: 2px solid rgba(207, 185, 145, 0.4); border-radius: 8px; color: #0a1122; font-size: 1rem; resize: vertical; transition: all 0.2s;"
+                  onfocus="this.style.borderColor='var(--brand)'; this.style.boxShadow='0 0 0 3px rgba(207, 185, 145, 0.1)'"
+                  onblur="this.style.borderColor='rgba(207, 185, 145, 0.4)'; this.style.boxShadow='none'"></textarea>
               </div>
 
               <button type="submit" id="submitTournamentBtn"
-                style="width: 100%; padding: 1rem; background: linear-gradient(90deg, var(--brand), var(--brand-2)); color: white; font-weight: 700; font-size: 1.1rem; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
+                style="width: 100%; padding: 1rem; background: linear-gradient(135deg, var(--brand), #d4be9c); color: #000; font-weight: 700; font-size: 1.1rem; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(207, 185, 145, 0.3);"
+                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(207, 185, 145, 0.4)'"
+                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(207, 185, 145, 0.3)'">
                 Submit Tournament Entry
               </button>
             </form>
@@ -4494,8 +4512,7 @@
               <div><strong>Team Name:</strong> ${data.teamName}</div>
               <div><strong>Captain:</strong> ${data.captainName}</div>
               <div><strong>Email:</strong> ${data.captainEmail}</div>
-              <div><strong>Phone:</strong> ${data.captainPhone}</div>
-              <div><strong>Team Size:</strong> ${data.teamSize} players</div>
+              <div><strong>Instagram:</strong> ${data.captainPhone}</div>
               <div><strong>Players:</strong><br/><pre style="margin: 0.5rem 0; padding: 0.5rem; background: #0a1122; border-radius: 4px;">${data.playerNames}</pre></div>
               ${data.notes ? `<div><strong>Notes:</strong> ${data.notes}</div>` : ''}
               <div style="color: var(--muted); font-size: 0.85rem;">Submitted: ${new Date(data.createdAt).toLocaleDateString()}</div>
@@ -4526,9 +4543,17 @@
         const captainName = document.getElementById('tournamentCaptainName').value.trim();
         const captainEmail = document.getElementById('tournamentCaptainEmail').value.trim();
         const captainPhone = document.getElementById('tournamentCaptainPhone').value.trim();
-        const teamSize = document.getElementById('tournamentTeamSize').value;
-        const playerNames = document.getElementById('tournamentPlayerNames').value.trim();
+        const player1 = document.getElementById('tournamentPlayer1').value.trim();
+        const player2 = document.getElementById('tournamentPlayer2').value.trim();
+        const player3 = document.getElementById('tournamentPlayer3').value.trim();
         const notes = document.getElementById('tournamentNotes').value.trim();
+
+        // Build player names string
+        const playerNamesArray = [player1, player2];
+        if (player3) {
+          playerNamesArray.push(player3);
+        }
+        const playerNames = playerNamesArray.join('\n');
 
         try {
           const submitBtn = document.getElementById('submitTournamentBtn');
@@ -4540,7 +4565,6 @@
             captainName,
             captainEmail,
             captainPhone,
-            teamSize,
             playerNames,
             notes,
             userId: auth.currentUser.uid,
@@ -4594,8 +4618,13 @@
             document.getElementById('tournamentCaptainName').value = data.captainName;
             document.getElementById('tournamentCaptainEmail').value = data.captainEmail;
             document.getElementById('tournamentCaptainPhone').value = data.captainPhone;
-            document.getElementById('tournamentTeamSize').value = data.teamSize;
-            document.getElementById('tournamentPlayerNames').value = data.playerNames;
+
+            // Split player names into individual fields
+            const players = (data.playerNames || '').split('\n').filter(p => p.trim());
+            document.getElementById('tournamentPlayer1').value = players[0] || '';
+            document.getElementById('tournamentPlayer2').value = players[1] || '';
+            document.getElementById('tournamentPlayer3').value = players[2] || '';
+
             document.getElementById('tournamentNotes').value = data.notes || '';
 
             // Show form, hide status
@@ -4675,16 +4704,13 @@
                       <strong style="color: var(--brand);">Team Name:</strong> ${sub.teamName}
                     </div>
                     <div>
-                      <strong style="color: var(--brand);">Team Size:</strong> ${sub.teamSize} players
-                    </div>
-                    <div>
                       <strong style="color: var(--brand);">Captain:</strong> ${sub.captainName}
                     </div>
                     <div>
                       <strong style="color: var(--brand);">Email:</strong> ${sub.captainEmail}
                     </div>
                     <div>
-                      <strong style="color: var(--brand);">Phone:</strong> ${sub.captainPhone}
+                      <strong style="color: var(--brand);">Instagram:</strong> ${sub.captainPhone}
                     </div>
                     <div>
                       <strong style="color: var(--brand);">Submitted:</strong> ${new Date(sub.createdAt).toLocaleDateString()}
@@ -4718,6 +4744,14 @@
     // Check if user is admin and show admin button
     onAuthStateChanged(auth, async (user) => {
       if (user) {
+        // Autofill captain email with logged-in user's email
+        const captainEmailField = document.getElementById('tournamentCaptainEmail');
+        if (captainEmailField && user.email) {
+          captainEmailField.value = user.email;
+          captainEmailField.setAttribute('readonly', 'true');
+          captainEmailField.style.backgroundColor = 'rgba(207, 185, 145, 0.1)';
+        }
+
         // Load user's submission
         await loadUserTournamentSubmission();
 
