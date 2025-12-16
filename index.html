@@ -16,48 +16,9 @@
   <!-- GSAP for animations -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.4/gsap.min.js"></script>
 
-  <!-- Firebase SDK -->
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-    import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-    import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
+  <!-- Modular JavaScript - All features organized in js/ directory -->
+  <script type="module" src="js/app.js"></script>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBN0rfpzjredziJbPny-YfEgq4uE2l1hzE",
-      authDomain: "iba-website-63cb3.firebaseapp.com",
-      projectId: "iba-website-63cb3",
-      storageBucket: "iba-website-63cb3.firebasestorage.app",
-      messagingSenderId: "267064036667",
-      appId: "1:267064036667:web:4f9d28aac0d5ae4ca97b1e",
-      measurementId: "G-GGH99DCY07"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    const functions = getFunctions(app);
-
-    // Set auth persistence to LOCAL so users stay signed in
-    setPersistence(auth, browserLocalPersistence).then(() => {
-      console.log('✅ Auth persistence set to LOCAL on index.html');
-    }).catch((error) => {
-      console.error('❌ Failed to set persistence:', error);
-    });
-
-    // Admin UID - only this user can access admin functions
-    const ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
-
-    // Make Firebase available globally
-    window.db = db;
-    window.auth = auth;
-    window.functions = functions;
-    window.ADMIN_UID = ADMIN_UID;
-    window.firestoreImports = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc, query, where };
-    window.authImports = { signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken, setPersistence, browserLocalPersistence };
-    window.functionsImports = { httpsCallable };
-  </script>
-  
 </head>
 <body>
   <div class="wrap">
@@ -300,8 +261,8 @@
       </div>
       <div class="hero-content">
         <h2>The Court. The Teams. The Glory</h2>
-        <p>IBA Fall 2025 • Regular Season & Playoffs</p>
-        <a href="#panel-signup" class="hero-btn" id="heroSignupBtn">Winter Mini Tournament</a>
+        <p>IBA Spring 2026 • Tournament Applications Open</p>
+        <a href="#panel-signup" class="hero-btn" id="heroSignupBtn">Spring 2026 Tournament</a>
       </div>
       <!-- Wave transition -->
       <div class="hero-wave">
@@ -358,7 +319,7 @@
         </a>
         <button role="tab" id="tab-faq" aria-selected="false" aria-controls="panel-faq">FAQ</button>
         <button role="tab" id="tab-contact" aria-selected="false" aria-controls="panel-contact">Contact Us</button>
-        <button role="tab" id="tab-signup" aria-selected="false" aria-controls="panel-signup">❄️ Winter Tournament</button>
+        <button role="tab" id="tab-signup" aria-selected="false" aria-controls="panel-signup">🌸 Spring 2026 Tournament</button>
       </div>
 
       <section id="panel-current" class="tabpanel active" role="tabpanel" aria-labelledby="tab-current">
@@ -547,89 +508,92 @@
 
       <section id="panel-bracket" class="tabpanel" role="tabpanel" aria-labelledby="tab-bracket">
         <button class="add-game-btn" id="bulkImportBracketBtn" style="display: none;">📥 Bulk Import Bracket</button>
+
+        <!-- Black Bracket -->
+        <h2 style="color: #1a1a1a; font-size: 1.75rem; margin: 2rem 0 1rem 0; text-align: center; font-weight: 700;">⚫ Black Bracket</h2>
         <div style="overflow-x: auto;">
           <div class="bracket-container">
             <!-- Round of 16 -->
             <div class="bracket-round">
               <div class="bracket-round-title">Round of 16</div>
               <div class="bracket-match">
-                <div class="bracket-team" data-slot="r16-1-1">
+                <div class="bracket-team" data-slot="black-r16-1-1">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-1-1')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-1-1')">Edit</button>
                 </div>
-                <div class="bracket-team" data-slot="r16-1-2">
+                <div class="bracket-team" data-slot="black-r16-1-2">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-1-2')">Edit</button>
-                </div>
-              </div>
-              <div class="bracket-match">
-                <div class="bracket-team" data-slot="r16-2-1">
-                  <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-2-1')">Edit</button>
-                </div>
-                <div class="bracket-team" data-slot="r16-2-2">
-                  <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-2-2')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-1-2')">Edit</button>
                 </div>
               </div>
               <div class="bracket-match">
-                <div class="bracket-team" data-slot="r16-3-1">
+                <div class="bracket-team" data-slot="black-r16-2-1">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-3-1')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-2-1')">Edit</button>
                 </div>
-                <div class="bracket-team" data-slot="r16-3-2">
+                <div class="bracket-team" data-slot="black-r16-2-2">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-3-2')">Edit</button>
-                </div>
-              </div>
-              <div class="bracket-match">
-                <div class="bracket-team" data-slot="r16-4-1">
-                  <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-4-1')">Edit</button>
-                </div>
-                <div class="bracket-team" data-slot="r16-4-2">
-                  <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-4-2')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-2-2')">Edit</button>
                 </div>
               </div>
               <div class="bracket-match">
-                <div class="bracket-team" data-slot="r16-5-1">
+                <div class="bracket-team" data-slot="black-r16-3-1">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-5-1')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-3-1')">Edit</button>
                 </div>
-                <div class="bracket-team" data-slot="r16-5-2">
+                <div class="bracket-team" data-slot="black-r16-3-2">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-5-2')">Edit</button>
-                </div>
-              </div>
-              <div class="bracket-match">
-                <div class="bracket-team" data-slot="r16-6-1">
-                  <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-6-1')">Edit</button>
-                </div>
-                <div class="bracket-team" data-slot="r16-6-2">
-                  <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-6-2')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-3-2')">Edit</button>
                 </div>
               </div>
               <div class="bracket-match">
-                <div class="bracket-team" data-slot="r16-7-1">
+                <div class="bracket-team" data-slot="black-r16-4-1">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-7-1')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-4-1')">Edit</button>
                 </div>
-                <div class="bracket-team" data-slot="r16-7-2">
+                <div class="bracket-team" data-slot="black-r16-4-2">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-7-2')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-4-2')">Edit</button>
                 </div>
               </div>
               <div class="bracket-match">
-                <div class="bracket-team" data-slot="r16-8-1">
+                <div class="bracket-team" data-slot="black-r16-5-1">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-8-1')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-5-1')">Edit</button>
                 </div>
-                <div class="bracket-team" data-slot="r16-8-2">
+                <div class="bracket-team" data-slot="black-r16-5-2">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('r16-8-2')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-5-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="black-r16-6-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-6-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="black-r16-6-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-6-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="black-r16-7-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-7-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="black-r16-7-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-7-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="black-r16-8-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-8-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="black-r16-8-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-r16-8-2')">Edit</button>
                 </div>
               </div>
             </div>
@@ -638,43 +602,43 @@
             <div class="bracket-round">
               <div class="bracket-round-title">Quarterfinals</div>
               <div class="bracket-match">
-                <div class="bracket-team" data-slot="qf-1">
+                <div class="bracket-team" data-slot="black-qf-1">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-1')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-qf-1')">Edit</button>
                 </div>
-                <div class="bracket-team" data-slot="qf-2">
+                <div class="bracket-team" data-slot="black-qf-2">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-2')">Edit</button>
-                </div>
-              </div>
-              <div class="bracket-match">
-                <div class="bracket-team" data-slot="qf-3">
-                  <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-3')">Edit</button>
-                </div>
-                <div class="bracket-team" data-slot="qf-4">
-                  <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-4')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-qf-2')">Edit</button>
                 </div>
               </div>
               <div class="bracket-match">
-                <div class="bracket-team" data-slot="qf-5">
+                <div class="bracket-team" data-slot="black-qf-3">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-5')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-qf-3')">Edit</button>
                 </div>
-                <div class="bracket-team" data-slot="qf-6">
+                <div class="bracket-team" data-slot="black-qf-4">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-6')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-qf-4')">Edit</button>
                 </div>
               </div>
               <div class="bracket-match">
-                <div class="bracket-team" data-slot="qf-7">
+                <div class="bracket-team" data-slot="black-qf-5">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-7')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-qf-5')">Edit</button>
                 </div>
-                <div class="bracket-team" data-slot="qf-8">
+                <div class="bracket-team" data-slot="black-qf-6">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('qf-8')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-qf-6')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="black-qf-7">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-qf-7')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="black-qf-8">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-qf-8')">Edit</button>
                 </div>
               </div>
             </div>
@@ -683,23 +647,23 @@
             <div class="bracket-round">
               <div class="bracket-round-title">Semifinals</div>
               <div class="bracket-match">
-                <div class="bracket-team" data-slot="sf-1">
+                <div class="bracket-team" data-slot="black-sf-1">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('sf-1')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-sf-1')">Edit</button>
                 </div>
-                <div class="bracket-team" data-slot="sf-2">
+                <div class="bracket-team" data-slot="black-sf-2">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('sf-2')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-sf-2')">Edit</button>
                 </div>
               </div>
               <div class="bracket-match">
-                <div class="bracket-team" data-slot="sf-3">
+                <div class="bracket-team" data-slot="black-sf-3">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('sf-3')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-sf-3')">Edit</button>
                 </div>
-                <div class="bracket-team" data-slot="sf-4">
+                <div class="bracket-team" data-slot="black-sf-4">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('sf-4')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-sf-4')">Edit</button>
                 </div>
               </div>
             </div>
@@ -708,13 +672,13 @@
             <div class="bracket-round">
               <div class="bracket-round-title">Finals</div>
               <div class="bracket-match">
-                <div class="bracket-team" data-slot="f-1">
+                <div class="bracket-team" data-slot="black-f-1">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('f-1')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-f-1')">Edit</button>
                 </div>
-                <div class="bracket-team" data-slot="f-2">
+                <div class="bracket-team" data-slot="black-f-2">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('f-2')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-f-2')">Edit</button>
                 </div>
               </div>
             </div>
@@ -723,9 +687,196 @@
             <div class="bracket-round">
               <div class="bracket-round-title">Champion</div>
               <div class="bracket-match">
-                <div class="bracket-team champion" data-slot="champion">
+                <div class="bracket-team champion" data-slot="black-champion">
                   <span class="team-name">TBD</span>
-                  <button class="edit-bracket-btn" onclick="editBracketSlot('champion')">Edit</button>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('black-champion')">Edit</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gold Bracket -->
+        <h2 style="color: #d4af37; font-size: 1.75rem; margin: 3rem 0 1rem 0; text-align: center; font-weight: 700;">🟡 Gold Bracket</h2>
+        <div style="overflow-x: auto;">
+          <div class="bracket-container">
+            <!-- Round of 16 -->
+            <div class="bracket-round">
+              <div class="bracket-round-title">Round of 16</div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-r16-1-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-1-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-r16-1-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-1-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-r16-2-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-2-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-r16-2-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-2-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-r16-3-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-3-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-r16-3-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-3-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-r16-4-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-4-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-r16-4-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-4-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-r16-5-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-5-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-r16-5-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-5-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-r16-6-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-6-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-r16-6-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-6-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-r16-7-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-7-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-r16-7-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-7-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-r16-8-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-8-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-r16-8-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-r16-8-2')">Edit</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quarterfinals -->
+            <div class="bracket-round">
+              <div class="bracket-round-title">Quarterfinals</div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-qf-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-qf-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-qf-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-qf-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-qf-3">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-qf-3')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-qf-4">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-qf-4')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-qf-5">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-qf-5')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-qf-6">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-qf-6')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-qf-7">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-qf-7')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-qf-8">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-qf-8')">Edit</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Semifinals -->
+            <div class="bracket-round">
+              <div class="bracket-round-title">Semifinals</div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-sf-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-sf-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-sf-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-sf-2')">Edit</button>
+                </div>
+              </div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-sf-3">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-sf-3')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-sf-4">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-sf-4')">Edit</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Finals -->
+            <div class="bracket-round">
+              <div class="bracket-round-title">Finals</div>
+              <div class="bracket-match">
+                <div class="bracket-team" data-slot="gold-f-1">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-f-1')">Edit</button>
+                </div>
+                <div class="bracket-team" data-slot="gold-f-2">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-f-2')">Edit</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Champion -->
+            <div class="bracket-round">
+              <div class="bracket-round-title">Champion</div>
+              <div class="bracket-match">
+                <div class="bracket-team champion" data-slot="gold-champion">
+                  <span class="team-name">TBD</span>
+                  <button class="edit-bracket-btn" onclick="editBracketSlot('gold-champion')">Edit</button>
                 </div>
               </div>
             </div>
@@ -984,22 +1135,19 @@
       <section id="panel-signup" class="tabpanel" role="tabpanel" aria-labelledby="tab-signup">
         <div style="max-width: 900px; margin: 0 auto;">
           <h2 style="font-size: 1.75rem; font-weight: 700; margin: 0 0 1rem 0; background: linear-gradient(90deg, var(--brand), var(--brand-2)); background-clip: text; -webkit-background-clip: text; color: transparent; -webkit-text-fill-color: transparent;">
-            🏀 IBA Tournament — December 6th!
+            🏀 IBA Spring 2026 Tournament — Applications Open!
           </h2>
 
           <div style="background: linear-gradient(135deg, #f8f5f0, #faf7f2); border: 2px solid var(--brand); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 20px rgba(207, 185, 145, 0.15);">
             <p style="color: #0a1122; margin: 0 0 0.75rem 0; font-size: 1rem; line-height: 1.6;">
-              <strong style="color: var(--brand);">📅 Date:</strong> Saturday, Dec 6th
+              <strong style="color: var(--brand);">📅 Date:</strong> TBD (Spring 2026)
             </p>
-            <p style="color: #0a1122; margin: 0 0 0.75rem 0; font-size: 1rem; line-height: 1.6;">
-              <strong style="color: var(--brand);">🕐 Time:</strong> 10:00 AM – 12:00 PM & 3:00 PM – 7:00 PM
-            </p>
-            <p style="color: #666; margin: 0 0 1.25rem 0; font-size: 0.9rem; font-style: italic;">
-              (Break from 12–3 PM)
+            <p style="color: #0a1122; margin: 0 0 1.25rem 0; font-size: 1rem; line-height: 1.6;">
+              <strong style="color: var(--brand);">🕐 Time:</strong> TBD
             </p>
 
             <p style="color: #0a1122; margin: 0 0 1.25rem 0; font-size: 1rem; line-height: 1.6;">
-              We're hosting a <strong>basketball tournament</strong> and will go through with it if we reach a <strong>minimum of 16 teams</strong> — so spread the word and get your squad ready!
+              We're hosting a <strong>single-elimination basketball tournament</strong> and will go through with it if we reach a <strong>minimum of 16 teams</strong> — so spread the word and get your squad ready!
             </p>
 
             <p style="color: #0a1122; margin: 0 0 0.5rem 0; font-size: 1rem; line-height: 1.6;">
@@ -1051,7 +1199,7 @@
 
           <!-- Tournament Entry Form -->
           <div id="tournamentEntryForm" style="background: linear-gradient(135deg, #f8f5f0, #faf7f2); padding: 2rem; border-radius: 12px; border: 2px solid var(--brand); box-shadow: 0 4px 20px rgba(207, 185, 145, 0.15);">
-            <form id="winterTournamentForm">
+            <form id="springTournamentForm">
               <div style="margin-bottom: 1.5rem;">
                 <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Team Name *</label>
                 <input type="text" id="tournamentTeamName" required placeholder="Enter your team name"
@@ -2553,164 +2701,7 @@
         }
       }
 
-    // Card Navigation with GSAP Animation
-    const cardNav = document.getElementById('cardNav');
-    const hamburgerMenu = document.getElementById('hamburgerMenu');
-    const cardNavContent = document.getElementById('cardNavContent');
-    const navCards = document.querySelectorAll('.nav-card');
-
-    let isExpanded = false;
-    let animationTimeline = null;
-
-    // Calculate expanded height
-    function calculateExpandedHeight() {
-      const isMobile = window.matchMedia('(max-width: 768px)').matches;
-      if (isMobile) {
-        // Mobile: stack cards vertically
-        const topBarHeight = 60;
-        const padding = 16;
-        let totalCardHeight = 0;
-        navCards.forEach(card => {
-          const cardHeight = card.scrollHeight || 100;
-          totalCardHeight += cardHeight;
-        });
-        const gaps = (navCards.length - 1) * 10;
-        return topBarHeight + totalCardHeight + gaps + padding;
-      } else {
-        // Desktop: fixed height (4 cards now)
-        return 280;
-      }
-    }
-
-    // Initialize GSAP timeline
-    function createTimeline() {
-      if (animationTimeline) {
-        animationTimeline.kill();
-      }
-
-      gsap.set(cardNav, { height: 70, overflow: 'hidden' });
-      gsap.set(navCards, { y: 30, opacity: 0 });
-
-      animationTimeline = gsap.timeline({ paused: true });
-
-      animationTimeline.to(cardNav, {
-        height: calculateExpandedHeight(),
-        duration: 0.4,
-        ease: 'power3.out'
-      });
-
-      animationTimeline.to(navCards, {
-        y: 0,
-        opacity: 1,
-        duration: 0.4,
-        stagger: 0.08,
-        ease: 'power3.out'
-      }, '-=0.2');
-
-      return animationTimeline;
-    }
-
-    // Initialize on load
-    window.addEventListener('load', () => {
-      createTimeline();
-    });
-
-    // Handle window resize
-    let resizeTimeout;
-    window.addEventListener('resize', () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        if (isExpanded) {
-          gsap.set(cardNav, { height: calculateExpandedHeight() });
-        }
-        createTimeline();
-        if (isExpanded) {
-          animationTimeline.progress(1);
-        }
-      }, 250);
-    });
-
-    // Toggle menu
-    function toggleMenu() {
-      if (!animationTimeline) {
-        createTimeline();
-      }
-
-      if (!isExpanded) {
-        hamburgerMenu.classList.add('open');
-        cardNav.classList.add('open');
-        isExpanded = true;
-        animationTimeline.play(0);
-      } else {
-        hamburgerMenu.classList.remove('open');
-        animationTimeline.eventCallback('onReverseComplete', () => {
-          cardNav.classList.remove('open');
-          isExpanded = false;
-        });
-        animationTimeline.reverse();
-      }
-    }
-
-    hamburgerMenu.addEventListener('click', toggleMenu);
-
-    // Tab navigation from card links
-    const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
-    const panels = Array.from(document.querySelectorAll('[role="tabpanel"]'));
-    const cardLinks = document.querySelectorAll('.nav-card-link[data-tab]');
-
-    function activateTab(tabId) {
-      const tab = document.getElementById(tabId);
-      if (!tab) return;
-
-      tabs.forEach(t => t.setAttribute('aria-selected', 'false'));
-      panels.forEach(p => p.classList.remove('active'));
-
-      tab.setAttribute('aria-selected', 'true');
-      const panelId = tab.getAttribute('aria-controls');
-      const panel = document.getElementById(panelId);
-      if (panel) {
-        panel.classList.add('active');
-      }
-
-      // Close menu after selection
-      if (isExpanded) {
-        toggleMenu();
-      }
-    }
-
-    // Handle card link clicks
-    cardLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
-        const tabId = link.getAttribute('data-tab');
-        if (tabId) {
-          e.preventDefault();
-          activateTab(tabId);
-
-          // Smooth scroll to content
-          setTimeout(() => {
-            document.querySelector('.tabs').scrollIntoView({
-              behavior: 'smooth',
-              block: 'start'
-            });
-          }, 100);
-        }
-      });
-    });
-
-    // Old tab button functionality (still works)
-    tabs.forEach(tab => {
-      tab.addEventListener('click', () => activateTab(tab.id));
-      tab.addEventListener('keydown', (e) => {
-        const i = tabs.indexOf(tab);
-        if (e.key === 'ArrowRight') {
-          e.preventDefault();
-          activateTab(tabs[(i + 1) % tabs.length].id);
-        } else if (e.key === 'ArrowLeft') {
-          e.preventDefault();
-          activateTab(tabs[(i - 1 + tabs.length) % tabs.length].id);
-        }
-      });
-    });
+    // Navigation code moved to js/ui/navigation.logic.js
 
     // Modal functionality
     const modal = document.getElementById('teamModal');
@@ -4598,7 +4589,7 @@
     }
 
     // Submit tournament entry
-    const tournamentForm = document.getElementById('winterTournamentForm');
+    const tournamentForm = document.getElementById('springTournamentForm');
     if (tournamentForm) {
       tournamentForm.addEventListener('submit', async (e) => {
         e.preventDefault();

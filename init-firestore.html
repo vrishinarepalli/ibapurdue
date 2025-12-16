@@ -116,6 +116,16 @@
 
     <hr style="margin: 2rem 0; border: 1px solid #1f2937;">
 
+    <h2 style="color: #ff9d00;">🏀 Spring 2026 Tournament Applications</h2>
+    <p>View all tournament applications submitted by teams.</p>
+    <button onclick="loadTournamentApplications()" style="margin-bottom: 1rem;">🔄 Load Applications</button>
+
+    <div id="tournamentApplicationsContainer" style="margin-top: 1rem;">
+      <p style="color: #94a3b8;">Click "Load Applications" to view all submissions.</p>
+    </div>
+
+    <hr style="margin: 2rem 0; border: 1px solid #1f2937;">
+
     <h2 style="color: #ff9d00;">📋 Pending Admin Requests</h2>
     <p>Review and approve/decline admin access requests from users.</p>
     <button onclick="loadAdminRequests()" style="margin-bottom: 1rem;">🔄 Refresh Requests</button>
@@ -152,7 +162,7 @@
     window.db = db;
     window.auth = auth;
     window.ADMIN_UID = ADMIN_UID;
-    window.firestoreImports = { collection, doc, setDoc, getDocs, getDoc };
+    window.firestoreImports = { collection, doc, setDoc, getDocs, getDoc, query, where, orderBy };
     window.authImports = { signInWithEmailAndPassword, signOut };
 
     // Check if user is already signed in
@@ -500,36 +510,61 @@
       btn.disabled = true;
       log('Starting bracket initialization...', 'info');
 
-      // Initialize with all TBD slots
+      // Initialize with all TBD slots for both Black and Gold brackets
       const bracketData = {};
 
+      // Black Bracket
       // Round of 16 slots
       for (let match = 1; match <= 8; match++) {
-        bracketData[`r16-${match}-1`] = 'TBD';
-        bracketData[`r16-${match}-2`] = 'TBD';
+        bracketData[`black-r16-${match}-1`] = 'TBD';
+        bracketData[`black-r16-${match}-2`] = 'TBD';
       }
 
       // Quarterfinals
       for (let i = 1; i <= 8; i++) {
-        bracketData[`qf-${i}`] = 'TBD';
+        bracketData[`black-qf-${i}`] = 'TBD';
       }
 
       // Semifinals
       for (let i = 1; i <= 4; i++) {
-        bracketData[`sf-${i}`] = 'TBD';
+        bracketData[`black-sf-${i}`] = 'TBD';
       }
 
       // Finals
-      bracketData['f-1'] = 'TBD';
-      bracketData['f-2'] = 'TBD';
+      bracketData['black-f-1'] = 'TBD';
+      bracketData['black-f-2'] = 'TBD';
 
       // Champion
-      bracketData['champion'] = 'TBD';
+      bracketData['black-champion'] = 'TBD';
+
+      // Gold Bracket
+      // Round of 16 slots
+      for (let match = 1; match <= 8; match++) {
+        bracketData[`gold-r16-${match}-1`] = 'TBD';
+        bracketData[`gold-r16-${match}-2`] = 'TBD';
+      }
+
+      // Quarterfinals
+      for (let i = 1; i <= 8; i++) {
+        bracketData[`gold-qf-${i}`] = 'TBD';
+      }
+
+      // Semifinals
+      for (let i = 1; i <= 4; i++) {
+        bracketData[`gold-sf-${i}`] = 'TBD';
+      }
+
+      // Finals
+      bracketData['gold-f-1'] = 'TBD';
+      bracketData['gold-f-2'] = 'TBD';
+
+      // Champion
+      bracketData['gold-champion'] = 'TBD';
 
       try {
         const { doc, setDoc } = window.firestoreImports;
         await setDoc(doc(db, 'tournament', 'bracket'), bracketData);
-        log('✅ Successfully initialized bracket with all TBD slots!', 'success');
+        log('✅ Successfully initialized Black and Gold brackets with all TBD slots!', 'success');
       } catch (error) {
         log(`❌ Error: ${error.message}`, 'error');
       } finally {
@@ -760,6 +795,92 @@
       } catch (error) {
         console.error('Error declining admin:', error);
         log(`❌ Error: ${error.message}`, 'error');
+      }
+    };
+
+    // Load tournament applications
+    window.loadTournamentApplications = async function() {
+      const container = document.getElementById('tournamentApplicationsContainer');
+      container.innerHTML = '<p style="color: #60a5fa;">Loading applications...</p>';
+
+      try {
+        const applicationsQuery = query(
+          collection(db, 'tournament_entries'),
+          where('status', '==', 'active'),
+          orderBy('createdAt', 'desc')
+        );
+        const snapshot = await getDocs(applicationsQuery);
+
+        if (snapshot.empty) {
+          container.innerHTML = '<p style="color: #94a3b8;">No tournament applications yet.</p>';
+          return;
+        }
+
+        let html = '<div style="display: grid; gap: 1rem;">';
+        let count = 0;
+
+        snapshot.forEach((docSnapshot) => {
+          const app = docSnapshot.data();
+          const appId = docSnapshot.id;
+          count++;
+
+          const submittedDate = app.createdAt ? new Date(app.createdAt).toLocaleString() : 'Unknown date';
+          const updatedDate = app.updatedAt ? new Date(app.updatedAt).toLocaleString() : 'N/A';
+
+          html += `
+            <div style="background: #0a1122; border: 1px solid #1f2937; border-radius: 8px; padding: 1.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                <div>
+                  <h3 style="margin: 0 0 0.5rem 0; color: #ff9d00;">${app.teamName || 'Unnamed Team'}</h3>
+                  <p style="margin: 0; color: #60a5fa; font-size: 0.9rem;">Captain: ${app.captainName || 'N/A'}</p>
+                </div>
+                <span style="background: #22c55e; color: #0b0f1a; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">ACTIVE</span>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                <div>
+                  <p style="margin: 0; color: #94a3b8; font-size: 0.85rem;">Email</p>
+                  <p style="margin: 0.25rem 0 0 0; color: #e7ecf6;">${app.captainEmail || 'N/A'}</p>
+                </div>
+                <div>
+                  <p style="margin: 0; color: #94a3b8; font-size: 0.85rem;">Instagram</p>
+                  <p style="margin: 0.25rem 0 0 0; color: #e7ecf6;">${app.captainPhone || 'N/A'}</p>
+                </div>
+                <div>
+                  <p style="margin: 0; color: #94a3b8; font-size: 0.85rem;">Submitted</p>
+                  <p style="margin: 0.25rem 0 0 0; color: #e7ecf6; font-size: 0.85rem;">${submittedDate}</p>
+                </div>
+                <div>
+                  <p style="margin: 0; color: #94a3b8; font-size: 0.85rem;">Last Updated</p>
+                  <p style="margin: 0.25rem 0 0 0; color: #e7ecf6; font-size: 0.85rem;">${updatedDate}</p>
+                </div>
+              </div>
+
+              <div style="margin-bottom: 1rem;">
+                <p style="margin: 0 0 0.5rem 0; color: #94a3b8; font-size: 0.85rem;">Players</p>
+                <pre style="margin: 0; padding: 0.75rem; background: #111827; border: 1px solid #1f2937; border-radius: 4px; color: #e7ecf6; font-size: 0.9rem; white-space: pre-wrap;">${app.playerNames || 'No players listed'}</pre>
+              </div>
+
+              ${app.notes ? `
+                <div>
+                  <p style="margin: 0 0 0.5rem 0; color: #94a3b8; font-size: 0.85rem;">Notes</p>
+                  <p style="margin: 0; padding: 0.75rem; background: #111827; border: 1px solid #1f2937; border-radius: 4px; color: #e7ecf6; font-size: 0.9rem;">${app.notes}</p>
+                </div>
+              ` : ''}
+
+              <p style="margin: 1rem 0 0 0; color: #60a5fa; font-size: 0.75rem; font-family: monospace;">ID: ${appId}</p>
+            </div>
+          `;
+        });
+
+        html += '</div>';
+        html = `<p style="color: #22c55e; font-weight: 600; margin-bottom: 1rem;">Total Applications: ${count}</p>` + html;
+        container.innerHTML = html;
+
+      } catch (error) {
+        console.error('Error loading tournament applications:', error);
+        container.innerHTML = '<p style="color: #ef4444;">Error loading applications. Check console.</p>';
+        log(`❌ Error loading applications: ${error.message}`, 'error');
       }
     };
 
