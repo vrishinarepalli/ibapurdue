@@ -320,16 +320,84 @@
       </div>
 
       <section id="panel-current" class="tabpanel active" role="tabpanel" aria-labelledby="tab-current">
-        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 400px; text-align: center; padding: 2rem;">
-          <h2 style="font-size: 3rem; margin-bottom: 1rem; color: var(--primary);">🏀</h2>
-          <h2 style="font-size: 2rem; margin-bottom: 1rem;">Spring 2026 Tournament</h2>
-          <p style="color: var(--text); font-size: 1.1rem; margin-bottom: 0.5rem;">Season starts February 2026</p>
-          <p style="color: var(--text); font-size: 1.1rem; margin-bottom: 0.5rem;">32 teams • 3-game regular season</p>
-          <p style="color: var(--text); font-size: 1.1rem; margin-bottom: 0.5rem;">All teams advance to playoffs</p>
-          <p style="color: var(--text); font-size: 1.1rem; margin-bottom: 1.5rem;">Black Division (16 teams) & Gold Division (16 teams)</p>
-          <p style="color: var(--brand); font-size: 1.3rem; font-weight: 600; margin-bottom: 0.5rem;">Prize Pool: $150 per division</p>
-          <p style="color: var(--muted); font-size: 1rem; margin-bottom: 1.5rem;">Every team has a chance to win!</p>
-          <p style="color: var(--muted); font-size: 0.95rem; margin-top: 2rem; max-width: 600px;">⚠️ All teams must complete payment before participating. IBA is committed to maintaining fair and competitive play.</p>
+        <div style="max-width: 900px; margin: 0 auto; padding: 2rem 1rem;">
+
+          <!-- Hero Header -->
+          <div style="background: linear-gradient(135deg, #CFB991 0%, #A89968 100%); padding: 2.5rem 2rem; border-radius: 16px; text-align: center; margin-bottom: 2rem; box-shadow: 0 4px 20px rgba(207, 185, 145, 0.3);">
+            <h2 style="font-size: 2.5rem; font-weight: 700; color: #000; margin-bottom: 0.5rem;">🏀 Spring 2026 Tournament</h2>
+            <p style="font-size: 1.2rem; color: #1a1a1a; font-weight: 500;">Starts February 2026</p>
+          </div>
+
+          <!-- Tournament Info Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+            <div style="background: white; border: 2px solid #e5e5e5; border-radius: 12px; padding: 1.5rem; text-align: center;">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">👥</div>
+              <div style="font-size: 1.8rem; font-weight: 700; color: var(--brand); margin-bottom: 0.25rem;">32</div>
+              <div style="font-size: 0.95rem; color: var(--muted);">Teams</div>
+            </div>
+            <div style="background: white; border: 2px solid #e5e5e5; border-radius: 12px; padding: 1.5rem; text-align: center;">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎯</div>
+              <div style="font-size: 1.8rem; font-weight: 700; color: var(--brand); margin-bottom: 0.25rem;">3</div>
+              <div style="font-size: 0.95rem; color: var(--muted);">Regular Season Games</div>
+            </div>
+            <div style="background: white; border: 2px solid #e5e5e5; border-radius: 12px; padding: 1.5rem; text-align: center;">
+              <div style="font-size: 2rem; margin-bottom: 0.5rem;">🏆</div>
+              <div style="font-size: 1.8rem; font-weight: 700; color: var(--brand); margin-bottom: 0.25rem;">100%</div>
+              <div style="font-size: 0.95rem; color: var(--muted);">Teams Make Playoffs</div>
+            </div>
+          </div>
+
+          <!-- Prize Pool -->
+          <div style="margin-bottom: 2rem;">
+            <h3 style="text-align: center; font-size: 1.8rem; margin-bottom: 1.5rem; color: var(--text);">💰 Prize Pool</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+              <!-- Black Division -->
+              <div style="background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%); border-radius: 16px; padding: 2rem; text-align: center; position: relative; overflow: hidden; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);">
+                <div style="position: absolute; top: -20px; right: -20px; font-size: 8rem; opacity: 0.1;">⚫</div>
+                <div style="position: relative; z-index: 1;">
+                  <div style="font-size: 1.3rem; color: white; font-weight: 600; margin-bottom: 0.5rem;">Black Division</div>
+                  <div style="font-size: 0.9rem; color: #999; margin-bottom: 1rem;">16 Teams Competing</div>
+                  <div style="font-size: 3rem; font-weight: 700; color: #CFB991;">$150</div>
+                  <div style="font-size: 0.85rem; color: #999; margin-top: 0.5rem;">Grand Prize</div>
+                </div>
+              </div>
+              <!-- Gold Division -->
+              <div style="background: linear-gradient(135deg, #CFB991 0%, #A89968 100%); border-radius: 16px; padding: 2rem; text-align: center; position: relative; overflow: hidden; box-shadow: 0 8px 24px rgba(207, 185, 145, 0.4);">
+                <div style="position: absolute; top: -20px; right: -20px; font-size: 8rem; opacity: 0.1;">🟡</div>
+                <div style="position: relative; z-index: 1;">
+                  <div style="font-size: 1.3rem; color: #000; font-weight: 600; margin-bottom: 0.5rem;">Gold Division</div>
+                  <div style="font-size: 0.9rem; color: #3a3a3a; margin-bottom: 1rem;">16 Teams Competing</div>
+                  <div style="font-size: 3rem; font-weight: 700; color: #000;">$150</div>
+                  <div style="font-size: 0.85rem; color: #3a3a3a; margin-top: 0.5rem;">Grand Prize</div>
+                </div>
+              </div>
+            </div>
+            <p style="text-align: center; margin-top: 1.5rem; font-size: 1.1rem; color: var(--text); font-weight: 500;">Every team has a chance to win! 🌟</p>
+          </div>
+
+          <!-- Format Explanation -->
+          <div style="background: linear-gradient(to right, #f8f9fa, #ffffff); border-left: 4px solid #CFB991; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <h4 style="font-size: 1.1rem; margin-bottom: 0.75rem; color: var(--text); font-weight: 600;">📋 How It Works</h4>
+            <p style="line-height: 1.7; color: var(--text); margin: 0;">
+              All 32 teams play a 3-game regular season to determine division placement.
+              Top 16 teams advance to the <strong style="color: #CFB991;">Gold Division</strong> playoffs,
+              while the remaining 16 teams compete in the <strong>Black Division</strong> playoffs.
+              Both divisions crown a champion with a $150 prize!
+            </p>
+          </div>
+
+          <!-- Important Notices -->
+          <div style="display: grid; gap: 1rem;">
+            <div style="background: #fff9e6; border-left: 4px solid #ffc107; border-radius: 8px; padding: 1rem 1.25rem;">
+              <div style="font-weight: 600; color: #856404; margin-bottom: 0.25rem;">⚠️ Payment Required</div>
+              <div style="font-size: 0.9rem; color: #856404;">All teams must complete payment before participating in tournament games.</div>
+            </div>
+            <div style="background: #e8f4f8; border-left: 4px solid #17a2b8; border-radius: 8px; padding: 1rem 1.25rem;">
+              <div style="font-weight: 600; color: #0c5460; margin-bottom: 0.25rem;">🤝 Fair Play Commitment</div>
+              <div style="font-size: 0.9rem; color: #0c5460;">IBA is committed to maintaining fair and competitive play throughout the tournament.</div>
+            </div>
+          </div>
+
         </div>
       </section>
 
