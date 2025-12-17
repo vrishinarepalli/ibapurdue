@@ -259,7 +259,7 @@
       <div class="hero-content">
         <h2>The Court. The Teams. The Glory</h2>
         <p id="heroSubtitle">IBA Spring 2026 • Tournament Applications Open</p>
-        <button class="hero-btn" id="heroSignupBtn" onclick="signInWithGoogle()" style="cursor: pointer; border: none; font-size: inherit; font-family: inherit; padding: 15px 40px;">Sign In with Google</button>
+        <button class="hero-btn" id="heroSignupBtn" style="cursor: pointer; border: none; font-size: inherit; font-family: inherit; padding: 15px 40px;">Sign In with Google</button>
       </div>
       <!-- Wave transition -->
       <div class="hero-wave">
@@ -1539,6 +1539,75 @@
         setTimeout(() => waitForFirebase(callback), 100);
       }
     }
+
+    // ============================================
+    // Google Sign-In Function for Non-Authenticated Users
+    // ============================================
+    async function signInWithGoogle() {
+      try {
+        // Wait for Firebase to be available
+        if (!window.auth || !window.firestoreImports) {
+          console.error('❌ Firebase not initialized yet');
+          alert('Please wait a moment and try again.');
+          return;
+        }
+
+        // Import GoogleAuthProvider and signInWithPopup from Firebase
+        const { GoogleAuthProvider, signInWithPopup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(window.auth, provider);
+        const user = result.user;
+
+        console.log('✅ Signed in successfully:', user.email);
+
+        // Check if user document exists, create if not
+        const { doc, getDoc, setDoc, updateDoc } = window.firestoreImports;
+        const userDocRef = doc(window.db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+          // Create user document
+          await setDoc(userDocRef, {
+            email: user.email,
+            displayName: user.displayName || user.email.split('@')[0],
+            photoURL: user.photoURL || '',
+            roles: ['player'],
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString()
+          });
+          console.log('✅ Created user document');
+        } else {
+          // Update last login
+          await updateDoc(userDocRef, {
+            lastLogin: new Date().toISOString()
+          });
+        }
+
+        // onAuthStateChanged will handle UI updates automatically
+
+      } catch (error) {
+        console.error('❌ Error signing in:', error);
+        if (error.code === 'auth/popup-closed-by-user') {
+          console.log('User closed the sign-in popup');
+        } else if (error.code === 'auth/cancelled-popup-request') {
+          console.log('Another popup already open');
+        } else {
+          alert('Error signing in. Please try again.');
+        }
+      }
+    }
+
+    // Make signInWithGoogle available globally
+    window.signInWithGoogle = signInWithGoogle;
+
+    // Set up hero button click handler when DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+      const heroBtn = document.getElementById('heroSignupBtn');
+      if (heroBtn && !window.auth?.currentUser) {
+        heroBtn.onclick = signInWithGoogle;
+      }
+    });
 
     // Profile modal handlers
     const profileModal = document.getElementById('profileModal');
@@ -4331,62 +4400,6 @@
         }
       }
     });
-
-    // ============================================
-    // Google Sign-In Function for Non-Authenticated Users
-    // ============================================
-    async function signInWithGoogle() {
-      try {
-        // Import GoogleAuthProvider and signInWithPopup from Firebase
-        const { GoogleAuthProvider, signInWithPopup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
-
-        const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-
-        console.log('✅ Signed in successfully:', user.email);
-
-        // Check if user document exists, create if not
-        const { doc, getDoc, setDoc } = window.firestoreImports;
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (!userDoc.exists()) {
-          // Create user document
-          await setDoc(userDocRef, {
-            email: user.email,
-            displayName: user.displayName || user.email.split('@')[0],
-            photoURL: user.photoURL || '',
-            roles: ['player'],
-            createdAt: new Date().toISOString(),
-            lastLogin: new Date().toISOString()
-          });
-          console.log('✅ Created user document');
-        } else {
-          // Update last login
-          const { updateDoc } = window.firestoreImports;
-          await updateDoc(userDocRef, {
-            lastLogin: new Date().toISOString()
-          });
-        }
-
-        // Redirect or refresh - onAuthStateChanged will handle UI updates
-        // No redirect needed, Firebase will trigger onAuthStateChanged
-
-      } catch (error) {
-        console.error('❌ Error signing in:', error);
-        if (error.code === 'auth/popup-closed-by-user') {
-          console.log('User closed the sign-in popup');
-        } else if (error.code === 'auth/cancelled-popup-request') {
-          console.log('Another popup already open');
-        } else {
-          alert('Error signing in. Please try again.');
-        }
-      }
-    }
-
-    // Make signInWithGoogle available globally
-    window.signInWithGoogle = signInWithGoogle;
 
     // ============================================
     // Previous Tournaments Functionality - Hidden for future use
