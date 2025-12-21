@@ -524,13 +524,29 @@
                     placeholder="captain@example.com" />
                 </div>
 
-                <!-- Alternative Contact -->
+                <!-- Contact Information -->
                 <div style="margin-bottom: 1.5rem;">
-                  <label for="altContact" style="display: block; margin-bottom: 0.5rem; color: #000; font-weight: 600; font-size: 0.95rem;">GroupMe or Instagram Contact *</label>
-                  <input type="text" id="altContact" name="altContact" required
-                    style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; transition: border-color 0.2s;"
-                    placeholder="@username or GroupMe link" />
-                  <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">Provide your GroupMe invite link or Instagram handle for team communication.</p>
+                  <label style="display: block; margin-bottom: 0.75rem; color: #000; font-weight: 600; font-size: 0.95rem;">Team Contact Information (Optional)</label>
+
+                  <div style="margin-bottom: 0.75rem;">
+                    <label for="instagramHandle" style="display: block; margin-bottom: 0.35rem; color: #666; font-size: 0.9rem;">Instagram Handle</label>
+                    <input type="text" id="instagramHandle" name="instagramHandle"
+                      style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
+                      placeholder="@teamhandle" />
+                  </div>
+
+                  <div style="margin-bottom: 0.75rem;">
+                    <label for="groupmeLink" style="display: block; margin-bottom: 0.35rem; color: #666; font-size: 0.9rem;">GroupMe Link</label>
+                    <input type="text" id="groupmeLink" name="groupmeLink"
+                      style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
+                      placeholder="https://groupme.com/join_group/..." />
+                  </div>
+
+                  <div style="background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; padding: 0.75rem; margin-top: 1rem;">
+                    <p style="margin: 0; color: #856404; font-size: 0.85rem; line-height: 1.5;">
+                      <strong>⚠️ Important:</strong> Teams are responsible for responding to messages from IBA staff in a timely manner. If a team fails to respond, IBA staff reserves the right to make decisions on behalf of the team.
+                    </p>
+                  </div>
                 </div>
 
                 <!-- Players -->
@@ -1733,7 +1749,8 @@
           teamName: form.teamName.value.trim(),
           captainEmail: form.captainEmail.value.trim(),
           captainUid: user.uid,
-          altContact: form.altContact.value.trim(),
+          instagram: form.instagramHandle.value.trim() || '',
+          groupme: form.groupmeLink.value.trim() || '',
           players: players,
           createdAt: new Date().toISOString(),
           tournament: 'spring-2026',
@@ -1821,25 +1838,75 @@
               createPanel.innerHTML = `
                 <div style="max-width: 700px; margin: 0 auto;">
                   <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-                    <h3 style="margin: 0 0 1rem 0; color: #000; font-weight: 700; font-size: 1.5rem;">${teamData.teamName}</h3>
-
-                    <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb;">
-                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-                        <div>
-                          <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">Captain Email</p>
-                          <p style="margin: 0; color: #000;">${teamData.captainEmail}</p>
-                        </div>
-                        <div>
-                          <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">Contact</p>
-                          <p style="margin: 0; color: #000;">${teamData.altContact}</p>
+                    <!-- Team Name Section -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                      <div style="flex: 1;">
+                        <h3 id="displayTeamName" style="margin: 0; color: #000; font-weight: 700; font-size: 1.5rem;">${teamData.teamName}</h3>
+                        <div id="editTeamNameForm" style="display: none;">
+                          <input type="text" id="editTeamNameInput" value="${teamData.teamName}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1.1rem; font-weight: 700;" />
+                          <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                            <button onclick="saveTeamName('${userData.teamId}')" style="padding: 0.5rem 1rem; background: #CFB991; color: #000; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Save</button>
+                            <button onclick="cancelEditTeamName()" style="padding: 0.5rem 1rem; background: #6c757d; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Cancel</button>
+                          </div>
                         </div>
                       </div>
-                      <div>
-                        <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">Tournament</p>
-                        <p style="margin: 0; color: #000;">Spring 2026</p>
+                      <button id="editTeamNameBtn" onclick="showEditTeamName()" style="padding: 0.5rem 1rem; background: #f8f9fa; color: #000; border: 1px solid #e5e7eb; border-radius: 6px; font-weight: 600; cursor: pointer; margin-left: 1rem;">Edit Name</button>
+                    </div>
+
+                    <!-- Team Info Section -->
+                    <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; color: #000; font-weight: 700;">Team Information</h4>
+                        <button id="editContactBtn" onclick="showEditContact()" style="padding: 0.5rem 1rem; background: #f8f9fa; color: #000; border: 1px solid #e5e7eb; border-radius: 6px; font-weight: 600; cursor: pointer;">Edit Contact</button>
+                      </div>
+
+                      <!-- Display Mode -->
+                      <div id="displayContact">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                          <div>
+                            <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">Captain Email</p>
+                            <p style="margin: 0; color: #000;">${teamData.captainEmail}</p>
+                          </div>
+                          <div>
+                            <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">Tournament</p>
+                            <p style="margin: 0; color: #000;">Spring 2026</p>
+                          </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                          <div>
+                            <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">Instagram</p>
+                            <p style="margin: 0; color: #000;">${teamData.instagram || 'Not provided'}</p>
+                          </div>
+                          <div>
+                            <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">GroupMe</p>
+                            <p style="margin: 0; color: #000;">${teamData.groupme ? '<a href="' + teamData.groupme + '" target="_blank" style="color: #CFB991; text-decoration: none;">Link</a>' : 'Not provided'}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Edit Mode -->
+                      <div id="editContactForm" style="display: none;">
+                        <div style="margin-bottom: 0.75rem;">
+                          <label style="display: block; margin-bottom: 0.35rem; color: #666; font-size: 0.9rem;">Instagram Handle</label>
+                          <input type="text" id="editInstagram" value="${teamData.instagram || ''}" placeholder="@teamhandle" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;" />
+                        </div>
+                        <div style="margin-bottom: 0.75rem;">
+                          <label style="display: block; margin-bottom: 0.35rem; color: #666; font-size: 0.9rem;">GroupMe Link</label>
+                          <input type="text" id="editGroupme" value="${teamData.groupme || ''}" placeholder="https://groupme.com/join_group/..." style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;" />
+                        </div>
+                        <div style="background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; padding: 0.75rem; margin-bottom: 1rem;">
+                          <p style="margin: 0; color: #856404; font-size: 0.85rem; line-height: 1.5;">
+                            <strong>⚠️ Important:</strong> Teams are responsible for responding to messages from IBA staff in a timely manner. If a team fails to respond, IBA staff reserves the right to make decisions on behalf of the team.
+                          </p>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                          <button onclick="saveContact('${userData.teamId}')" style="padding: 0.5rem 1rem; background: #CFB991; color: #000; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Save</button>
+                          <button onclick="cancelEditContact()" style="padding: 0.5rem 1rem; background: #6c757d; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">Cancel</button>
+                        </div>
                       </div>
                     </div>
 
+                    <!-- Roster Section -->
                     <div style="margin-bottom: 1.5rem;">
                       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                         <h4 style="margin: 0; color: #000; font-weight: 700;">Team Roster</h4>
@@ -1856,6 +1923,7 @@
                       </div>
                     </div>
 
+                    <!-- Add Player Form -->
                     <div id="addPlayerFormContainer" style="display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e5e7eb;">
                       <form id="addPlayerForm" onsubmit="handleAddPlayer(event, '${userData.teamId}')">
                         <label for="newPlayerName" style="display: block; margin-bottom: 0.5rem; color: #000; font-weight: 600;">New Player Name</label>
@@ -1990,6 +2058,111 @@
 
       } catch (error) {
         console.error('Error removing player:', error);
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.border = '1px solid #f5c6cb';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = error.message;
+      }
+    };
+
+    // Show edit team name form
+    window.showEditTeamName = function() {
+      document.getElementById('displayTeamName').style.display = 'none';
+      document.getElementById('editTeamNameForm').style.display = 'block';
+      document.getElementById('editTeamNameBtn').style.display = 'none';
+    };
+
+    // Cancel edit team name
+    window.cancelEditTeamName = function() {
+      document.getElementById('displayTeamName').style.display = 'block';
+      document.getElementById('editTeamNameForm').style.display = 'none';
+      document.getElementById('editTeamNameBtn').style.display = 'block';
+    };
+
+    // Save team name
+    window.saveTeamName = async function(teamId) {
+      const messageDiv = document.getElementById('teamMessage');
+      const newName = document.getElementById('editTeamNameInput').value.trim();
+
+      if (!newName) {
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.border = '1px solid #f5c6cb';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = 'Team name cannot be empty';
+        return;
+      }
+
+      try {
+        const { doc, updateDoc } = window.firestoreImports;
+        const teamDocRef = doc(window.db, 'teams', teamId);
+
+        await updateDoc(teamDocRef, {
+          teamName: newName
+        });
+
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#d4edda';
+        messageDiv.style.border = '1px solid #c3e6cb';
+        messageDiv.style.color = '#155724';
+        messageDiv.textContent = 'Team name updated successfully!';
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+
+      } catch (error) {
+        console.error('Error updating team name:', error);
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.border = '1px solid #f5c6cb';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = error.message;
+      }
+    };
+
+    // Show edit contact form
+    window.showEditContact = function() {
+      document.getElementById('displayContact').style.display = 'none';
+      document.getElementById('editContactForm').style.display = 'block';
+      document.getElementById('editContactBtn').style.display = 'none';
+    };
+
+    // Cancel edit contact
+    window.cancelEditContact = function() {
+      document.getElementById('displayContact').style.display = 'block';
+      document.getElementById('editContactForm').style.display = 'none';
+      document.getElementById('editContactBtn').style.display = 'block';
+    };
+
+    // Save contact info
+    window.saveContact = async function(teamId) {
+      const messageDiv = document.getElementById('teamMessage');
+      const instagram = document.getElementById('editInstagram').value.trim();
+      const groupme = document.getElementById('editGroupme').value.trim();
+
+      try {
+        const { doc, updateDoc } = window.firestoreImports;
+        const teamDocRef = doc(window.db, 'teams', teamId);
+
+        await updateDoc(teamDocRef, {
+          instagram: instagram,
+          groupme: groupme
+        });
+
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#d4edda';
+        messageDiv.style.border = '1px solid #c3e6cb';
+        messageDiv.style.color = '#155724';
+        messageDiv.textContent = 'Contact information updated successfully!';
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+
+      } catch (error) {
+        console.error('Error updating contact info:', error);
         messageDiv.style.display = 'block';
         messageDiv.style.background = '#f8d7da';
         messageDiv.style.border = '1px solid #f5c6cb';
