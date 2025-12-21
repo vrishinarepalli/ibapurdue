@@ -1712,6 +1712,13 @@
         console.log('Switching to subtab:', subtab);
         switchTeamsTab(subtab);
 
+        // Scroll to the Teams section
+        const teamsPanel = document.getElementById('panel-teams');
+        if (teamsPanel) {
+          console.log('Scrolling to Teams panel');
+          teamsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
         // Close mobile navigation AFTER switching
         const cardNav = document.getElementById('cardNav');
         if (cardNav && cardNav.classList.contains('open')) {
