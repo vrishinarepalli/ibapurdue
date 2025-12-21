@@ -199,22 +199,17 @@
           <div class="nav-card" style="background: linear-gradient(135deg, #D9C6A7 0%, #E4D4B8 100%); color: #000;">
             <div class="nav-card-label">Teams</div>
             <div class="nav-card-links">
-              <a href="teams.html" class="nav-card-link">
+              <a href="#" class="nav-card-link" onclick="switchToTeamsTab('all'); return false;">
                 <span>→</span>
                 All Teams
               </a>
-              <a href="#" class="nav-card-link player-only" data-tab="tab-myteams" style="display: none;">
+              <a href="#" class="nav-card-link" id="navCreateTeamLink" onclick="switchToTeamsTab('create'); return false;">
                 <span>→</span>
-                My Teams
+                Create Team
               </a>
-              <a href="inbox.html" class="nav-card-link player-only" id="inboxLink" style="display: none; position: relative;">
+              <a href="#" class="nav-card-link" onclick="switchToTeamsTab('freeagency'); return false;">
                 <span>→</span>
-                Inbox
-                <span id="inboxBadge" style="display: none; position: absolute; top: -5px; right: 10px; background: #e74c3c; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 10px; font-weight: 700;"></span>
-              </a>
-              <a href="#" class="nav-card-link" data-tab="tab-signup">
-                <span>→</span>
-                Sign Up
+                Free Agency
               </a>
             </div>
           </div>
@@ -1683,6 +1678,26 @@
       document.getElementById(`teams-panel-${tab}`).style.display = 'block';
     };
 
+    // Helper function to switch to Teams tab and specific sub-tab from navigation
+    window.switchToTeamsTab = function(subtab) {
+      // First, switch to the Teams main tab
+      const teamsTab = document.getElementById('tab-teams');
+      if (teamsTab) {
+        teamsTab.click();
+      }
+
+      // Then switch to the specific sub-tab
+      setTimeout(() => {
+        switchTeamsTab(subtab);
+      }, 100);
+
+      // Close mobile navigation if open
+      const cardNav = document.getElementById('cardNav');
+      if (cardNav && cardNav.classList.contains('open')) {
+        cardNav.classList.remove('open');
+      }
+    };
+
     // Handle create team form submission
     window.handleCreateTeam = async function(event) {
       event.preventDefault();
@@ -1785,6 +1800,12 @@
           const createBtn = document.getElementById('teams-subtab-create');
           if (createBtn) {
             createBtn.textContent = 'My Team';
+          }
+
+          // Also update navigation dropdown link
+          const navCreateLink = document.getElementById('navCreateTeamLink');
+          if (navCreateLink) {
+            navCreateLink.innerHTML = '<span>→</span> My Team';
           }
 
           // Get full team data
