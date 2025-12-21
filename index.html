@@ -519,9 +519,10 @@
                 <!-- Captain Email -->
                 <div style="margin-bottom: 1.5rem;">
                   <label for="captainEmail" style="display: block; margin-bottom: 0.5rem; color: #000; font-weight: 600; font-size: 0.95rem;">Captain Email *</label>
-                  <input type="email" id="captainEmail" name="captainEmail" required
-                    style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; transition: border-color 0.2s;"
-                    placeholder="captain@example.com" />
+                  <input type="email" id="captainEmail" name="captainEmail" required readonly
+                    style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f8f9fa; color: #666;"
+                    placeholder="Sign in to auto-fill" />
+                  <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">Auto-filled from your signed-in account</p>
                 </div>
 
                 <!-- Contact Information -->
@@ -532,14 +533,17 @@
                     <label for="instagramHandle" style="display: block; margin-bottom: 0.35rem; color: #666; font-size: 0.9rem;">Instagram Handle</label>
                     <input type="text" id="instagramHandle" name="instagramHandle"
                       style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
-                      placeholder="@teamhandle" />
+                      placeholder="@username" />
                   </div>
 
                   <div style="margin-bottom: 0.75rem;">
-                    <label for="groupmeLink" style="display: block; margin-bottom: 0.35rem; color: #666; font-size: 0.9rem;">GroupMe Link</label>
+                    <label for="groupmeLink" style="display: block; margin-bottom: 0.35rem; color: #666; font-size: 0.9rem;">GroupMe Contact</label>
                     <input type="text" id="groupmeLink" name="groupmeLink"
                       style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
                       placeholder="https://groupme.com/join_group/..." />
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">
+                      Join the <a href="https://groupme.com/join_group/YOUR_IBA_GROUPME_LINK" target="_blank" style="color: #CFB991; text-decoration: none; font-weight: 600;">IBA GroupMe</a> for tournament updates
+                    </p>
                   </div>
 
                   <div style="background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; padding: 0.75rem; margin-top: 1rem;">
@@ -552,7 +556,7 @@
                 <!-- Players -->
                 <div style="margin-bottom: 2rem;">
                   <label style="display: block; margin-bottom: 0.5rem; color: #000; font-weight: 600; font-size: 0.95rem;">Team Players (Up to 4 Players) *</label>
-                  <p style="margin: 0 0 1rem 0; font-size: 0.85rem; color: #666;">Enter the names of your team members (at least 1 required, maximum 4).</p>
+                  <p style="margin: 0 0 1rem 0; font-size: 0.85rem; color: #666;">Enter the names of your team members (at least 3 required, maximum 4).</p>
 
                   <div id="playersContainer">
                     <div style="margin-bottom: 0.75rem;">
@@ -561,14 +565,14 @@
                         placeholder="Player 1 Name" />
                     </div>
                     <div style="margin-bottom: 0.75rem;">
-                      <input type="text" name="player2"
+                      <input type="text" name="player2" required
                         style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
-                        placeholder="Player 2 Name (Optional)" />
+                        placeholder="Player 2 Name" />
                     </div>
                     <div style="margin-bottom: 0.75rem;">
-                      <input type="text" name="player3"
+                      <input type="text" name="player3" required
                         style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
-                        placeholder="Player 3 Name (Optional)" />
+                        placeholder="Player 3 Name" />
                     </div>
                     <div style="margin-bottom: 0.75rem;">
                       <input type="text" name="player4"
@@ -591,10 +595,79 @@
 
         <!-- Free Agency Panel -->
         <div id="teams-panel-freeagency" class="teams-subpanel" style="display: none;">
-          <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 1rem 0; color: #000; font-weight: 700; font-size: 1.5rem;">Free Agency</h3>
-            <p style="margin: 0 0 1rem 0; color: #666; line-height: 1.6;">Looking for a team or need players? Post here to connect with other players.</p>
-            <p style="margin: 0; color: #666; line-height: 1.6; font-style: italic;">Free agency board coming soon! Check back later or reach out to IBA staff for help finding teammates.</p>
+          <!-- Join Free Agency Form (shown when signed in and no team) -->
+          <div id="joinFreeAgencyForm" style="display: none; max-width: 600px; margin: 0 auto;">
+            <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+              <h3 style="margin: 0 0 0.5rem 0; color: #000; font-weight: 700; font-size: 1.5rem;">Join Free Agency</h3>
+              <p style="margin: 0 0 2rem 0; color: #666; line-height: 1.6;">Post your profile to let teams know you're looking to join!</p>
+
+              <form id="freeAgencyForm" onsubmit="handleJoinFreeAgency(event)">
+                <!-- Player Name -->
+                <div style="margin-bottom: 1.5rem;">
+                  <label for="freeAgencyName" style="display: block; margin-bottom: 0.5rem; color: #000; font-weight: 600; font-size: 0.95rem;">Your Name *</label>
+                  <input type="text" id="freeAgencyName" name="freeAgencyName" required readonly
+                    style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f8f9fa; color: #666;"
+                    placeholder="Auto-filled from your account" />
+                </div>
+
+                <!-- Email -->
+                <div style="margin-bottom: 1.5rem;">
+                  <label for="freeAgencyEmail" style="display: block; margin-bottom: 0.5rem; color: #000; font-weight: 600; font-size: 0.95rem;">Email *</label>
+                  <input type="email" id="freeAgencyEmail" name="freeAgencyEmail" required readonly
+                    style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; background: #f8f9fa; color: #666;"
+                    placeholder="Auto-filled from your account" />
+                </div>
+
+                <!-- Contact Info -->
+                <div style="margin-bottom: 1.5rem;">
+                  <label style="display: block; margin-bottom: 0.75rem; color: #000; font-weight: 600; font-size: 0.95rem;">Contact Information</label>
+
+                  <div style="margin-bottom: 0.75rem;">
+                    <label for="freeAgencyInstagram" style="display: block; margin-bottom: 0.35rem; color: #666; font-size: 0.9rem;">Instagram Handle</label>
+                    <input type="text" id="freeAgencyInstagram" name="freeAgencyInstagram"
+                      style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
+                      placeholder="@username" />
+                  </div>
+
+                  <div style="margin-bottom: 0.75rem;">
+                    <label for="freeAgencyGroupme" style="display: block; margin-bottom: 0.35rem; color: #666; font-size: 0.9rem;">GroupMe Contact</label>
+                    <input type="text" id="freeAgencyGroupme" name="freeAgencyGroupme"
+                      style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
+                      placeholder="Your GroupMe username or link" />
+                  </div>
+                </div>
+
+                <!-- Player Bio/Notes -->
+                <div style="margin-bottom: 2rem;">
+                  <label for="freeAgencyNotes" style="display: block; margin-bottom: 0.5rem; color: #000; font-weight: 600; font-size: 0.95rem;">About You (Optional)</label>
+                  <textarea id="freeAgencyNotes" name="freeAgencyNotes" rows="4"
+                    style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; resize: vertical;"
+                    placeholder="Tell teams about your playing style, experience, availability, or anything else that might help them contact you..."></textarea>
+                  <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">This helps teams find players that fit their style!</p>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" style="width: 100%; padding: 1rem; background: linear-gradient(135deg, #CFB991 0%, #A89968 100%); color: #000; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 12px rgba(207, 185, 145, 0.3);">
+                  Join Free Agency
+                </button>
+              </form>
+
+              <div id="freeAgencyMessage" style="margin-top: 1.5rem; padding: 1rem; border-radius: 8px; display: none;"></div>
+            </div>
+          </div>
+
+          <!-- Free Agents List (shown for all users) -->
+          <div id="freeAgentsList" style="max-width: 800px; margin: 0 auto;">
+            <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5rem;">
+              <h3 style="margin: 0 0 1rem 0; color: #000; font-weight: 700; font-size: 1.5rem;">Free Agents</h3>
+              <p style="margin: 0 0 1rem 0; color: #666; line-height: 1.6;">Players looking for teams</p>
+            </div>
+            <div id="freeAgentsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+              <!-- Free agents will be loaded here -->
+              <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #999;">
+                <p style="font-size: 1.1rem; margin: 0;">No players in free agency yet. Be the first!</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1754,8 +1827,8 @@
           }
         }
 
-        if (players.length === 0) {
-          throw new Error('Please add at least one player');
+        if (players.length < 3) {
+          throw new Error('Please add at least 3 players (Player 4 is optional)');
         }
 
         // Create team document
@@ -1956,6 +2029,18 @@
                 </div>
               `;
             }
+
+            // Hide free agency form if user has a team
+            const joinFreeAgencyForm = document.getElementById('joinFreeAgencyForm');
+            if (joinFreeAgencyForm) {
+              joinFreeAgencyForm.style.display = 'none';
+            }
+          }
+        } else {
+          // User doesn't have a team - show free agency form
+          const joinFreeAgencyForm = document.getElementById('joinFreeAgencyForm');
+          if (joinFreeAgencyForm) {
+            joinFreeAgencyForm.style.display = 'block';
           }
         }
       } catch (error) {
@@ -2251,10 +2336,140 @@
       const teamsTab = document.getElementById('tab-teams');
       if (teamsTab) {
         teamsTab.addEventListener('click', () => {
-          waitForFirebase(() => loadAllTeams());
+          waitForFirebase(() => {
+            loadAllTeams();
+            loadFreeAgents();
+          });
         });
       }
     });
+
+    // ============================================
+    // Free Agency Functions
+    // ============================================
+
+    // Handle join free agency form submission
+    window.handleJoinFreeAgency = async function(event) {
+      event.preventDefault();
+
+      const messageDiv = document.getElementById('freeAgencyMessage');
+      const form = event.target;
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Joining...';
+
+        const user = window.auth?.currentUser;
+        if (!user) {
+          throw new Error('You must be signed in to join free agency');
+        }
+
+        // Create free agent document
+        const freeAgentData = {
+          playerName: form.freeAgencyName.value.trim(),
+          email: form.freeAgencyEmail.value.trim(),
+          uid: user.uid,
+          instagram: form.freeAgencyInstagram.value.trim() || '',
+          groupme: form.freeAgencyGroupme.value.trim() || '',
+          notes: form.freeAgencyNotes.value.trim() || '',
+          createdAt: new Date().toISOString(),
+          tournament: 'spring-2026',
+          status: 'active'
+        };
+
+        const { collection, addDoc } = window.firestoreImports;
+
+        // Add to free agents collection
+        await addDoc(collection(window.db, 'freeAgents'), freeAgentData);
+
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#d4edda';
+        messageDiv.style.border = '1px solid #c3e6cb';
+        messageDiv.style.color = '#155724';
+        messageDiv.innerHTML = `
+          <strong>Success!</strong> You've joined free agency. Teams can now see your profile and contact you!
+        `;
+
+        // Hide form and reload free agents list
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+
+      } catch (error) {
+        console.error('Error joining free agency:', error);
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.border = '1px solid #f5c6cb';
+        messageDiv.style.color = '#721c24';
+        messageDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Join Free Agency';
+      }
+    };
+
+    // Load all free agents from Firestore
+    window.loadFreeAgents = async function() {
+      try {
+        const { collection, getDocs, query, where } = window.firestoreImports;
+        const freeAgentsGrid = document.getElementById('freeAgentsGrid');
+
+        if (!freeAgentsGrid) return;
+
+        // Query free agents for Spring 2026 tournament
+        const freeAgentsQuery = query(
+          collection(window.db, 'freeAgents'),
+          where('tournament', '==', 'spring-2026'),
+          where('status', '==', 'active')
+        );
+
+        const freeAgentsSnapshot = await getDocs(freeAgentsQuery);
+
+        if (freeAgentsSnapshot.empty) {
+          freeAgentsGrid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #999;">
+              <p style="font-size: 1.1rem; margin: 0;">No players in free agency yet. Be the first!</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Display free agents
+        const freeAgentsHTML = [];
+        freeAgentsSnapshot.forEach((doc) => {
+          const agent = doc.data();
+          freeAgentsHTML.push(`
+            <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 2px solid #e5e7eb; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
+              <div style="margin-bottom: 1rem;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #000; font-weight: 700; font-size: 1.1rem;">${agent.playerName}</h4>
+                <p style="margin: 0; color: #666; font-size: 0.85rem;">${agent.email}</p>
+              </div>
+
+              ${agent.instagram || agent.groupme ? `
+                <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb; margin-bottom: 1rem;">
+                  <p style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">Contact:</p>
+                  ${agent.instagram ? `<p style="margin: 0 0 0.25rem 0; color: #000; font-size: 0.9rem;">📷 ${agent.instagram}</p>` : ''}
+                  ${agent.groupme ? `<p style="margin: 0; color: #000; font-size: 0.9rem;">💬 GroupMe</p>` : ''}
+                </div>
+              ` : ''}
+
+              ${agent.notes ? `
+                <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                  <p style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">About:</p>
+                  <p style="margin: 0; color: #000; font-size: 0.9rem; line-height: 1.5;">${agent.notes}</p>
+                </div>
+              ` : ''}
+            </div>
+          `);
+        });
+
+        freeAgentsGrid.innerHTML = freeAgentsHTML.join('');
+
+      } catch (error) {
+        console.error('Error loading free agents:', error);
+      }
+    };
 
     // Profile modal handlers
     const profileModal = document.getElementById('profileModal');
@@ -4909,6 +5124,22 @@
         }
         if (signupTab) {
           signupTab.innerHTML = '🌸 Spring 2026 Tournament';
+        }
+
+        // Auto-fill captain email in Create Team form
+        const captainEmailInput = document.getElementById('captainEmail');
+        if (captainEmailInput) {
+          captainEmailInput.value = user.email;
+          console.log('✅ Auto-filled captain email:', user.email);
+        }
+
+        // Auto-fill free agency form fields
+        const freeAgencyNameInput = document.getElementById('freeAgencyName');
+        const freeAgencyEmailInput = document.getElementById('freeAgencyEmail');
+        if (freeAgencyNameInput && freeAgencyEmailInput) {
+          freeAgencyNameInput.value = user.displayName || user.email.split('@')[0];
+          freeAgencyEmailInput.value = user.email;
+          console.log('✅ Auto-filled free agency form');
         }
 
         // Show user profile in card navigation
