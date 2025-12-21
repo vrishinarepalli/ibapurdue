@@ -19,6 +19,16 @@
   <!-- Modular JavaScript - All features organized in js/ directory -->
   <script type="module" src="js/app.js"></script>
 
+  <!-- Teams subtab styles -->
+  <style>
+    .teams-subtab.active {
+      color: #CFB991 !important;
+      border-bottom-color: #CFB991 !important;
+    }
+    .teams-subtab:hover {
+      color: #000 !important;
+    }
+  </style>
 </head>
 <body>
   <div class="wrap">
@@ -468,135 +478,113 @@
       </section>
 
       <section id="panel-teams" class="tabpanel" role="tabpanel" aria-labelledby="tab-teams">
-        <div class="grid" id="teamsGrid">
-          <article class="team-card" data-team="mutts">
-            <button class="edit-icon-btn" onclick="editTeamIcon('mutts')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">🏀</div>
-            <div>
-              <h4>Mutts and Fulls <span class="pill" title="Seed">#1</span></h4>
-              <p>Click to view roster and stats</p>
+        <!-- Teams Sub-Navigation -->
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 2rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 0;">
+          <button id="teams-subtab-all" class="teams-subtab active" onclick="switchTeamsTab('all')" style="padding: 0.75rem 1.5rem; border: none; background: none; font-size: 1rem; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">
+            All Teams
+          </button>
+          <button id="teams-subtab-create" class="teams-subtab" onclick="switchTeamsTab('create')" style="padding: 0.75rem 1.5rem; border: none; background: none; font-size: 1rem; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">
+            Create Team
+          </button>
+          <button id="teams-subtab-freeagency" class="teams-subtab" onclick="switchTeamsTab('freeagency')" style="padding: 0.75rem 1.5rem; border: none; background: none; font-size: 1rem; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">
+            Free Agency
+          </button>
+        </div>
+
+        <!-- All Teams Panel -->
+        <div id="teams-panel-all" class="teams-subpanel">
+          <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 1rem 0; color: #000; font-weight: 700; font-size: 1.5rem;">Spring 2026 Teams</h3>
+            <p style="margin: 0; color: #666; line-height: 1.6;">All teams registered for the Spring 2026 tournament will appear here once registration opens.</p>
+          </div>
+          <div id="teamsGrid" class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+            <!-- Teams will be loaded dynamically from Firestore -->
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #999;">
+              <p style="font-size: 1.1rem; margin: 0;">No teams registered yet. Be the first to create a team!</p>
             </div>
-          </article>
-          <article class="team-card" data-team="bbb">
-            <button class="edit-icon-btn" onclick="editTeamIcon('bbb')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">🔥</div>
-            <div>
-              <h4>BBB <span class="pill" title="Seed">#2</span></h4>
-              <p>Click to view roster and stats</p>
+          </div>
+        </div>
+
+        <!-- Create Team Panel -->
+        <div id="teams-panel-create" class="teams-subpanel" style="display: none;">
+          <div style="max-width: 600px; margin: 0 auto;">
+            <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+              <h3 style="margin: 0 0 0.5rem 0; color: #000; font-weight: 700; font-size: 1.5rem;">Create Your Team</h3>
+              <p style="margin: 0 0 2rem 0; color: #666; line-height: 1.6;">Fill out the form below to register your team for the Spring 2026 tournament.</p>
+
+              <form id="createTeamForm" onsubmit="handleCreateTeam(event)">
+                <!-- Team Name -->
+                <div style="margin-bottom: 1.5rem;">
+                  <label for="teamName" style="display: block; margin-bottom: 0.5rem; color: #000; font-weight: 600; font-size: 0.95rem;">Team Name *</label>
+                  <input type="text" id="teamName" name="teamName" required
+                    style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; transition: border-color 0.2s;"
+                    placeholder="Enter your team name" />
+                </div>
+
+                <!-- Captain Email -->
+                <div style="margin-bottom: 1.5rem;">
+                  <label for="captainEmail" style="display: block; margin-bottom: 0.5rem; color: #000; font-weight: 600; font-size: 0.95rem;">Captain Email *</label>
+                  <input type="email" id="captainEmail" name="captainEmail" required
+                    style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; transition: border-color 0.2s;"
+                    placeholder="captain@example.com" />
+                </div>
+
+                <!-- Alternative Contact -->
+                <div style="margin-bottom: 1.5rem;">
+                  <label for="altContact" style="display: block; margin-bottom: 0.5rem; color: #000; font-weight: 600; font-size: 0.95rem;">GroupMe or Instagram Contact *</label>
+                  <input type="text" id="altContact" name="altContact" required
+                    style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; transition: border-color 0.2s;"
+                    placeholder="@username or GroupMe link" />
+                  <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">Provide your GroupMe invite link or Instagram handle for team communication.</p>
+                </div>
+
+                <!-- Players -->
+                <div style="margin-bottom: 2rem;">
+                  <label style="display: block; margin-bottom: 0.5rem; color: #000; font-weight: 600; font-size: 0.95rem;">Team Players (Up to 4 Players) *</label>
+                  <p style="margin: 0 0 1rem 0; font-size: 0.85rem; color: #666;">Enter the names of your team members (at least 1 required, maximum 4).</p>
+
+                  <div id="playersContainer">
+                    <div style="margin-bottom: 0.75rem;">
+                      <input type="text" name="player1" required
+                        style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
+                        placeholder="Player 1 Name" />
+                    </div>
+                    <div style="margin-bottom: 0.75rem;">
+                      <input type="text" name="player2"
+                        style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
+                        placeholder="Player 2 Name (Optional)" />
+                    </div>
+                    <div style="margin-bottom: 0.75rem;">
+                      <input type="text" name="player3"
+                        style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
+                        placeholder="Player 3 Name (Optional)" />
+                    </div>
+                    <div style="margin-bottom: 0.75rem;">
+                      <input type="text" name="player4"
+                        style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
+                        placeholder="Player 4 Name (Optional)" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" style="width: 100%; padding: 1rem; background: linear-gradient(135deg, #CFB991 0%, #A89968 100%); color: #000; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 12px rgba(207, 185, 145, 0.3);">
+                  Create Team
+                </button>
+              </form>
+
+              <div id="createTeamMessage" style="margin-top: 1.5rem; padding: 1rem; border-radius: 8px; display: none;"></div>
             </div>
-          </article>
-          <article class="team-card" data-team="rajesh">
-            <button class="edit-icon-btn" onclick="editTeamIcon('rajesh')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">🛡️</div>
-            <div>
-              <h4>Rajesh's Last Dance <span class="pill" title="Seed">#3</span></h4>
-              <p>Click to view roster and stats</p>
-            </div>
-          </article>
-          <article class="team-card" data-team="club">
-            <button class="edit-icon-btn" onclick="editTeamIcon('club')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">⚡</div>
-            <div>
-              <h4>Club ballers <span class="pill" title="Seed">#4</span></h4>
-              <p>Click to view roster and stats</p>
-            </div>
-          </article>
-          <article class="team-card" data-team="navsandeep">
-            <button class="edit-icon-btn" onclick="editTeamIcon('navsandeep')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">⭐</div>
-            <div>
-              <h4>Nav/Sandeep <span class="pill" title="Seed">#5</span></h4>
-              <p>Click to view roster and stats</p>
-            </div>
-          </article>
-          <article class="team-card" data-team="kos">
-            <button class="edit-icon-btn" onclick="editTeamIcon('kos')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">👑</div>
-            <div>
-              <h4>KOS <span class="pill" title="Seed">#6</span></h4>
-              <p>Click to view roster and stats</p>
-            </div>
-          </article>
-          <article class="team-card" data-team="lemickey">
-            <button class="edit-icon-btn" onclick="editTeamIcon('lemickey')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">🏆</div>
-            <div>
-              <h4>LeMickey <span class="pill" title="Seed">#7</span></h4>
-              <p>Click to view roster and stats</p>
-            </div>
-          </article>
-          <article class="team-card" data-team="bbs">
-            <button class="edit-icon-btn" onclick="editTeamIcon('bbs')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">💪</div>
-            <div>
-              <h4>BBS <span class="pill" title="Seed">#8</span></h4>
-              <p>Click to view roster and stats</p>
-            </div>
-          </article>
-          <article class="team-card" data-team="gutti">
-            <button class="edit-icon-btn" onclick="editTeamIcon('gutti')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">🌟</div>
-            <div>
-              <h4>gutti boys <span class="pill" title="Seed">#9</span></h4>
-              <p>Click to view roster and stats</p>
-            </div>
-          </article>
-          <article class="team-card" data-team="sap">
-            <button class="edit-icon-btn" onclick="editTeamIcon('sap')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">🏟️</div>
-            <div>
-              <h4>SAP Center <span class="pill" title="Seed">#10</span></h4>
-              <p>Click to view roster and stats</p>
-            </div>
-          </article>
-          <article class="team-card" data-team="are">
-            <button class="edit-icon-btn" onclick="editTeamIcon('are')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">🚀</div>
-            <div>
-              <h4>ARE 3.0 <span class="pill" title="Seed">#11</span></h4>
-              <p>Click to view roster and stats</p>
-            </div>
-          </article>
-          <article class="team-card" data-team="naujawan">
-            <button class="edit-icon-btn" onclick="editTeamIcon('naujawan')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">💎</div>
-            <div>
-              <h4>Naujawan <span class="pill" title="Seed">#12</span></h4>
-              <p>Click to view roster and stats</p>
-            </div>
-          </article>
-          <article class="team-card" data-team="buckit">
-            <button class="edit-icon-btn" onclick="editTeamIcon('buckit')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">🪣</div>
-            <div>
-              <h4>Buckit <span class="pill" title="Seed">#13</span></h4>
-              <p>Click to view roster and stats</p>
-            </div>
-          </article>
-          <article class="team-card" data-team="swish">
-            <button class="edit-icon-btn" onclick="editTeamIcon('swish')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">🌶️</div>
-            <div>
-              <h4>Swish Kebabs <span class="pill" title="Seed">#14</span></h4>
-              <p>Click to view roster and stats</p>
-            </div>
-          </article>
-          <article class="team-card" data-team="diko">
-            <button class="edit-icon-btn" onclick="editTeamIcon('diko')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">🎯</div>
-            <div>
-              <h4>Diko & Co. <span class="pill" title="Seed">#15</span></h4>
-              <p>Click to view roster and stats</p>
-            </div>
-          </article>
-          <article class="team-card" data-team="fuse">
-            <button class="edit-icon-btn" onclick="editTeamIcon('fuse')">Edit Icon</button>
-            <div class="avatar" aria-hidden="true">⚡</div>
-            <div>
-              <h4>Fuse <span class="pill" title="Seed">#16</span></h4>
-              <p>Click to view roster and stats</p>
-            </div>
-          </article>
+          </div>
+        </div>
+
+        <!-- Free Agency Panel -->
+        <div id="teams-panel-freeagency" class="teams-subpanel" style="display: none;">
+          <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 1rem 0; color: #000; font-weight: 700; font-size: 1.5rem;">Free Agency</h3>
+            <p style="margin: 0 0 1rem 0; color: #666; line-height: 1.6;">Looking for a team or need players? Post here to connect with other players.</p>
+            <p style="margin: 0; color: #666; line-height: 1.6; font-style: italic;">Free agency board coming soon! Check back later or reach out to IBA staff for help finding teammates.</p>
+          </div>
         </div>
       </section>
 
@@ -1701,6 +1689,390 @@
       if (heroBtn) {
         heroBtn.onclick = signInWithGoogle;
         console.log('✅ Sign-in button configured');
+      }
+    });
+
+    // ============================================
+    // Teams Tab Functions
+    // ============================================
+
+    // Switch between teams sub-tabs
+    window.switchTeamsTab = function(tab) {
+      // Update button states
+      document.querySelectorAll('.teams-subtab').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.getElementById(`teams-subtab-${tab}`).classList.add('active');
+
+      // Show/hide panels
+      document.querySelectorAll('.teams-subpanel').forEach(panel => {
+        panel.style.display = 'none';
+      });
+      document.getElementById(`teams-panel-${tab}`).style.display = 'block';
+    };
+
+    // Handle create team form submission
+    window.handleCreateTeam = async function(event) {
+      event.preventDefault();
+
+      const messageDiv = document.getElementById('createTeamMessage');
+      const form = event.target;
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating Team...';
+
+        const user = window.auth?.currentUser;
+        if (!user) {
+          throw new Error('You must be signed in to create a team');
+        }
+
+        // Collect player names
+        const players = [];
+        for (let i = 1; i <= 4; i++) {
+          const playerName = form[`player${i}`].value.trim();
+          if (playerName) {
+            players.push(playerName);
+          }
+        }
+
+        if (players.length === 0) {
+          throw new Error('Please add at least one player');
+        }
+
+        // Create team document
+        const teamData = {
+          teamName: form.teamName.value.trim(),
+          captainEmail: form.captainEmail.value.trim(),
+          captainUid: user.uid,
+          altContact: form.altContact.value.trim(),
+          players: players,
+          createdAt: new Date().toISOString(),
+          tournament: 'spring-2026',
+          status: 'active'
+        };
+
+        const { collection, addDoc, doc, setDoc } = window.firestoreImports;
+
+        // Add team to teams collection
+        const teamRef = await addDoc(collection(window.db, 'teams'), teamData);
+
+        // Update user document with team reference
+        const userDocRef = doc(window.db, 'users', user.uid);
+        await setDoc(userDocRef, {
+          teamId: teamRef.id,
+          teamName: teamData.teamName,
+          isCaptain: true
+        }, { merge: true });
+
+        // Show success message
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#d4edda';
+        messageDiv.style.border = '1px solid #c3e6cb';
+        messageDiv.style.color = '#155724';
+        messageDiv.innerHTML = `
+          <strong>Success!</strong> Your team "${teamData.teamName}" has been created.
+          <br>Refresh the page to see your team in "My Team".
+        `;
+
+        // Reset form
+        form.reset();
+
+        // Reload user team to show "My Team" panel
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+
+      } catch (error) {
+        console.error('Error creating team:', error);
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.border = '1px solid #f5c6cb';
+        messageDiv.style.color = '#721c24';
+        messageDiv.innerHTML = `<strong>Error:</strong> ${error.message}`;
+
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Team';
+      }
+    };
+
+    // Load user's team if they have one
+    window.loadUserTeam = async function(user) {
+      if (!user) return;
+
+      try {
+        const { doc, getDoc } = window.firestoreImports;
+        const userDocRef = doc(window.db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists() && userDoc.data().teamId) {
+          const userData = userDoc.data();
+
+          // User has a team - change "Create Team" to "My Team"
+          const createBtn = document.getElementById('teams-subtab-create');
+          if (createBtn) {
+            createBtn.textContent = 'My Team';
+          }
+
+          // Get full team data
+          const teamDocRef = doc(window.db, 'teams', userData.teamId);
+          const teamDoc = await getDoc(teamDocRef);
+
+          if (teamDoc.exists()) {
+            const teamData = teamDoc.data();
+
+            // Replace create team panel with my team panel
+            const createPanel = document.getElementById('teams-panel-create');
+            if (createPanel) {
+              createPanel.innerHTML = `
+                <div style="max-width: 700px; margin: 0 auto;">
+                  <div style="background: white; border-radius: 12px; padding: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                    <h3 style="margin: 0 0 1rem 0; color: #000; font-weight: 700; font-size: 1.5rem;">${teamData.teamName}</h3>
+
+                    <div style="margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb;">
+                      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div>
+                          <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">Captain Email</p>
+                          <p style="margin: 0; color: #000;">${teamData.captainEmail}</p>
+                        </div>
+                        <div>
+                          <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">Contact</p>
+                          <p style="margin: 0; color: #000;">${teamData.altContact}</p>
+                        </div>
+                      </div>
+                      <div>
+                        <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">Tournament</p>
+                        <p style="margin: 0; color: #000;">Spring 2026</p>
+                      </div>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h4 style="margin: 0; color: #000; font-weight: 700;">Team Roster</h4>
+                        ${teamData.players.length < 4 ? `<button onclick="showAddPlayerForm('${userData.teamId}')" style="padding: 0.5rem 1rem; background: #CFB991; color: #000; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">+ Add Player</button>` : ''}
+                      </div>
+
+                      <div id="playersList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        ${teamData.players.map((player, index) => `
+                          <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8f9fa; border: 1px solid #e5e7eb; border-radius: 8px;">
+                            <span style="color: #000; font-weight: 500;">${player}</span>
+                            <button onclick="removePlayer('${userData.teamId}', ${index}, '${player}')" style="padding: 0.35rem 0.75rem; background: #dc3545; color: white; border: none; border-radius: 4px; font-size: 0.85rem; cursor: pointer;">Remove</button>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+
+                    <div id="addPlayerFormContainer" style="display: none; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #e5e7eb;">
+                      <form id="addPlayerForm" onsubmit="handleAddPlayer(event, '${userData.teamId}')">
+                        <label for="newPlayerName" style="display: block; margin-bottom: 0.5rem; color: #000; font-weight: 600;">New Player Name</label>
+                        <div style="display: flex; gap: 0.75rem;">
+                          <input type="text" id="newPlayerName" name="newPlayerName" required
+                            style="flex: 1; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
+                            placeholder="Player name" />
+                          <button type="submit" style="padding: 0.75rem 1.5rem; background: #CFB991; color: #000; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Add</button>
+                          <button type="button" onclick="hideAddPlayerForm()" style="padding: 0.75rem 1.5rem; background: #6c757d; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Cancel</button>
+                        </div>
+                      </form>
+                    </div>
+
+                    <div id="teamMessage" style="margin-top: 1.5rem; padding: 1rem; border-radius: 8px; display: none;"></div>
+                  </div>
+                </div>
+              `;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user team:', error);
+      }
+    };
+
+    // Show add player form
+    window.showAddPlayerForm = function(teamId) {
+      document.getElementById('addPlayerFormContainer').style.display = 'block';
+    };
+
+    // Hide add player form
+    window.hideAddPlayerForm = function() {
+      document.getElementById('addPlayerFormContainer').style.display = 'none';
+      document.getElementById('addPlayerForm').reset();
+    };
+
+    // Handle add player
+    window.handleAddPlayer = async function(event, teamId) {
+      event.preventDefault();
+
+      const messageDiv = document.getElementById('teamMessage');
+      const form = event.target;
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding...';
+
+        const newPlayerName = form.newPlayerName.value.trim();
+
+        const { doc, getDoc, updateDoc, arrayUnion } = window.firestoreImports;
+        const teamDocRef = doc(window.db, 'teams', teamId);
+        const teamDoc = await getDoc(teamDocRef);
+
+        if (!teamDoc.exists()) {
+          throw new Error('Team not found');
+        }
+
+        const teamData = teamDoc.data();
+        if (teamData.players.length >= 4) {
+          throw new Error('Team already has maximum 4 players');
+        }
+
+        // Add player to team
+        await updateDoc(teamDocRef, {
+          players: arrayUnion(newPlayerName)
+        });
+
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#d4edda';
+        messageDiv.style.border = '1px solid #c3e6cb';
+        messageDiv.style.color = '#155724';
+        messageDiv.textContent = `${newPlayerName} has been added to the team!`;
+
+        // Reload page to show updated roster
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+
+      } catch (error) {
+        console.error('Error adding player:', error);
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.border = '1px solid #f5c6cb';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = error.message;
+
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Add';
+      }
+    };
+
+    // Remove player from team
+    window.removePlayer = async function(teamId, playerIndex, playerName) {
+      if (!confirm(`Are you sure you want to remove ${playerName} from the team?`)) {
+        return;
+      }
+
+      const messageDiv = document.getElementById('teamMessage');
+
+      try {
+        const { doc, getDoc, updateDoc } = window.firestoreImports;
+        const teamDocRef = doc(window.db, 'teams', teamId);
+        const teamDoc = await getDoc(teamDocRef);
+
+        if (!teamDoc.exists()) {
+          throw new Error('Team not found');
+        }
+
+        const teamData = teamDoc.data();
+        const updatedPlayers = teamData.players.filter((_, index) => index !== playerIndex);
+
+        if (updatedPlayers.length === 0) {
+          throw new Error('Team must have at least one player');
+        }
+
+        // Update team with new players array
+        await updateDoc(teamDocRef, {
+          players: updatedPlayers
+        });
+
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#d4edda';
+        messageDiv.style.border = '1px solid #c3e6cb';
+        messageDiv.style.color = '#155724';
+        messageDiv.textContent = `${playerName} has been removed from the team.`;
+
+        // Reload page to show updated roster
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+
+      } catch (error) {
+        console.error('Error removing player:', error);
+        messageDiv.style.display = 'block';
+        messageDiv.style.background = '#f8d7da';
+        messageDiv.style.border = '1px solid #f5c6cb';
+        messageDiv.style.color = '#721c24';
+        messageDiv.textContent = error.message;
+      }
+    };
+
+    // Load all teams from Firestore
+    window.loadAllTeams = async function() {
+      try {
+        const { collection, getDocs, query, where, orderBy } = window.firestoreImports;
+        const teamsGrid = document.getElementById('teamsGrid');
+
+        if (!teamsGrid) return;
+
+        // Query teams for Spring 2026 tournament
+        const teamsQuery = query(
+          collection(window.db, 'teams'),
+          where('tournament', '==', 'spring-2026'),
+          where('status', '==', 'active')
+        );
+
+        const teamsSnapshot = await getDocs(teamsQuery);
+
+        if (teamsSnapshot.empty) {
+          teamsGrid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: #999;">
+              <p style="font-size: 1.1rem; margin: 0;">No teams registered yet. Be the first to create a team!</p>
+            </div>
+          `;
+          return;
+        }
+
+        // Display teams
+        const teamsHTML = [];
+        teamsSnapshot.forEach((doc) => {
+          const team = doc.data();
+          teamsHTML.push(`
+            <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 2px solid #e5e7eb; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
+              <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #CFB991 0%, #A89968 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-right: 1rem;">
+                  🏀
+                </div>
+                <div style="flex: 1;">
+                  <h4 style="margin: 0 0 0.25rem 0; color: #000; font-weight: 700; font-size: 1.1rem;">${team.teamName}</h4>
+                  <p style="margin: 0; color: #666; font-size: 0.85rem;">Captain: ${team.captainEmail}</p>
+                </div>
+              </div>
+              <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                <p style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">Players (${team.players.length}):</p>
+                <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                  ${team.players.slice(0, 3).map(player => `
+                    <p style="margin: 0; color: #000; font-size: 0.9rem;">• ${player}</p>
+                  `).join('')}
+                  ${team.players.length > 3 ? `<p style="margin: 0; color: #666; font-size: 0.85rem; font-style: italic;">+ ${team.players.length - 3} more</p>` : ''}
+                </div>
+              </div>
+            </div>
+          `);
+        });
+
+        teamsGrid.innerHTML = teamsHTML.join('');
+
+      } catch (error) {
+        console.error('Error loading teams:', error);
+      }
+    };
+
+    // Call loadAllTeams when Firebase is ready and Teams tab is opened
+    document.addEventListener('DOMContentLoaded', () => {
+      const teamsTab = document.getElementById('tab-teams');
+      if (teamsTab) {
+        teamsTab.addEventListener('click', () => {
+          waitForFirebase(() => loadAllTeams());
+        });
       }
     });
 
@@ -4462,6 +4834,9 @@
         } catch (error) {
           console.error('Error checking user roles:', error);
         }
+
+        // Load user's team to show "My Team" if they have one
+        waitForFirebase(() => loadUserTeam(user));
       } else {
         // User is signed out
         console.log('❌ User is signed out');
