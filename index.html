@@ -88,7 +88,7 @@
         <form id="teamForm">
           <div class="form-group">
             <label>Team Name</label>
-            <input type="text" id="teamName" required />
+            <input type="text" id="editTeamName" required />
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
             <div class="form-group">
@@ -1065,34 +1065,6 @@
             <div id="noTeamDisplay">
               <button id="createTeamBtn" class="admin-submit" style="margin-right: 1rem;">+ Create New Team</button>
               <p style="color: var(--muted); margin-top: 1rem;">Or browse teams below to request to join</p>
-            </div>
-          </div>
-
-          <!-- Create Team Modal -->
-          <div id="createTeamModal" class="edit-game-modal" style="display: none;">
-            <div class="edit-game-content" style="max-width: 500px;">
-              <h3>Create New Team</h3>
-              <form id="createTeamForm">
-                <div class="form-group">
-                  <label>Team Name *</label>
-                  <input type="text" id="newTeamName" required placeholder="Enter team name">
-                </div>
-                <div class="form-group">
-                  <label>Team Description (Optional)</label>
-                  <textarea id="newTeamDescription" placeholder="Tell others about your team..." style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; min-height: 100px; background: #0a1122; color: var(--text);"></textarea>
-                </div>
-                <div class="admin-buttons">
-                  <button type="button" class="admin-cancel" id="cancelCreateTeam">Cancel</button>
-                  <button type="submit" class="admin-submit">Create Team</button>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          <div id="allTeamsSection">
-            <h3 style="margin-top: 2rem;">All Teams</h3>
-            <div id="allTeamsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
-              <!-- Teams will be populated here -->
             </div>
           </div>
         </div>
@@ -3397,7 +3369,7 @@
 
       if (!team) return;
 
-      document.getElementById('teamName').value = team.name;
+      document.getElementById('editTeamName').value = team.name;
       document.getElementById('teamSeed').value = team.seed;
       document.getElementById('teamWins').value = team.record?.wins || 0;
       document.getElementById('teamLosses').value = team.record?.losses || 0;
@@ -3429,7 +3401,7 @@
       const teamRef = doc(db, 'teams', currentEditTeamId);
 
       const updatedData = {
-        name: document.getElementById('teamName').value,
+        name: document.getElementById('editTeamName').value,
         seed: parseInt(document.getElementById('teamSeed').value),
         record: {
           wins: parseInt(document.getElementById('teamWins').value),
