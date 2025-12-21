@@ -1696,22 +1696,29 @@
 
     // Helper function to switch to Teams tab and specific sub-tab from navigation
     window.switchToTeamsTab = function(subtab) {
+      console.log('switchToTeamsTab called with:', subtab);
+
       // First, switch to the Teams main tab
       const teamsTab = document.getElementById('tab-teams');
       if (teamsTab) {
+        console.log('Clicking teams tab');
         teamsTab.click();
+      } else {
+        console.error('Teams tab not found');
       }
 
-      // Then switch to the specific sub-tab
+      // Then switch to the specific sub-tab after a delay
       setTimeout(() => {
+        console.log('Switching to subtab:', subtab);
         switchTeamsTab(subtab);
-      }, 100);
 
-      // Close mobile navigation if open
-      const cardNav = document.getElementById('cardNav');
-      if (cardNav && cardNav.classList.contains('open')) {
-        cardNav.classList.remove('open');
-      }
+        // Close mobile navigation AFTER switching
+        const cardNav = document.getElementById('cardNav');
+        if (cardNav && cardNav.classList.contains('open')) {
+          console.log('Closing mobile nav');
+          cardNav.classList.remove('open');
+        }
+      }, 200);
     };
 
     // Handle create team form submission
