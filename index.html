@@ -1739,14 +1739,8 @@
     // Make signInWithGoogle available globally
     window.signInWithGoogle = signInWithGoogle;
 
-    // Set up hero button click handler when DOM is ready
-    document.addEventListener('DOMContentLoaded', () => {
-      const heroBtn = document.getElementById('heroSignupBtn');
-      if (heroBtn) {
-        heroBtn.onclick = signInWithGoogle;
-        console.log('✅ Sign-in button configured');
-      }
-    });
+    // Hero button click handler is set dynamically in the auth state listener
+    // based on whether user is signed in or not
 
     // ============================================
     // Teams Tab Functions
@@ -5117,6 +5111,11 @@
         const signupTab = document.getElementById('tab-signup');
         if (heroBtn) {
           heroBtn.textContent = 'Spring 2026 Tournament';
+          // Set click handler to navigate to Teams -> All Teams
+          heroBtn.onclick = (e) => {
+            e.preventDefault();
+            switchToTeamsTab('all');
+          };
         }
         if (signupTab) {
           signupTab.innerHTML = '🌸 Spring 2026 Tournament';
@@ -5472,23 +5471,8 @@
     // ============================================
     // Hero Button Click Handler
     // ============================================
-    const heroSignupBtn = document.getElementById('heroSignupBtn');
-    if (heroSignupBtn) {
-      heroSignupBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-
-        // Check if user is authenticated
-        const user = window.auth?.currentUser;
-
-        if (user) {
-          // Authenticated user: navigate to Teams -> All Teams
-          switchToTeamsTab('all');
-        } else {
-          // Not authenticated: trigger sign-in
-          signInWithGoogle();
-        }
-      });
-    }
+    // Note: Click handler is set dynamically in the auth state listener
+    // based on whether user is signed in or not
 
     // ============================================
     // Winter Tournament Entry System
