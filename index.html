@@ -2411,6 +2411,17 @@
 
         if (!freeAgentsGrid) return;
 
+        // Check if current user is a team captain with less than 4 players
+        const user = window.auth?.currentUser;
+        let canSendInvite = false;
+        let userTeam = null;
+
+        if (user && window.currentUserTeam) {
+          userTeam = window.currentUserTeam;
+          const playerCount = userTeam.players ? userTeam.players.length : 0;
+          canSendInvite = userTeam.captainUid === user.uid && playerCount < 4;
+        }
+
         // Query free agents for Spring 2026 tournament
         const freeAgentsQuery = query(
           collection(window.db, 'freeAgents'),
@@ -2433,6 +2444,8 @@
         const freeAgentsHTML = [];
         freeAgentsSnapshot.forEach((doc) => {
           const agent = doc.data();
+          const agentId = doc.id;
+
           freeAgentsHTML.push(`
             <div style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 2px solid #e5e7eb; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
               <div style="margin-bottom: 1rem;">
@@ -2449,9 +2462,17 @@
               ` : ''}
 
               ${agent.notes ? `
-                <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb; margin-bottom: 1rem;">
                   <p style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">About:</p>
                   <p style="margin: 0; color: #000; font-size: 0.9rem; line-height: 1.5;">${agent.notes}</p>
+                </div>
+              ` : ''}
+
+              ${canSendInvite ? `
+                <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                  <button onclick="sendTeamInvite('${agentId}', '${agent.playerName}', '${agent.email}')" style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #CFB991 0%, #A89968 100%); color: #000; border: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(207, 185, 145, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    Send Team Invite
+                  </button>
                 </div>
               ` : ''}
             </div>
@@ -2462,6 +2483,92 @@
 
       } catch (error) {
         console.error('Error loading free agents:', error);
+      }
+    };
+
+    // Send team invite to free agent
+    window.sendTeamInvite = async function(agentId, playerName, playerEmail) {
+      try {
+        const user = window.auth?.currentUser;
+        if (!user) {
+          alert('You must be signed in to send team invites');
+          return;
+        }
+
+        if (!window.currentUserTeam) {
+          alert('You must have a team to send invites');
+          return;
+        }
+
+        const team = window.currentUserTeam;
+        const playerCount = team.players ? team.players.length : 0;
+
+        if (playerCount >= 4) {
+          alert('Your team already has 4 players. You cannot add more.');
+          return;
+        }
+
+        if (team.captainUid !== user.uid) {
+          alert('Only the team captain can send invites');
+          return;
+        }
+
+        // Confirm before sending
+        const confirmed = confirm(`Send team invite to ${playerName} to join ${team.name}?`);
+        if (!confirmed) return;
+
+        const { collection, addDoc, query, where, getDocs } = window.firestoreImports;
+
+        // Check if invite already exists
+        const existingInviteQuery = query(
+          collection(window.db, 'teamInvites'),
+          where('teamId', '==', team.id),
+          where('freeAgentId', '==', agentId),
+          where('status', '==', 'pending')
+        );
+
+        const existingInvites = await getDocs(existingInviteQuery);
+        if (!existingInvites.empty) {
+          alert('You have already sent an invite to this player. Please wait for their response.');
+          return;
+        }
+
+        // Create team invite
+        const inviteData = {
+          teamId: team.id,
+          teamName: team.name,
+          captainUid: user.uid,
+          captainEmail: user.email,
+          freeAgentId: agentId,
+          playerName: playerName,
+          playerEmail: playerEmail,
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          tournament: 'spring-2026'
+        };
+
+        await addDoc(collection(window.db, 'teamInvites'), inviteData);
+
+        // Create notification for the free agent
+        const notificationData = {
+          userId: playerEmail, // Use email as identifier since free agents might not have uid
+          type: 'team_invite',
+          title: 'Team Invite',
+          message: `${team.name} has invited you to join their team!`,
+          teamId: team.id,
+          teamName: team.name,
+          inviteId: agentId,
+          read: false,
+          createdAt: new Date().toISOString()
+        };
+
+        await addDoc(collection(window.db, 'notifications'), notificationData);
+
+        alert(`Team invite sent to ${playerName}! They will be notified via email.`);
+
+      } catch (error) {
+        console.error('Error sending team invite:', error);
+        alert('Failed to send team invite: ' + error.message);
       }
     };
 

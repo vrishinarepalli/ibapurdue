@@ -186,6 +186,34 @@ service cloud.firestore {
       );
     }
 
+    // Team invites collection (teams inviting free agents)
+    match /teamInvites/{inviteId} {
+      // Team captains can read invites they sent
+      // Free agents can read invites sent to them
+      // Admins can read all invites
+      allow read: if isSignedIn() && (
+        resource.data.captainUid == request.auth.uid ||
+        resource.data.playerEmail == request.auth.token.email ||
+        isAdmin()
+      );
+
+      // Only authenticated team captains can create invites
+      allow create: if isSignedIn() &&
+                      request.resource.data.captainUid == request.auth.uid;
+
+      // Only the free agent receiving the invite or admin can update (accept/decline)
+      allow update: if isSignedIn() && (
+        resource.data.playerEmail == request.auth.token.email ||
+        isAdmin()
+      );
+
+      // Captains and admins can delete invites
+      allow delete: if isSignedIn() && (
+        resource.data.captainUid == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
     // Contact messages - anyone can create (rate limited recommended), only admins can read
     match /contact_messages/{messageId} {
       // Allow creation with size limits to prevent abuse
