@@ -801,7 +801,7 @@
     // Load tournament applications
     window.loadTournamentApplications = async function() {
       const container = document.getElementById('tournamentApplicationsContainer');
-      container.innerHTML = '<p style="color: #60a5fa;">Loading applications...</p>';
+      container.innerHTML = '<p style="color: #CFB991;">Loading applications...</p>';
 
       try {
         const applicationsQuery = query(
@@ -812,7 +812,7 @@
         const snapshot = await getDocs(applicationsQuery);
 
         if (snapshot.empty) {
-          container.innerHTML = '<p style="color: #94a3b8;">No tournament applications yet.</p>';
+          container.innerHTML = '<p style="color: #666;">No tournament applications yet.</p>';
           return;
         }
 
@@ -828,53 +828,53 @@
           const updatedDate = app.updatedAt ? new Date(app.updatedAt).toLocaleString() : 'N/A';
 
           html += `
-            <div style="background: #0a1122; border: 1px solid #1f2937; border-radius: 8px; padding: 1.5rem;">
+            <div style="background: white; border: 2px solid #CFB991; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
               <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
                 <div>
-                  <h3 style="margin: 0 0 0.5rem 0; color: #ff9d00;">${app.teamName || 'Unnamed Team'}</h3>
-                  <p style="margin: 0; color: #60a5fa; font-size: 0.9rem;">Captain: ${app.captainName || 'N/A'}</p>
+                  <h3 style="margin: 0 0 0.5rem 0; color: #000; font-weight: 700;">${app.teamName || 'Unnamed Team'}</h3>
+                  <p style="margin: 0; color: #CFB991; font-size: 0.9rem; font-weight: 600;">Captain: ${app.captainName || 'N/A'}</p>
                 </div>
-                <span style="background: #22c55e; color: #0b0f1a; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem; font-weight: 600;">ACTIVE</span>
+                <span style="background: #CFB991; color: #000; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem; font-weight: 700;">ACTIVE</span>
               </div>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
                 <div>
-                  <p style="margin: 0; color: #94a3b8; font-size: 0.85rem;">Email</p>
-                  <p style="margin: 0.25rem 0 0 0; color: #e7ecf6;">${app.captainEmail || 'N/A'}</p>
+                  <p style="margin: 0; color: #666; font-size: 0.85rem; font-weight: 600;">Email</p>
+                  <p style="margin: 0.25rem 0 0 0; color: #000;">${app.captainEmail || 'N/A'}</p>
                 </div>
                 <div>
-                  <p style="margin: 0; color: #94a3b8; font-size: 0.85rem;">Instagram</p>
-                  <p style="margin: 0.25rem 0 0 0; color: #e7ecf6;">${app.captainPhone || 'N/A'}</p>
+                  <p style="margin: 0; color: #666; font-size: 0.85rem; font-weight: 600;">Instagram</p>
+                  <p style="margin: 0.25rem 0 0 0; color: #000;">${app.captainPhone || 'N/A'}</p>
                 </div>
                 <div>
-                  <p style="margin: 0; color: #94a3b8; font-size: 0.85rem;">Submitted</p>
-                  <p style="margin: 0.25rem 0 0 0; color: #e7ecf6; font-size: 0.85rem;">${submittedDate}</p>
+                  <p style="margin: 0; color: #666; font-size: 0.85rem; font-weight: 600;">Submitted</p>
+                  <p style="margin: 0.25rem 0 0 0; color: #000; font-size: 0.85rem;">${submittedDate}</p>
                 </div>
                 <div>
-                  <p style="margin: 0; color: #94a3b8; font-size: 0.85rem;">Last Updated</p>
-                  <p style="margin: 0.25rem 0 0 0; color: #e7ecf6; font-size: 0.85rem;">${updatedDate}</p>
+                  <p style="margin: 0; color: #666; font-size: 0.85rem; font-weight: 600;">Last Updated</p>
+                  <p style="margin: 0.25rem 0 0 0; color: #000; font-size: 0.85rem;">${updatedDate}</p>
                 </div>
               </div>
 
               <div style="margin-bottom: 1rem;">
-                <p style="margin: 0 0 0.5rem 0; color: #94a3b8; font-size: 0.85rem;">Players</p>
-                <pre style="margin: 0; padding: 0.75rem; background: #111827; border: 1px solid #1f2937; border-radius: 4px; color: #e7ecf6; font-size: 0.9rem; white-space: pre-wrap;">${app.playerNames || 'No players listed'}</pre>
+                <p style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">Players</p>
+                <pre style="margin: 0; padding: 0.75rem; background: #f8f9fa; border: 1px solid #CFB991; border-radius: 4px; color: #000; font-size: 0.9rem; white-space: pre-wrap;">${app.playerNames || 'No players listed'}</pre>
               </div>
 
               ${app.notes ? `
                 <div>
-                  <p style="margin: 0 0 0.5rem 0; color: #94a3b8; font-size: 0.85rem;">Notes</p>
-                  <p style="margin: 0; padding: 0.75rem; background: #111827; border: 1px solid #1f2937; border-radius: 4px; color: #e7ecf6; font-size: 0.9rem;">${app.notes}</p>
+                  <p style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">Notes</p>
+                  <p style="margin: 0; padding: 0.75rem; background: #f8f9fa; border: 1px solid #CFB991; border-radius: 4px; color: #000; font-size: 0.9rem;">${app.notes}</p>
                 </div>
               ` : ''}
 
-              <p style="margin: 1rem 0 0 0; color: #60a5fa; font-size: 0.75rem; font-family: monospace;">ID: ${appId}</p>
+              <p style="margin: 1rem 0 0 0; color: #999; font-size: 0.75rem; font-family: monospace;">ID: ${appId}</p>
             </div>
           `;
         });
 
         html += '</div>';
-        html = `<p style="color: #22c55e; font-weight: 600; margin-bottom: 1rem;">Total Applications: ${count}</p>` + html;
+        html = `<p style="color: #CFB991; font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem;">Total Applications: ${count}</p>` + html;
         container.innerHTML = html;
 
       } catch (error) {
