@@ -5118,8 +5118,8 @@
         if (heroBtn) {
           heroBtn.textContent = 'Spring 2026 Tournament';
           heroBtn.onclick = () => {
-            // Switch to signup tab
-            if (signupTab) signupTab.click();
+            // Switch to Teams tab -> All Teams
+            switchToTeamsTab('all');
           };
         }
         if (signupTab) {
