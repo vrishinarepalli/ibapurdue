@@ -5117,10 +5117,6 @@
         const signupTab = document.getElementById('tab-signup');
         if (heroBtn) {
           heroBtn.textContent = 'Spring 2026 Tournament';
-          heroBtn.onclick = () => {
-            // Switch to Teams tab -> All Teams
-            switchToTeamsTab('all');
-          };
         }
         if (signupTab) {
           signupTab.innerHTML = '🌸 Spring 2026 Tournament';
@@ -5474,27 +5470,22 @@
     */
 
     // ============================================
-    // Hero Button Smooth Scroll
+    // Hero Button Click Handler
     // ============================================
     const heroSignupBtn = document.getElementById('heroSignupBtn');
     if (heroSignupBtn) {
       heroSignupBtn.addEventListener('click', (e) => {
         e.preventDefault();
 
-        // First, activate the signup tab
-        const signupTab = document.getElementById('tab-signup');
-        if (signupTab) {
-          signupTab.click();
+        // Check if user is authenticated
+        const user = window.auth?.currentUser;
 
-          // Wait for tab to switch, then scroll to the panel
-          setTimeout(() => {
-            const signupPanel = document.getElementById('panel-signup');
-            if (signupPanel) {
-              const yOffset = -100; // Offset for fixed navigation
-              const y = signupPanel.getBoundingClientRect().top + window.pageYOffset + yOffset;
-              window.scrollTo({ top: y, behavior: 'smooth' });
-            }
-          }, 100);
+        if (user) {
+          // Authenticated user: navigate to Teams -> All Teams
+          switchToTeamsTab('all');
+        } else {
+          // Not authenticated: trigger sign-in
+          signInWithGoogle();
         }
       });
     }
