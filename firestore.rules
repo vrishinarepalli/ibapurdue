@@ -166,6 +166,26 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Free agents collection (players looking for teams)
+    match /freeAgents/{agentId} {
+      // Anyone can read active free agent profiles
+      allow read: if true;
+
+      // Only authenticated users can create their own profile
+      allow create: if isSignedIn() &&
+                      request.resource.data.uid == request.auth.uid;
+
+      // Users can update/delete their own profile, admins can update/delete any
+      allow update: if isSignedIn() && (
+        resource.data.uid == request.auth.uid ||
+        isAdmin()
+      );
+      allow delete: if isSignedIn() && (
+        resource.data.uid == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
     // Contact messages - anyone can create (rate limited recommended), only admins can read
     match /contact_messages/{messageId} {
       // Allow creation with size limits to prevent abuse
