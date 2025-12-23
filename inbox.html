@@ -310,7 +310,7 @@
         const unreadClass = !notification.read ? 'unread' : '';
 
         return `
-          <div class="notification-card ${unreadClass}">
+          <div class="notification-card ${unreadClass}" onclick="${!notification.isRequest && !notification.read ? `markAsRead('${notification.id}')` : ''}" style="${!notification.isRequest && !notification.read ? 'cursor: pointer;' : ''}">
             <div class="notification-header">
               <h3 class="notification-title">${notification.title}</h3>
               <span class="notification-time">${timeAgo}</span>
@@ -318,15 +318,11 @@
             <p class="notification-message">${notification.message}</p>
             <div class="notification-actions">
               ${notification.isRequest ? `
-                <button class="btn-approve" onclick="approveJoinRequest('${notification.id}', '${notification.teamId}', '${notification.requesterId}', '${notification.requesterName}')">
+                <button class="btn-approve" onclick="event.stopPropagation(); approveJoinRequest('${notification.id}', '${notification.teamId}', '${notification.requesterId}', '${notification.requesterName}')">
                   ✓ Approve
                 </button>
-                <button class="btn-reject" onclick="rejectJoinRequest('${notification.id}', '${notification.teamId}', '${notification.requesterId}')">
+                <button class="btn-reject" onclick="event.stopPropagation(); rejectJoinRequest('${notification.id}', '${notification.teamId}', '${notification.requesterId}')">
                   ✗ Reject
-                </button>
-              ` : !notification.read ? `
-                <button class="btn-mark-read" onclick="markAsRead('${notification.id}')">
-                  Mark as Read
                 </button>
               ` : ''}
             </div>
