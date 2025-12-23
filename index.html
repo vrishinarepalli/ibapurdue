@@ -152,8 +152,10 @@
 
           <!-- User Profile - Only shown when authenticated -->
           <div id="navUserProfile" style="display: none; position: relative;">
-            <button class="card-nav-user-button" id="navUserButton">
+            <button class="card-nav-user-button" id="navUserButton" style="position: relative;">
               <img id="navUserAvatar" src="" alt="User Avatar" class="nav-user-avatar" />
+              <!-- Unread messages badge -->
+              <span id="unreadBadge" style="display: none; position: absolute; top: -4px; right: -4px; background: #dc3545; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid #1a1a1a;">0</span>
             </button>
             <div class="nav-user-dropdown" id="navUserDropdown" style="display: none;">
               <button class="nav-dropdown-item" id="navProfileBtn">
@@ -1838,7 +1840,7 @@
           status: 'active'
         };
 
-        const { collection, addDoc, doc, setDoc } = window.firestoreImports;
+        const { collection, addDoc, doc, setDoc, query, where, getDocs, updateDoc } = window.firestoreImports;
 
         // Add team to teams collection
         const teamRef = await addDoc(collection(window.db, 'teams'), teamData);
@@ -1850,6 +1852,19 @@
           teamName: teamData.teamName,
           isCaptain: true
         }, { merge: true });
+
+        // Remove user from free agency if they're in it
+        const freeAgentsQuery = query(
+          collection(window.db, 'freeAgents'),
+          where('uid', '==', user.uid),
+          where('status', '==', 'active')
+        );
+        const freeAgentsSnapshot = await getDocs(freeAgentsQuery);
+        freeAgentsSnapshot.forEach(async (docSnapshot) => {
+          await updateDoc(doc(window.db, 'freeAgents', docSnapshot.id), {
+            status: 'inactive'
+          });
+        });
 
         // Show success message
         messageDiv.style.display = 'block';
@@ -2024,18 +2039,10 @@
               `;
             }
 
-            // Hide free agency form if user has a team
-            const joinFreeAgencyForm = document.getElementById('joinFreeAgencyForm');
-            if (joinFreeAgencyForm) {
-              joinFreeAgencyForm.style.display = 'none';
-            }
+            // Free agency form visibility is handled in loadFreeAgents()
           }
         } else {
-          // User doesn't have a team - show free agency form
-          const joinFreeAgencyForm = document.getElementById('joinFreeAgencyForm');
-          if (joinFreeAgencyForm) {
-            joinFreeAgencyForm.style.display = 'block';
-          }
+          // Free agency form visibility is handled in loadFreeAgents()
         }
       } catch (error) {
         console.error('Error loading user team:', error);
@@ -2408,6 +2415,7 @@
       try {
         const { collection, getDocs, query, where } = window.firestoreImports;
         const freeAgentsGrid = document.getElementById('freeAgentsGrid');
+        const joinFreeAgencyForm = document.getElementById('joinFreeAgencyForm');
 
         if (!freeAgentsGrid) return;
 
@@ -2415,6 +2423,7 @@
         const user = window.auth?.currentUser;
         let canSendInvite = false;
         let userTeam = null;
+        let userIsInFreeAgency = false;
 
         if (user && window.currentUserTeam) {
           userTeam = window.currentUserTeam;
@@ -2430,6 +2439,28 @@
         );
 
         const freeAgentsSnapshot = await getDocs(freeAgentsQuery);
+
+        // Check if current user is already in free agency
+        if (user) {
+          freeAgentsSnapshot.forEach((doc) => {
+            const agent = doc.data();
+            if (agent.uid === user.uid || agent.email === user.email) {
+              userIsInFreeAgency = true;
+            }
+          });
+        }
+
+        // Show or hide the Join Free Agency form
+        if (joinFreeAgencyForm) {
+          // Hide form if user has a team or is already in free agency
+          if (window.currentUserTeam || userIsInFreeAgency) {
+            joinFreeAgencyForm.style.display = 'none';
+          } else if (user) {
+            joinFreeAgencyForm.style.display = 'block';
+          } else {
+            joinFreeAgencyForm.style.display = 'none';
+          }
+        }
 
         if (freeAgentsSnapshot.empty) {
           freeAgentsGrid.innerHTML = `
@@ -2483,6 +2514,139 @@
 
       } catch (error) {
         console.error('Error loading free agents:', error);
+      }
+    };
+
+    // Accept team invite from free agency
+    window.acceptTeamInvite = async function(inviteId, teamId, teamName) {
+      try {
+        const user = window.auth?.currentUser;
+        if (!user) {
+          alert('You must be signed in to accept team invites');
+          return;
+        }
+
+        const { doc, getDoc, updateDoc, collection, query, where, getDocs, arrayUnion } = window.firestoreImports;
+
+        // Get team data to check current roster
+        const teamRef = doc(window.db, 'teams', teamId);
+        const teamDoc = await getDoc(teamRef);
+
+        if (!teamDoc.exists()) {
+          alert('Team not found. It may have been deleted.');
+          return;
+        }
+
+        const teamData = teamDoc.data();
+        const currentPlayers = teamData.players || [];
+
+        // Check if team has space
+        if (currentPlayers.length >= 4) {
+          alert(`Team "${teamName}" is full (4/4 players). Please check the roster and try another team.`);
+          return;
+        }
+
+        // Confirm acceptance
+        const confirmed = confirm(`Join "${teamName}"? You currently have ${currentPlayers.length}/4 players.`);
+        if (!confirmed) return;
+
+        // Add player to team
+        const playerName = user.displayName || user.email.split('@')[0];
+        await updateDoc(teamRef, {
+          players: arrayUnion(playerName)
+        });
+
+        // Remove from free agency
+        const freeAgentsQuery = query(
+          collection(window.db, 'freeAgents'),
+          where('uid', '==', user.uid),
+          where('status', '==', 'active')
+        );
+        const freeAgentsSnapshot = await getDocs(freeAgentsQuery);
+        freeAgentsSnapshot.forEach(async (docSnapshot) => {
+          await updateDoc(doc(window.db, 'freeAgents', docSnapshot.id), {
+            status: 'inactive'
+          });
+        });
+
+        // Update invite status
+        await updateDoc(doc(window.db, 'teamInvites', inviteId), {
+          status: 'accepted'
+        });
+
+        // Create notification for team captain
+        const { addDoc } = window.firestoreImports;
+        await addDoc(collection(window.db, 'notifications'), {
+          userId: teamData.captainEmail,
+          type: 'invite_accepted',
+          title: 'Team Invite Accepted',
+          message: `${playerName} has joined your team "${teamName}"!`,
+          teamId: teamId,
+          teamName: teamName,
+          read: false,
+          createdAt: new Date().toISOString()
+        });
+
+        alert(`Successfully joined "${teamName}"!`);
+        window.location.reload();
+
+      } catch (error) {
+        console.error('Error accepting team invite:', error);
+        alert('Failed to accept invite: ' + error.message);
+      }
+    };
+
+    // Decline team invite
+    window.declineTeamInvite = async function(inviteId) {
+      try {
+        const confirmed = confirm('Decline this team invite?');
+        if (!confirmed) return;
+
+        const { doc, updateDoc } = window.firestoreImports;
+
+        await updateDoc(doc(window.db, 'teamInvites', inviteId), {
+          status: 'declined'
+        });
+
+        alert('Team invite declined.');
+        window.location.reload();
+
+      } catch (error) {
+        console.error('Error declining invite:', error);
+        alert('Failed to decline invite: ' + error.message);
+      }
+    };
+
+    // Update unread notifications badge
+    window.updateUnreadBadge = async function() {
+      try {
+        const user = window.auth?.currentUser;
+        if (!user) return;
+
+        const { collection, query, where, getDocs } = window.firestoreImports;
+        const unreadBadge = document.getElementById('unreadBadge');
+
+        if (!unreadBadge) return;
+
+        // Query unread notifications for current user
+        const notificationsQuery = query(
+          collection(window.db, 'notifications'),
+          where('userId', '==', user.email),
+          where('read', '==', false)
+        );
+
+        const unreadSnapshot = await getDocs(notificationsQuery);
+        const unreadCount = unreadSnapshot.size;
+
+        if (unreadCount > 0) {
+          unreadBadge.textContent = unreadCount;
+          unreadBadge.style.display = 'flex';
+        } else {
+          unreadBadge.style.display = 'none';
+        }
+
+      } catch (error) {
+        console.error('Error updating unread badge:', error);
       }
     };
 
@@ -5349,7 +5513,10 @@
         }
 
         // Load user's team to show "My Team" if they have one
-        waitForFirebase(() => loadUserTeam(user));
+        waitForFirebase(() => {
+          loadUserTeam(user);
+          updateUnreadBadge();
+        });
       } else {
         // User is signed out
         console.log('❌ User is signed out');
