@@ -6,23 +6,27 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>IBA Basketball Tournament</title>
+  <title>IBA Basketball Tournament - Mobile</title>
 
-  <!-- Mobile Detection & Redirect -->
+  <!-- Desktop Detection & Redirect (for mobile page) -->
   <script>
-    // Detect mobile/tablet devices and redirect to mobile page
+    // Detect desktop devices and redirect to desktop page
     // Mobile: 0-599px, Tablet: 600-1023px, Desktop: 1024px+
     (function() {
-      // Check if we're already on the mobile page
-      if (window.location.pathname.includes('mobile.html')) return;
+      // Check screen width (desktop if >= 1024px)
+      const isDesktopScreen = window.innerWidth >= 1024;
 
-      // Check screen width (mobile/tablet if < 1024px)
-      const isMobileOrTablet = window.innerWidth < 1024;
-
-      // Redirect to mobile page if on mobile/tablet device
-      if (isMobileOrTablet) {
-        window.location.replace('mobile.html');
+      // Redirect to desktop page if on desktop device
+      if (isDesktopScreen) {
+        window.location.replace('index.html');
       }
+
+      // Also listen for resize events (orientation change, window resize)
+      window.addEventListener('resize', function() {
+        if (window.innerWidth >= 1024) {
+          window.location.replace('index.html');
+        }
+      });
     })();
   </script>
 
