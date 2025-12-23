@@ -151,11 +151,11 @@
           </div>
 
           <!-- User Profile - Only shown when authenticated -->
-          <div id="navUserProfile" style="display: none; position: relative;">
-            <button class="card-nav-user-button" id="navUserButton" style="position: relative;">
-              <img id="navUserAvatar" src="" alt="User Avatar" class="nav-user-avatar" />
+          <div id="navUserProfile" style="display: none; position: relative; overflow: visible;">
+            <button class="card-nav-user-button" id="navUserButton" style="position: relative; overflow: visible;">
+              <img id="navUserAvatar" src="" alt="User Avatar" class="nav-user-avatar" style="overflow: hidden;" />
               <!-- Unread messages badge -->
-              <span id="unreadBadge" style="display: none; position: absolute; top: -4px; right: -4px; background: #dc3545; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 2px solid #1a1a1a;">0</span>
+              <span id="unreadBadge" style="position: absolute; top: -6px; right: -6px; background: #dc3545; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; font-weight: 700; display: none; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1000;">0</span>
             </button>
             <div class="nav-user-dropdown" id="navUserDropdown" style="display: none;">
               <button class="nav-dropdown-item" id="navProfileBtn">
