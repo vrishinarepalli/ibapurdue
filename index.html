@@ -157,16 +157,6 @@
               <!-- Unread messages badge -->
               <span id="unreadBadge" style="position: absolute; top: -6px; right: -6px; background: #dc3545; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; font-weight: 700; display: none; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1000;">0</span>
             </button>
-            <div class="nav-user-dropdown" id="navUserDropdown" style="display: none;">
-              <button class="nav-dropdown-item" id="navProfileBtn">
-                <span>👤</span>
-                Profile
-              </button>
-              <button class="nav-dropdown-item" id="navSignOutBtn">
-                <span>🚪</span>
-                Sign Out
-              </button>
-            </div>
           </div>
         </div>
 
@@ -5398,8 +5388,6 @@
       const navUserProfile = document.getElementById('navUserProfile');
       const navUserAvatar = document.getElementById('navUserAvatar');
       const navUserButton = document.getElementById('navUserButton');
-      const navUserDropdown = document.getElementById('navUserDropdown');
-      const navSignOutBtn = document.getElementById('navSignOutBtn');
 
       console.log('🔐 Auth state changed. User:', user ? user.email : 'Not signed in');
       console.log('Nav elements found:', { navUserProfile: !!navUserProfile, navUserAvatar: !!navUserAvatar });
@@ -5456,40 +5444,10 @@
           console.log('Set avatar URL:', avatarUrl);
         }
 
-        // Toggle dropdown when user button is clicked
+        // Navigate to profile page when user button is clicked
         if (navUserButton) {
-          navUserButton.onclick = (e) => {
-            e.stopPropagation();
-            navUserDropdown.style.display = navUserDropdown.style.display === 'none' ? 'block' : 'none';
-          };
-        }
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-          if (navUserDropdown && !navUserProfile.contains(e.target)) {
-            navUserDropdown.style.display = 'none';
-          }
-        });
-
-        // Handle profile button click
-        const navProfileBtn = document.getElementById('navProfileBtn');
-        if (navProfileBtn) {
-          navProfileBtn.onclick = () => {
-            navUserDropdown.style.display = 'none';
+          navUserButton.onclick = () => {
             window.location.href = 'profile.html';
-          };
-        }
-
-        // Handle sign out
-        if (navSignOutBtn) {
-          navSignOutBtn.onclick = async () => {
-            try {
-              await signOut(auth);
-              navUserDropdown.style.display = 'none';
-              window.location.href = 'index.html';
-            } catch (error) {
-              console.error('Error signing out:', error);
-            }
           };
         }
 
