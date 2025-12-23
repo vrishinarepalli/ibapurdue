@@ -2419,11 +2419,12 @@
 
         if (!freeAgentsGrid) return;
 
-        // Check if current user is a team captain with less than 4 players
+        // Check if current user is a team captain with less than 4 players or admin
         const user = window.auth?.currentUser;
         let canSendInvite = false;
         let userTeam = null;
         let userIsInFreeAgency = false;
+        let isAdmin = window.currentUserData?.roles?.includes('admin') || false;
 
         if (user && window.currentUserTeam) {
           userTeam = window.currentUserTeam;
@@ -2499,11 +2500,18 @@
                 </div>
               ` : ''}
 
-              ${canSendInvite ? `
-                <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                  <button onclick="sendTeamInvite('${agentId}', '${agent.playerName}', '${agent.email}')" style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #CFB991 0%, #A89968 100%); color: #000; border: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(207, 185, 145, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                    Send Team Invite
-                  </button>
+              ${canSendInvite || isAdmin ? `
+                <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb; ${canSendInvite && isAdmin ? 'display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;' : ''}">
+                  ${canSendInvite ? `
+                    <button onclick="sendTeamInvite('${agentId}', '${agent.playerName}', '${agent.email}')" style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #CFB991 0%, #A89968 100%); color: #000; border: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(207, 185, 145, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                      Send Team Invite
+                    </button>
+                  ` : ''}
+                  ${isAdmin ? `
+                    <button onclick="removeFreeAgent('${agentId}', '${agent.playerName}')" style="width: 100%; padding: 0.75rem; background: #dc3545; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(220, 53, 69, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                      Remove
+                    </button>
+                  ` : ''}
                 </div>
               ` : ''}
             </div>
@@ -2614,6 +2622,33 @@
       } catch (error) {
         console.error('Error declining invite:', error);
         alert('Failed to decline invite: ' + error.message);
+      }
+    };
+
+    // Remove free agent (admin only)
+    window.removeFreeAgent = async function(agentId, playerName) {
+      try {
+        // Check if user is admin
+        if (!window.currentUserData?.roles?.includes('admin')) {
+          alert('Only admins can remove free agents.');
+          return;
+        }
+
+        const confirmed = confirm(`Remove ${playerName} from free agency?`);
+        if (!confirmed) return;
+
+        const { doc, updateDoc } = window.firestoreImports;
+
+        await updateDoc(doc(window.db, 'freeAgents', agentId), {
+          status: 'inactive'
+        });
+
+        alert(`${playerName} has been removed from free agency.`);
+        loadFreeAgents(); // Reload the list
+
+      } catch (error) {
+        console.error('Error removing free agent:', error);
+        alert('Failed to remove free agent: ' + error.message);
       }
     };
 
