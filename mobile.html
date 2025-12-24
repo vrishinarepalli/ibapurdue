@@ -202,6 +202,96 @@
         padding: 16px !important;
       }
     }
+
+    /* Mobile Navigation Fixes (all mobile/tablet screens) */
+    @media (max-width: 1023px) {
+      /* Fix navigation top bar to show user profile */
+      .card-nav-top {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 12px !important;
+      }
+
+      /* Ensure hamburger menu is visible */
+      .hamburger-menu {
+        flex-shrink: 0 !important;
+        order: 1 !important;
+      }
+
+      /* Logo container should take available space but not push profile out */
+      .nav-logo-container {
+        flex: 1 !important;
+        min-width: 0 !important;
+        order: 2 !important;
+      }
+
+      /* Make logo text responsive */
+      .nav-title-main {
+        font-size: 0.9rem !important;
+      }
+
+      .nav-title-sub {
+        font-size: 0.75rem !important;
+      }
+
+      /* User profile should always be visible */
+      #navUserProfile {
+        flex-shrink: 0 !important;
+        order: 3 !important;
+        margin-left: auto !important;
+      }
+
+      /* Fix menu dropdown overflow */
+      .card-nav-content {
+        max-height: calc(100vh - 100px) !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        padding-bottom: 20px !important;
+      }
+
+      /* Ensure nav cards don't get cut off */
+      .card-nav {
+        max-height: 100vh !important;
+        overflow: hidden !important;
+      }
+
+      /* Add scroll indicator at bottom of menu */
+      .card-nav-content::after {
+        content: '' !important;
+        display: block !important;
+        height: 20px !important;
+        background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.1)) !important;
+        position: sticky !important;
+        bottom: 0 !important;
+        pointer-events: none !important;
+      }
+
+      /* Better spacing for nav cards on mobile */
+      .nav-card {
+        margin-bottom: 12px !important;
+      }
+
+      /* Compact logo image on small screens */
+      .nav-logo-img {
+        max-width: 40px !important;
+        max-height: 40px !important;
+      }
+    }
+
+    /* Extra small screens - even more compact */
+    @media (max-width: 380px) {
+      /* Hide logo text on very small screens to save space */
+      .nav-title-text {
+        display: none !important;
+      }
+
+      /* Make logo slightly smaller */
+      .nav-logo-img {
+        max-width: 36px !important;
+        max-height: 36px !important;
+      }
+    }
   </style>
 </head>
 <body>
