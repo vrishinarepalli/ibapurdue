@@ -13,17 +13,23 @@
     // Detect desktop devices and redirect to desktop page
     // Mobile: 0-599px, Tablet: 600-1023px, Desktop: 1024px+
     (function() {
-      // Check screen width (desktop if >= 1024px)
-      const isDesktopScreen = window.innerWidth >= 1024;
+      // Check if device is actually a mobile/tablet (User Agent detection)
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|Tablet/i.test(navigator.userAgent);
 
-      // Redirect to desktop page if on desktop device
-      if (isDesktopScreen) {
+      // Check screen width (desktop if >= 1024px)
+      const isLargeScreen = window.innerWidth >= 1024;
+
+      // Redirect to desktop if NOT a mobile device
+      // This allows desktop users (even with small windows) to stay on desktop version
+      if (!isMobileDevice) {
         window.location.replace('index.html');
       }
 
-      // Also listen for resize events (orientation change, window resize)
+      // Listen for resize events (mainly for tablets rotating to landscape)
       window.addEventListener('resize', function() {
-        if (window.innerWidth >= 1024) {
+        const isNowLargeScreen = window.innerWidth >= 1024;
+        // Only redirect on resize if it's a mobile device becoming large
+        if (isMobileDevice && isNowLargeScreen) {
           window.location.replace('index.html');
         }
       });
