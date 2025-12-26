@@ -237,9 +237,26 @@
 
       /* User profile should always be visible */
       #navUserProfile {
+        display: flex !important;
         flex-shrink: 0 !important;
         order: 3 !important;
         margin-left: auto !important;
+        position: relative !important;
+        overflow: visible !important;
+      }
+
+      /* Force show user profile when authenticated - override inline styles */
+      #navUserProfile[style*="display: none"] {
+        display: flex !important;
+      }
+
+      /* Ensure user button is visible */
+      .card-nav-user-button {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 48px !important;
+        height: 48px !important;
       }
 
       /* Fix menu dropdown overflow */
