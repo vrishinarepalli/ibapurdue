@@ -143,8 +143,9 @@ service cloud.firestore {
       allow read: if true;
       // Allow authenticated users to create teams (for tournament registration)
       allow create: if isSignedIn() && request.resource.data.captainUid == request.auth.uid;
-      // Only admins can update/delete teams
-      allow update, delete: if isAdmin();
+      // Allow team captain or admin to update/delete teams
+      allow update: if isAdmin() || (isSignedIn() && resource.data.captainUid == request.auth.uid);
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.captainUid == request.auth.uid);
     }
 
     // Tournament bracket
