@@ -113,17 +113,26 @@ service cloud.firestore {
 
     // Notifications collection
     match /notifications/{notificationId} {
-      // Users can only read their own notifications
-      allow read: if isOwner(resource.data.userId);
+      // Users can read notifications where userId matches their UID or email
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.userId ||
+        request.auth.token.email == resource.data.userId
+      );
 
       // Anyone authenticated can create notifications (for team requests, etc.)
       allow create: if isSignedIn();
 
-      // Users can update (mark as read) their own notifications
-      allow update: if isOwner(resource.data.userId);
+      // Users can update notifications where userId matches their UID or email
+      allow update: if isSignedIn() && (
+        request.auth.uid == resource.data.userId ||
+        request.auth.token.email == resource.data.userId
+      );
 
-      // Users can delete their own notifications
-      allow delete: if isOwner(resource.data.userId) || isAdmin();
+      // Users can delete notifications where userId matches their UID or email
+      allow delete: if (isSignedIn() && (
+        request.auth.uid == resource.data.userId ||
+        request.auth.token.email == resource.data.userId
+      )) || isAdmin();
     }
 
     // Message templates - read by all, write by admins only
@@ -228,9 +237,8 @@ service cloud.firestore {
     // System collection - read by anyone, write restricted to prevent abuse
     match /system/{document} {
       allow read: if true;
-      // Only allow specific document updates (e.g., visitor_count)
-      // Prevent spam by restricting to authenticated users
-      allow write: if request.auth != null && document == 'visitor_count';
+      // Allow visitor_count updates from anyone (for tracking page visits)
+      allow write: if document == 'visitor_count';
     }
   }
 }
