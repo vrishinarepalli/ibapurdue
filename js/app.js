@@ -4,7 +4,7 @@
  * Scope: Coordinate initialization of Firebase, auth, and all feature modules
  */
 
-import { initializeFirebase } from './config/firebase.config.js';
+import { initializeFirebase } from './config/firebase.config.js?v=2';
 import { initNavigation } from './ui/navigation.logic.js';
 
 // Initialize Firebase first (exposes to window.db, window.auth, etc.)
