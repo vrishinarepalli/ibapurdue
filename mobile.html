@@ -5321,30 +5321,20 @@
       if (!confirmed) return;
 
       try {
-        const { doc, deleteDoc, collection, query, where, getDocs, updateDoc, deleteField } = window.firestoreImports;
+        const { doc, deleteDoc, updateDoc, deleteField } = window.firestoreImports;
 
         // Delete the team document
         await deleteDoc(doc(window.db, 'teams', teamId));
 
-        // Remove team reference from all users who were on this team
-        const usersQuery = query(
-          collection(window.db, 'users'),
-          where('teamId', '==', teamId)
-        );
-        const usersSnapshot = await getDocs(usersQuery);
-
-        const updatePromises = [];
-        usersSnapshot.forEach((userDoc) => {
-          updatePromises.push(
-            updateDoc(doc(window.db, 'users', userDoc.id), {
-              teamId: deleteField(),
-              teamName: deleteField(),
-              isCaptain: deleteField()
-            })
-          );
-        });
-
-        await Promise.all(updatePromises);
+        // Remove team reference from current user's document
+        const currentUser = window.auth.currentUser;
+        if (currentUser) {
+          await updateDoc(doc(window.db, 'users', currentUser.uid), {
+            teamId: deleteField(),
+            teamName: deleteField(),
+            isCaptain: deleteField()
+          });
+        }
 
         alert(`✅ Team "${teamName}" has been deleted successfully.`);
         window.location.reload();
