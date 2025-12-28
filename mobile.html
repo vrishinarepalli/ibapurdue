@@ -2427,7 +2427,7 @@
       const messageDiv = document.getElementById('teamMessage');
 
       try {
-        const { doc, getDoc, updateDoc } = window.firestoreImports;
+        const { doc, getDoc, updateDoc, collection, query, where, getDocs } = window.firestoreImports;
         const teamDocRef = doc(window.db, 'teams', teamId);
         const teamDoc = await getDoc(teamDocRef);
 
@@ -2445,6 +2445,28 @@
         // Update team with new players array
         await updateDoc(teamDocRef, {
           players: updatedPlayers
+        });
+
+        // Find and clear team info from the removed player's user document
+        const usersQuery = query(
+          collection(window.db, 'users'),
+          where('teamId', '==', teamId)
+        );
+        const usersSnapshot = await getDocs(usersQuery);
+
+        // Clear team info from removed player
+        usersSnapshot.forEach(async (userDoc) => {
+          const userData = userDoc.data();
+          const userDisplayName = userData.displayName || userData.email?.split('@')[0];
+
+          // Check if this user matches the removed player name
+          if (userDisplayName === playerName || userData.email === playerName) {
+            await updateDoc(doc(window.db, 'users', userDoc.id), {
+              teamId: null,
+              teamName: null,
+              isCaptain: null
+            });
+          }
         });
 
         messageDiv.style.display = 'block';
@@ -5321,7 +5343,27 @@
       if (!confirmed) return;
 
       try {
-        const { doc, deleteDoc } = window.firestoreImports;
+        const { doc, deleteDoc, collection, query, where, getDocs, updateDoc } = window.firestoreImports;
+
+        // Find all users on this team and clear their team info
+        const usersQuery = query(
+          collection(window.db, 'users'),
+          where('teamId', '==', teamId)
+        );
+        const usersSnapshot = await getDocs(usersQuery);
+
+        // Clear team info from all users
+        const updatePromises = [];
+        usersSnapshot.forEach((userDoc) => {
+          updatePromises.push(
+            updateDoc(doc(window.db, 'users', userDoc.id), {
+              teamId: null,
+              teamName: null,
+              isCaptain: null
+            })
+          );
+        });
+        await Promise.all(updatePromises);
 
         // Delete the team document
         await deleteDoc(doc(window.db, 'teams', teamId));
