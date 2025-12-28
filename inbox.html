@@ -215,7 +215,7 @@
       notificationsContainer.innerHTML = '<p style="text-align: center; color: #666;">Loading notifications...</p>';
 
       try {
-        // Load notifications
+        // Load notifications by UID
         const notificationsQuery = query(
           collection(db, 'notifications'),
           where('userId', '==', currentUser.uid),
@@ -226,6 +226,23 @@
           id: doc.id,
           ...doc.data()
         }));
+
+        // Also load notifications by email (for team invites sent to free agents)
+        const emailNotificationsQuery = query(
+          collection(db, 'notifications'),
+          where('userId', '==', currentUser.email),
+          orderBy('createdAt', 'desc')
+        );
+        const emailNotificationsSnapshot = await getDocs(emailNotificationsQuery);
+        emailNotificationsSnapshot.docs.forEach(doc => {
+          // Avoid duplicates
+          if (!notifications.find(n => n.id === doc.id)) {
+            notifications.push({
+              id: doc.id,
+              ...doc.data()
+            });
+          }
+        });
 
         // Load team join requests for teams where user is captain
         const requestsQuery = query(
@@ -325,6 +342,14 @@
                   ✗ Reject
                 </button>
               ` : ''}
+              ${notification.type === 'team_invite' ? `
+                <button class="btn-approve" onclick="event.stopPropagation(); acceptTeamInvite('${notification.inviteId}', '${notification.teamId}', '${notification.teamName}')">
+                  ✓ Accept
+                </button>
+                <button class="btn-reject" onclick="event.stopPropagation(); rejectTeamInvite('${notification.inviteId}', '${notification.teamName}')">
+                  ✗ Decline
+                </button>
+              ` : ''}
             </div>
           </div>
         `;
@@ -421,6 +446,121 @@
       } catch (error) {
         console.error('Error rejecting request:', error);
         alert('Error rejecting request. Please try again.');
+      }
+    };
+
+    // Accept team invite
+    window.acceptTeamInvite = async function(inviteId, teamId, teamName) {
+      try {
+        // Get team data to check current roster
+        const teamRef = doc(db, 'teams', teamId);
+        const teamDoc = await getDoc(teamRef);
+
+        if (!teamDoc.exists()) {
+          alert('Team not found. It may have been deleted.');
+          return;
+        }
+
+        const teamData = teamDoc.data();
+        const currentPlayers = teamData.players || [];
+
+        // Check if team has space
+        if (currentPlayers.length >= 4) {
+          alert(`Team "${teamName}" is full (4/4 players). Cannot join.`);
+          // Update invite status to indicate team is full
+          await updateDoc(doc(db, 'teamInvites', inviteId), {
+            status: 'team_full'
+          });
+          await loadNotifications();
+          return;
+        }
+
+        // Confirm acceptance
+        const confirmed = confirm(`Join "${teamName}"? They currently have ${currentPlayers.length}/4 players.`);
+        if (!confirmed) return;
+
+        // Add player to team
+        const playerName = currentUser.displayName || currentUser.email.split('@')[0];
+        await updateDoc(teamRef, {
+          players: arrayUnion(playerName)
+        });
+
+        // Remove from free agency
+        const freeAgentsQuery = query(
+          collection(db, 'freeAgents'),
+          where('uid', '==', currentUser.uid),
+          where('status', '==', 'active')
+        );
+        const freeAgentsSnapshot = await getDocs(freeAgentsQuery);
+        freeAgentsSnapshot.forEach(async (docSnapshot) => {
+          await updateDoc(doc(db, 'freeAgents', docSnapshot.id), {
+            status: 'inactive'
+          });
+        });
+
+        // Update invite status
+        await updateDoc(doc(db, 'teamInvites', inviteId), {
+          status: 'accepted'
+        });
+
+        // Remove notification
+        const notificationQuery = query(
+          collection(db, 'notifications'),
+          where('inviteId', '==', inviteId),
+          where('userId', '==', currentUser.email)
+        );
+        const notificationSnapshot = await getDocs(notificationQuery);
+        notificationSnapshot.forEach(async (notifDoc) => {
+          await deleteDoc(doc(db, 'notifications', notifDoc.id));
+        });
+
+        // Create notification for team captain
+        await addDoc(collection(db, 'notifications'), {
+          userId: teamData.captainUid,
+          type: 'invite_accepted',
+          title: 'Team Invite Accepted',
+          message: `${playerName} has joined your team "${teamName}"!`,
+          read: false,
+          createdAt: serverTimestamp()
+        });
+
+        alert(`✅ You've successfully joined ${teamName}!`);
+        await loadNotifications();
+
+      } catch (error) {
+        console.error('Error accepting team invite:', error);
+        alert('Error accepting invite. Please try again.');
+      }
+    };
+
+    // Reject team invite
+    window.rejectTeamInvite = async function(inviteId, teamName) {
+      try {
+        const confirmed = confirm(`Decline team invite from "${teamName}"?`);
+        if (!confirmed) return;
+
+        // Update invite status
+        await updateDoc(doc(db, 'teamInvites', inviteId), {
+          status: 'declined'
+        });
+
+        // Remove notification
+        const notificationQuery = query(
+          collection(db, 'notifications'),
+          where('inviteId', '==', inviteId),
+          where('userId', '==', currentUser.email)
+        );
+        const notificationSnapshot = await getDocs(notificationQuery);
+        notificationSnapshot.forEach(async (notifDoc) => {
+          await deleteDoc(doc(db, 'notifications', notifDoc.id));
+        });
+
+        alert('Team invite declined.');
+        await loadNotifications();
+
+      } catch (error) {
+        console.error('Error declining team invite:', error);
+        alert('Error declining invite. Please try again.');
       }
     };
 

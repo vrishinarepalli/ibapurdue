@@ -141,7 +141,10 @@ service cloud.firestore {
     // Teams collection (for team stats/standings)
     match /teams/{teamId} {
       allow read: if true;
-      allow write: if isAdmin();
+      // Allow authenticated users to create teams (for tournament registration)
+      allow create: if isSignedIn() && request.resource.data.captainUid == request.auth.uid;
+      // Only admins can update/delete teams
+      allow update, delete: if isAdmin();
     }
 
     // Tournament bracket
