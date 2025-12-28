@@ -2787,12 +2787,32 @@
           return;
         }
 
-        if (!window.currentUserTeam) {
+        // Get user's team info
+        const { doc, getDoc, collection, addDoc, query, where, getDocs } = window.firestoreImports;
+        const userDocRef = doc(window.db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists() || !userDoc.data().teamId) {
           alert('You must have a team to send invites');
           return;
         }
 
-        const team = window.currentUserTeam;
+        const userData = userDoc.data();
+        if (!userData.isCaptain) {
+          alert('Only the team captain can send invites');
+          return;
+        }
+
+        // Get team data
+        const teamDocRef = doc(window.db, 'teams', userData.teamId);
+        const teamDoc = await getDoc(teamDocRef);
+
+        if (!teamDoc.exists()) {
+          alert('Team not found');
+          return;
+        }
+
+        const team = { id: userData.teamId, ...teamDoc.data() };
         const playerCount = team.players ? team.players.length : 0;
 
         if (playerCount >= 4) {
@@ -2800,16 +2820,9 @@
           return;
         }
 
-        if (team.captainUid !== user.uid) {
-          alert('Only the team captain can send invites');
-          return;
-        }
-
         // Confirm before sending
-        const confirmed = confirm(`Send team invite to ${playerName} to join ${team.name}?`);
+        const confirmed = confirm(`Send team invite to ${playerName} to join ${team.teamName}?`);
         if (!confirmed) return;
-
-        const { collection, addDoc, query, where, getDocs } = window.firestoreImports;
 
         // Check if invite already exists
         const existingInviteQuery = query(
