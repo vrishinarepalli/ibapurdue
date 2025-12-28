@@ -485,6 +485,13 @@
           players: arrayUnion(playerName)
         });
 
+        // Update user document with team info
+        await setDoc(doc(db, 'users', currentUser.uid), {
+          teamId: teamId,
+          teamName: teamName,
+          isCaptain: false
+        }, { merge: true });
+
         // Remove from free agency
         const freeAgentsQuery = query(
           collection(db, 'freeAgents'),
