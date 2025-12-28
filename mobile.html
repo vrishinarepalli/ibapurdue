@@ -3129,24 +3129,35 @@
           tournament: 'spring-2026'
         };
 
-        const inviteDocRef = await addDoc(collection(window.db, 'teamInvites'), inviteData);
+        console.log('Creating team invite with data:', inviteData);
+        console.log('Current user UID:', user.uid);
 
-        // Create notification for the free agent
-        const notificationData = {
-          userId: playerEmail, // Use email as identifier since free agents might not have uid
-          type: 'team_invite',
-          title: 'Team Invite',
-          message: `${team.teamName} has invited you to join their team!`,
-          teamId: team.id,
-          teamName: team.teamName,
-          inviteId: inviteDocRef.id, // Use the actual teamInvites document ID
-          read: false,
-          createdAt: new Date().toISOString()
-        };
+        try {
+          const inviteDocRef = await addDoc(collection(window.db, 'teamInvites'), inviteData);
+          console.log('Team invite created successfully:', inviteDocRef.id);
 
-        await addDoc(collection(window.db, 'notifications'), notificationData);
+          // Create notification for the free agent
+          const notificationData = {
+            userId: playerEmail, // Use email as identifier since free agents might not have uid
+            type: 'team_invite',
+            title: 'Team Invite',
+            message: `${team.teamName} has invited you to join their team!`,
+            teamId: team.id,
+            teamName: team.teamName,
+            inviteId: inviteDocRef.id, // Use the actual teamInvites document ID
+            read: false,
+            createdAt: new Date().toISOString()
+          };
 
-        alert(`Team invite sent to ${playerName}! They will be notified via email.`);
+          console.log('Creating notification with data:', notificationData);
+          await addDoc(collection(window.db, 'notifications'), notificationData);
+          console.log('Notification created successfully');
+
+          alert(`Team invite sent to ${playerName}!`);
+        } catch (createError) {
+          console.error('Error creating invite or notification:', createError);
+          throw createError;
+        }
 
       } catch (error) {
         console.error('Error sending team invite:', error);
