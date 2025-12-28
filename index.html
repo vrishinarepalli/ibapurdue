@@ -2798,6 +2798,13 @@
         }
 
         const userData = userDoc.data();
+
+        console.log('=== TEAM INVITE DEBUG ===');
+        console.log('User data:', userData);
+        console.log('User UID from auth:', user.uid);
+        console.log('User email from auth:', user.email);
+        console.log('Is captain:', userData.isCaptain);
+
         if (!userData.isCaptain) {
           alert('Only the team captain can send invites');
           return;
