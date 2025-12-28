@@ -2193,30 +2193,29 @@
       if (!user) return;
 
       try {
-        const { doc, getDoc } = window.firestoreImports;
+        const { doc, getDoc, updateDoc } = window.firestoreImports;
         const userDocRef = doc(window.db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists() && userDoc.data().teamId) {
           const userData = userDoc.data();
 
-          // User has a team - change "Create Team" to "My Team"
-          const createBtn = document.getElementById('teams-subtab-create');
-          if (createBtn) {
-            createBtn.textContent = 'My Team';
-          }
-
-          // Also update navigation dropdown link
-          const navCreateLink = document.getElementById('navCreateTeamLink');
-          if (navCreateLink) {
-            navCreateLink.innerHTML = '<span>→</span> My Team';
-          }
-
-          // Get full team data
+          // Get full team data first to verify team exists
           const teamDocRef = doc(window.db, 'teams', userData.teamId);
           const teamDoc = await getDoc(teamDocRef);
 
           if (teamDoc.exists()) {
+            // Team exists - change "Create Team" to "My Team"
+            const createBtn = document.getElementById('teams-subtab-create');
+            if (createBtn) {
+              createBtn.textContent = 'My Team';
+            }
+
+            // Also update navigation dropdown link
+            const navCreateLink = document.getElementById('navCreateTeamLink');
+            if (navCreateLink) {
+              navCreateLink.innerHTML = '<span>→</span> My Team';
+            }
             const teamData = teamDoc.data();
 
             // Replace create team panel with my team panel
@@ -2342,6 +2341,16 @@
             }
 
             // Free agency form visibility is handled in loadFreeAgents()
+          } else {
+            // Team doesn't exist anymore - clear stale teamId
+            console.log('⚠️ Team no longer exists, clearing stale teamId');
+            await updateDoc(userDocRef, {
+              teamId: null,
+              teamName: null,
+              isCaptain: null
+            });
+
+            // Keep button as "Create Team" (default state)
           }
         } else {
           // Free agency form visibility is handled in loadFreeAgents()
