@@ -848,23 +848,23 @@
                 <!-- Players -->
                 <div style="margin-bottom: 2rem;">
                   <label style="display: block; margin-bottom: 0.5rem; color: #000; font-weight: 600; font-size: 0.95rem;">Team Players (Up to 4 Players) *</label>
-                  <p style="margin: 0 0 1rem 0; font-size: 0.85rem; color: #666;">Enter the names of your team members (at least 3 required, maximum 4).</p>
+                  <p style="margin: 0 0 1rem 0; font-size: 0.85rem; color: #666;">Enter team member names. Captain is required, other positions are optional (maximum 4 players total).</p>
 
                   <div id="playersContainer">
                     <div style="margin-bottom: 0.75rem;">
                       <input type="text" name="player1" required
                         style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
-                        placeholder="Captain Name" />
+                        placeholder="Captain Name *" />
                     </div>
                     <div style="margin-bottom: 0.75rem;">
-                      <input type="text" name="player2" required
+                      <input type="text" name="player2"
                         style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
-                        placeholder="Starter 1 Name" />
+                        placeholder="Starter 1 Name (Optional)" />
                     </div>
                     <div style="margin-bottom: 0.75rem;">
-                      <input type="text" name="player3" required
+                      <input type="text" name="player3"
                         style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
-                        placeholder="Starter 2 Name" />
+                        placeholder="Starter 2 Name (Optional)" />
                     </div>
                     <div style="margin-bottom: 0.75rem;">
                       <input type="text" name="player4"
@@ -2113,8 +2113,8 @@
           }
         }
 
-        if (players.length < 3) {
-          throw new Error('Please add at least 3 players (Player 4 is optional)');
+        if (players.length < 1) {
+          throw new Error('Please add at least the captain');
         }
 
         // Create team document
