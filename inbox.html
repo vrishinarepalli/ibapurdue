@@ -609,7 +609,19 @@
     function getTimeAgo(timestamp) {
       if (!timestamp) return 'Just now';
       const now = new Date();
-      const time = timestamp.toDate();
+
+      // Handle both Firestore Timestamp and ISO string
+      let time;
+      if (timestamp.toDate) {
+        // Firestore Timestamp
+        time = timestamp.toDate();
+      } else if (typeof timestamp === 'string') {
+        // ISO date string
+        time = new Date(timestamp);
+      } else {
+        return 'Just now';
+      }
+
       const diffMs = now - time;
       const diffMins = Math.floor(diffMs / 60000);
       const diffHours = Math.floor(diffMs / 3600000);
