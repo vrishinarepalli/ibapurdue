@@ -5045,20 +5045,10 @@
       if (!confirmed) return;
 
       try {
-        const { doc, deleteDoc, updateDoc, deleteField } = window.firestoreImports;
+        const { doc, deleteDoc } = window.firestoreImports;
 
         // Delete the team document
         await deleteDoc(doc(window.db, 'teams', teamId));
-
-        // Remove team reference from current user's document
-        const currentUser = window.auth.currentUser;
-        if (currentUser) {
-          await updateDoc(doc(window.db, 'users', currentUser.uid), {
-            teamId: deleteField(),
-            teamName: deleteField(),
-            isCaptain: deleteField()
-          });
-        }
 
         alert(`✅ Team "${teamName}" has been deleted successfully.`);
         window.location.reload();
