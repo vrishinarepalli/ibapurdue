@@ -3110,6 +3110,7 @@
         // Check if invite already exists
         const existingInviteQuery = query(
           collection(window.db, 'teamInvites'),
+          where('captainUid', '==', user.uid),
           where('teamId', '==', team.id),
           where('freeAgentId', '==', agentId),
           where('status', '==', 'pending')
