@@ -2767,7 +2767,8 @@
 
           if (userDoc.exists() && userDoc.data().teamId) {
             userHasTeam = true;
-            const teamId = userDoc.data().teamId;
+            const userData = userDoc.data();
+            const teamId = userData.teamId;
 
             // Get team data
             const teamDocRef = doc(window.db, 'teams', teamId);
@@ -2776,7 +2777,9 @@
             if (teamDoc.exists()) {
               userTeam = { id: teamId, ...teamDoc.data() };
               const playerCount = userTeam.players ? userTeam.players.length : 0;
-              canSendInvite = userTeam.captainUid === user.uid && playerCount < 4;
+
+              // User can send invites if they are captain AND team is not full
+              canSendInvite = userData.isCaptain && playerCount < 4;
             }
           }
         }
