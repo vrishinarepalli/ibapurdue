@@ -267,9 +267,15 @@
         display: block !important;
         width: 100% !important;
         height: 100% !important;
+        max-width: none !important;
+        max-height: none !important;
         object-fit: cover !important;
+        object-position: center !important;
         opacity: 1 !important;
         visibility: visible !important;
+        position: relative !important;
+        z-index: 1 !important;
+        border: none !important;
       }
 
       /* Fix menu dropdown overflow */
@@ -446,7 +452,7 @@
 
           <!-- User Profile - Only shown when authenticated -->
           <div id="navUserProfile" style="display: none; position: relative; overflow: visible;">
-            <button class="card-nav-user-button" id="navUserButton" style="position: relative; overflow: visible;">
+            <button class="card-nav-user-button" id="navUserButton" style="position: relative;">
               <img id="navUserAvatar" src="" alt="User Avatar" class="nav-user-avatar" />
               <!-- Unread messages badge -->
               <span id="unreadBadge" style="position: absolute; top: -6px; right: -6px; background: #dc3545; color: white; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; font-weight: 700; display: none; align-items: center; justify-content: center; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 1000;">0</span>
@@ -848,22 +854,22 @@
                     <div style="margin-bottom: 0.75rem;">
                       <input type="text" name="player1" required
                         style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
-                        placeholder="Player 1 Name" />
+                        placeholder="Captain Name" />
                     </div>
                     <div style="margin-bottom: 0.75rem;">
                       <input type="text" name="player2" required
                         style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
-                        placeholder="Player 2 Name" />
+                        placeholder="Starter 1 Name" />
                     </div>
                     <div style="margin-bottom: 0.75rem;">
                       <input type="text" name="player3" required
                         style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
-                        placeholder="Player 3 Name" />
+                        placeholder="Starter 2 Name" />
                     </div>
                     <div style="margin-bottom: 0.75rem;">
                       <input type="text" name="player4"
                         style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem;"
-                        placeholder="Player 4 Name (Optional)" />
+                        placeholder="Reserve Name (Optional)" />
                     </div>
                   </div>
                 </div>
@@ -1656,24 +1662,24 @@
               </div>
 
               <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Player 1 Name *</label>
-                <input type="text" id="tournamentPlayer1" required placeholder="Enter first player name"
+                <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Captain Name *</label>
+                <input type="text" id="tournamentPlayer1" required placeholder="Enter captain name"
                   style="width: 100%; padding: 0.75rem; background: #ffffff; border: 2px solid rgba(207, 185, 145, 0.4); border-radius: 8px; color: #0a1122; font-size: 1rem; transition: all 0.2s;"
                   onfocus="this.style.borderColor='var(--brand)'; this.style.boxShadow='0 0 0 3px rgba(207, 185, 145, 0.1)'"
                   onblur="this.style.borderColor='rgba(207, 185, 145, 0.4)'; this.style.boxShadow='none'" />
               </div>
 
               <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Player 2 Name *</label>
-                <input type="text" id="tournamentPlayer2" required placeholder="Enter second player name"
+                <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Starter 1 Name *</label>
+                <input type="text" id="tournamentPlayer2" required placeholder="Enter starter 1 name"
                   style="width: 100%; padding: 0.75rem; background: #ffffff; border: 2px solid rgba(207, 185, 145, 0.4); border-radius: 8px; color: #0a1122; font-size: 1rem; transition: all 0.2s;"
                   onfocus="this.style.borderColor='var(--brand)'; this.style.boxShadow='0 0 0 3px rgba(207, 185, 145, 0.1)'"
                   onblur="this.style.borderColor='rgba(207, 185, 145, 0.4)'; this.style.boxShadow='none'" />
               </div>
 
               <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Player 3 Name (Optional)</label>
-                <input type="text" id="tournamentPlayer3" placeholder="Enter third player name (optional)"
+                <label style="display: block; color: #0a1122; font-weight: 600; margin-bottom: 0.5rem;">Starter 2 Name (Optional)</label>
+                <input type="text" id="tournamentPlayer3" placeholder="Enter starter 2 name (optional)"
                   style="width: 100%; padding: 0.75rem; background: #ffffff; border: 2px solid rgba(207, 185, 145, 0.4); border-radius: 8px; color: #0a1122; font-size: 1rem; transition: all 0.2s;"
                   onfocus="this.style.borderColor='var(--brand)'; this.style.boxShadow='0 0 0 3px rgba(207, 185, 145, 0.1)'"
                   onblur="this.style.borderColor='rgba(207, 185, 145, 0.4)'; this.style.boxShadow='none'" />
@@ -2114,6 +2120,7 @@
         // Create team document
         const teamData = {
           teamName: form.teamName.value.trim(),
+          captainName: user.displayName || user.email.split('@')[0],
           captainEmail: form.captainEmail.value.trim(),
           captainUid: user.uid,
           instagram: form.instagramHandle.value.trim() || '',
@@ -2593,14 +2600,14 @@
                 </div>
                 <div style="flex: 1;">
                   <h4 style="margin: 0 0 0.25rem 0; color: #000; font-weight: 700; font-size: 1.1rem;">${team.teamName}</h4>
-                  <p style="margin: 0; color: #666; font-size: 0.85rem;">Captain: ${team.captainEmail}</p>
+                  <p style="margin: 0; color: #666; font-size: 0.85rem;">Captain: ${team.captainName || team.captainEmail}</p>
                 </div>
               </div>
               <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb;">
                 <p style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.85rem; font-weight: 600;">Players (${team.players.length}):</p>
                 <div style="display: flex; flex-direction: column; gap: 0.35rem;">
                   ${team.players.slice(0, 3).map(player => `
-                    <p style="margin: 0; color: #000; font-size: 0.9rem;">• ${player}</p>
+                    <p style="margin: 0; color: #000; font-size: 0.9rem;">${player}</p>
                   `).join('')}
                   ${team.players.length > 3 ? `<p style="margin: 0; color: #666; font-size: 0.85rem; font-style: italic;">+ ${team.players.length - 3} more</p>` : ''}
                 </div>
@@ -2888,17 +2895,31 @@
       }
     };
 
-    // Decline team invite
-    window.declineTeamInvite = async function(inviteId) {
+    // Reject team invite
+    window.rejectTeamInvite = async function(inviteId, teamName) {
       try {
-        const confirmed = confirm('Decline this team invite?');
+        const confirmed = confirm(`Decline team invite from "${teamName}"?`);
         if (!confirmed) return;
 
-        const { doc, updateDoc } = window.firestoreImports;
+        const { doc, updateDoc, collection, query, where, getDocs, deleteDoc } = window.firestoreImports;
 
         await updateDoc(doc(window.db, 'teamInvites', inviteId), {
           status: 'declined'
         });
+
+        // Remove notification
+        const user = window.auth?.currentUser;
+        if (user) {
+          const notificationQuery = query(
+            collection(window.db, 'notifications'),
+            where('inviteId', '==', inviteId),
+            where('userId', '==', user.email)
+          );
+          const notificationSnapshot = await getDocs(notificationQuery);
+          notificationSnapshot.forEach(async (notifDoc) => {
+            await deleteDoc(doc(window.db, 'notifications', notifDoc.id));
+          });
+        }
 
         alert('Team invite declined.');
         window.location.reload();
@@ -2908,6 +2929,9 @@
         alert('Failed to decline invite: ' + error.message);
       }
     };
+
+    // Alias for backwards compatibility
+    window.declineTeamInvite = window.rejectTeamInvite;
 
     // Remove free agent (admin only)
     window.removeFreeAgent = async function(agentId, playerName) {
@@ -3019,9 +3043,10 @@
         // Create team invite
         const inviteData = {
           teamId: team.id,
-          teamName: team.name,
+          teamName: team.teamName,
           captainUid: user.uid,
           captainEmail: user.email,
+          captainName: user.displayName || user.email.split('@')[0],
           freeAgentId: agentId,
           playerName: playerName,
           playerEmail: playerEmail,
@@ -3030,17 +3055,17 @@
           tournament: 'spring-2026'
         };
 
-        await addDoc(collection(window.db, 'teamInvites'), inviteData);
+        const inviteDocRef = await addDoc(collection(window.db, 'teamInvites'), inviteData);
 
         // Create notification for the free agent
         const notificationData = {
           userId: playerEmail, // Use email as identifier since free agents might not have uid
           type: 'team_invite',
           title: 'Team Invite',
-          message: `${team.name} has invited you to join their team!`,
+          message: `${team.teamName} has invited you to join their team!`,
           teamId: team.id,
-          teamName: team.name,
-          inviteId: agentId,
+          teamName: team.teamName,
+          inviteId: inviteDocRef.id, // Use the actual teamInvites document ID
           read: false,
           createdAt: new Date().toISOString()
         };
@@ -5166,48 +5191,27 @@
       }
     }
 
-    // Create new team
+    // Create new team - scroll to tournament registration form
     document.getElementById('createTeamBtn')?.addEventListener('click', () => {
-      document.getElementById('createTeamModal').style.display = 'flex';
-    });
+      // Scroll to the tournament registration form
+      const tournamentSection = document.getElementById('panel-tournament');
+      if (tournamentSection) {
+        // First switch to the tournament tab
+        const tournamentTab = document.getElementById('tab-tournament');
+        if (tournamentTab) {
+          tournamentTab.click();
+        }
 
-    document.getElementById('cancelCreateTeam')?.addEventListener('click', () => {
-      document.getElementById('createTeamModal').style.display = 'none';
-      document.getElementById('createTeamForm').reset();
-    });
+        // Then scroll to it after a brief delay
+        setTimeout(() => {
+          tournamentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    document.getElementById('createTeamForm')?.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!window.currentUserData) return;
-
-      const teamName = document.getElementById('newTeamName').value.trim();
-      const teamDescription = document.getElementById('newTeamDescription').value.trim();
-
-      try {
-        const teamsRef = collection(db, 'player_teams');
-        await addDoc(teamsRef, {
-          name: teamName,
-          description: teamDescription,
-          captainUid: window.currentUserData.uid,
-          captainName: window.currentUserData.displayName,
-          captainEmail: window.currentUserData.email,
-          members: [{
-            uid: window.currentUserData.uid,
-            name: window.currentUserData.displayName,
-            email: window.currentUserData.email,
-            joinedAt: new Date().toISOString(),
-            role: 'captain'
-          }],
-          createdAt: new Date().toISOString()
-        });
-
-        document.getElementById('createTeamModal').style.display = 'none';
-        document.getElementById('createTeamForm').reset();
-        alert('✅ Team created successfully!');
-        loadMyTeam();
-      } catch (error) {
-        console.error('Error creating team:', error);
-        alert('Failed to create team. Please try again.');
+          // Focus on the team name field
+          const teamNameField = document.getElementById('teamName');
+          if (teamNameField) {
+            setTimeout(() => teamNameField.focus(), 500);
+          }
+        }, 200);
       }
     });
 
@@ -5269,7 +5273,12 @@
       html += `</ul>`;
 
       if (isCaptain) {
-        html += `<button onclick="viewJoinRequests('${team.id}')" style="margin-top: 1rem; background: var(--brand); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 10px; cursor: pointer;">View Join Requests</button>`;
+        html += `
+          <div style="margin-top: 1rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button onclick="viewJoinRequests('${team.id}')" style="background: var(--brand); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 10px; cursor: pointer; font-weight: 600;">View Join Requests</button>
+            <button onclick="deleteTeam('${team.id}', '${team.name}')" style="background: #dc3545; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 10px; cursor: pointer; font-weight: 600;">Delete Team</button>
+          </div>
+        `;
       }
 
       card.innerHTML = html;
@@ -5292,6 +5301,46 @@
       } catch (error) {
         console.error('Error kicking player:', error);
         alert('Failed to kick player');
+      }
+    };
+
+    // Delete team (captain only)
+    window.deleteTeam = async function(teamId, teamName) {
+      const confirmed = confirm(`Are you sure you want to delete "${teamName}"?\n\nThis action cannot be undone. All team data will be permanently deleted.`);
+      if (!confirmed) return;
+
+      try {
+        const { doc, deleteDoc, collection, query, where, getDocs, updateDoc, deleteField } = window.firestoreImports;
+
+        // Delete the team document
+        await deleteDoc(doc(window.db, 'teams', teamId));
+
+        // Remove team reference from all users who were on this team
+        const usersQuery = query(
+          collection(window.db, 'users'),
+          where('teamId', '==', teamId)
+        );
+        const usersSnapshot = await getDocs(usersQuery);
+
+        const updatePromises = [];
+        usersSnapshot.forEach((userDoc) => {
+          updatePromises.push(
+            updateDoc(doc(window.db, 'users', userDoc.id), {
+              teamId: deleteField(),
+              teamName: deleteField(),
+              isCaptain: deleteField()
+            })
+          );
+        });
+
+        await Promise.all(updatePromises);
+
+        alert(`✅ Team "${teamName}" has been deleted successfully.`);
+        window.location.reload();
+
+      } catch (error) {
+        console.error('Error deleting team:', error);
+        alert('Failed to delete team. Please try again.');
       }
     };
 
