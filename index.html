@@ -3765,7 +3765,7 @@
       async function trackVisitor() {
         try {
           const { doc, getDoc, setDoc, increment } = window.firestoreImports;
-          const visitorRef = doc(db, 'system', 'visitors');
+          const visitorRef = doc(db, 'system', 'visitor_count');
 
           // Check if visitor has already been counted in this session
           if (sessionStorage.getItem('visitorCounted')) {
@@ -3803,7 +3803,7 @@
       // Load visitor count for admin
       function loadVisitorCount() {
         const { doc, onSnapshot } = window.firestoreImports;
-        const visitorRef = doc(db, 'system', 'visitors');
+        const visitorRef = doc(db, 'system', 'visitor_count');
 
         onSnapshot(visitorRef, (docSnap) => {
           if (docSnap.exists()) {
