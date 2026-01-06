@@ -2436,7 +2436,7 @@
       const messageDiv = document.getElementById('teamMessage');
 
       try {
-        const { doc, getDoc, updateDoc, collection, query, where, getDocs } = window.firestoreImports;
+        const { doc, getDoc, updateDoc, addDoc, collection, query, where, getDocs } = window.firestoreImports;
         const teamDocRef = doc(window.db, 'teams', teamId);
         const teamDoc = await getDoc(teamDocRef);
 
@@ -2463,26 +2463,37 @@
         );
         const usersSnapshot = await getDocs(usersQuery);
 
-        // Clear team info from removed player
-        usersSnapshot.forEach(async (userDoc) => {
+        // Clear team info from removed player and create free agent profile
+        for (const userDoc of usersSnapshot.docs) {
           const userData = userDoc.data();
           const userDisplayName = userData.displayName || userData.email?.split('@')[0];
 
           // Check if this user matches the removed player name
           if (userDisplayName === playerName || userData.email === playerName) {
+            // Clear team info from user document
             await updateDoc(doc(window.db, 'users', userDoc.id), {
               teamId: null,
               teamName: null,
               isCaptain: null
             });
+
+            // Create free agent profile for this user
+            await addDoc(collection(window.db, 'freeAgents'), {
+              uid: userDoc.id,
+              email: userData.email,
+              displayName: userData.displayName || userData.email?.split('@')[0],
+              createdAt: new Date().toISOString(),
+              status: 'active'
+            });
+            break;
           }
-        });
+        }
 
         messageDiv.style.display = 'block';
         messageDiv.style.background = '#d4edda';
         messageDiv.style.border = '1px solid #c3e6cb';
         messageDiv.style.color = '#155724';
-        messageDiv.textContent = `${playerName} has been removed from the team.`;
+        messageDiv.textContent = `${playerName} has been removed from the team and added to free agents.`;
 
         // Reload page to show updated roster
         setTimeout(() => {
@@ -4437,7 +4448,7 @@
           </div>
           <div class="roster-item-actions">
             ${!player.isCaptain ? `<button type="button" class="make-captain-btn" onclick="makeCaptain(${index})">Make Captain</button>` : ''}
-            <button type="button" class="remove-player-btn" onclick="removePlayer(${index})">Remove</button>
+            <button type="button" class="remove-player-btn" onclick="removeRosterPlayer(${index})">Remove</button>
           </div>
         `;
         rosterManager.appendChild(rosterItem);
@@ -4478,8 +4489,8 @@
       renderRosterManager();
     };
 
-    // Remove player from roster
-    window.removePlayer = function(index) {
+    // Remove player from roster (admin roster manager)
+    window.removeRosterPlayer = function(index) {
       if (confirm('Remove this player from the roster?')) {
         currentRoster.splice(index, 1);
         renderRosterManager();
