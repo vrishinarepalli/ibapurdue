@@ -5413,6 +5413,8 @@
       const confirmed = confirm(`Are you sure you want to delete "${teamName}"?\n\nThis action cannot be undone. All team data will be permanently deleted.\n\nNon-captain players will be moved to free agency.`);
       if (!confirmed) return;
 
+      let deletionSucceeded = false;
+
       try {
         const { doc, deleteDoc, getDoc, collection, query, where, getDocs, updateDoc, addDoc } = window.firestoreImports;
 
@@ -5446,28 +5448,56 @@
             isCaptain: null
           });
 
-          // If not captain, create free agent profile
+          // If not captain, create free agent profile (check if one doesn't exist already)
           if (!isUserCaptain) {
-            await addDoc(collection(window.db, 'freeAgents'), {
-              uid: userDoc.id,
-              email: userData.email,
-              displayName: userData.displayName || userData.email?.split('@')[0],
-              createdAt: new Date().toISOString(),
-              status: 'active'
-            });
+            try {
+              // Check if free agent profile already exists
+              const freeAgentQuery = query(
+                collection(window.db, 'freeAgents'),
+                where('uid', '==', userDoc.id),
+                where('status', '==', 'active')
+              );
+              const existingFreeAgent = await getDocs(freeAgentQuery);
+
+              // Only create if doesn't exist
+              if (existingFreeAgent.empty) {
+                await addDoc(collection(window.db, 'freeAgents'), {
+                  uid: userDoc.id,
+                  email: userData.email,
+                  displayName: userData.displayName || userData.email?.split('@')[0],
+                  createdAt: new Date().toISOString(),
+                  status: 'active'
+                });
+              }
+            } catch (freeAgentError) {
+              // Log but don't fail the whole operation if free agent creation fails
+              console.warn('Could not create free agent for user:', userDoc.id, freeAgentError);
+            }
           }
         }
 
         // Delete the team document
         await deleteDoc(teamDocRef);
 
-        alert(`✅ Team "${teamName}" has been deleted successfully.\nNon-captain players have been moved to free agency.`);
-        window.location.reload();
+        // Verify deletion succeeded
+        const verifyDoc = await getDoc(teamDocRef);
+        if (!verifyDoc.exists()) {
+          deletionSucceeded = true;
+        }
 
       } catch (error) {
         console.error('Error deleting team:', error);
-        alert('Failed to delete team. Please try again.');
+        deletionSucceeded = false;
       }
+
+      // Always reload and show result after operations complete
+      if (deletionSucceeded) {
+        alert(`✅ Team "${teamName}" has been deleted successfully.\nNon-captain players have been moved to free agency.`);
+      } else {
+        alert('❌ Failed to delete team. Please try again or contact support if the issue persists.');
+      }
+
+      window.location.reload();
     };
 
     window.viewJoinRequests = function(teamId) {
