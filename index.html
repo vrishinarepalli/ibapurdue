@@ -5134,36 +5134,58 @@
 
     // Delete team (captain only)
     window.deleteTeam = async function(teamId, teamName) {
-      const confirmed = confirm(`Are you sure you want to delete "${teamName}"?\n\nThis action cannot be undone. All team data will be permanently deleted.`);
+      const confirmed = confirm(`Are you sure you want to delete "${teamName}"?\n\nThis action cannot be undone. All team data will be permanently deleted.\n\nNon-captain players will be moved to free agency.`);
       if (!confirmed) return;
 
       try {
-        const { doc, deleteDoc, collection, query, where, getDocs, updateDoc } = window.firestoreImports;
+        const { doc, deleteDoc, getDoc, collection, query, where, getDocs, updateDoc, addDoc } = window.firestoreImports;
 
-        // Find all users on this team and clear their team info
+        // Get team data to find captain
+        const teamDocRef = doc(window.db, 'teams', teamId);
+        const teamDoc = await getDoc(teamDocRef);
+
+        if (!teamDoc.exists()) {
+          throw new Error('Team not found');
+        }
+
+        const teamData = teamDoc.data();
+        const captainUid = teamData.captainUid;
+
+        // Find all users on this team
         const usersQuery = query(
           collection(window.db, 'users'),
           where('teamId', '==', teamId)
         );
         const usersSnapshot = await getDocs(usersQuery);
 
-        // Clear team info from all users
-        const updatePromises = [];
-        usersSnapshot.forEach((userDoc) => {
-          updatePromises.push(
-            updateDoc(doc(window.db, 'users', userDoc.id), {
-              teamId: null,
-              teamName: null,
-              isCaptain: null
-            })
-          );
-        });
-        await Promise.all(updatePromises);
+        // Process all users: clear team info and create free agent profiles for non-captains
+        for (const userDoc of usersSnapshot.docs) {
+          const userData = userDoc.data();
+          const isUserCaptain = userDoc.id === captainUid || userData.isCaptain === true;
+
+          // Clear team info from user
+          await updateDoc(doc(window.db, 'users', userDoc.id), {
+            teamId: null,
+            teamName: null,
+            isCaptain: null
+          });
+
+          // If not captain, create free agent profile
+          if (!isUserCaptain) {
+            await addDoc(collection(window.db, 'freeAgents'), {
+              uid: userDoc.id,
+              email: userData.email,
+              displayName: userData.displayName || userData.email?.split('@')[0],
+              createdAt: new Date().toISOString(),
+              status: 'active'
+            });
+          }
+        }
 
         // Delete the team document
-        await deleteDoc(doc(window.db, 'teams', teamId));
+        await deleteDoc(teamDocRef);
 
-        alert(`✅ Team "${teamName}" has been deleted successfully.`);
+        alert(`✅ Team "${teamName}" has been deleted successfully.\nNon-captain players have been moved to free agency.`);
         window.location.reload();
 
       } catch (error) {
