@@ -2048,7 +2048,7 @@
                     </div>
 
                     <!-- Captain Actions -->
-                    ${userData.isCaptain ? `
+                    ${(userData.isCaptain || teamData.captainUid === window.auth.currentUser?.uid) ? `
                       <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid #e5e7eb;">
                         <h4 style="margin: 0 0 1rem 0; color: #000; font-weight: 700;">Captain Actions</h4>
                         <button onclick="deleteTeam('${userData.teamId}', '${teamData.teamName}')" style="padding: 0.75rem 1.5rem; background: #dc3545; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">
