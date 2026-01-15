@@ -1979,7 +1979,6 @@
       // Use waitForFirebase to ensure Firebase is ready before proceeding
       waitForFirebase(async () => {
         try {
-          console.log('🔥 Firebase ready, starting sign-in...');
 
           // Import GoogleAuthProvider and signInWithPopup from Firebase
           const { GoogleAuthProvider, signInWithPopup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
@@ -1988,7 +1987,6 @@
           const result = await signInWithPopup(window.auth, provider);
           const user = result.user;
 
-          console.log('✅ Signed in successfully:', user.email);
 
           // Check if user document exists, create if not
           const { doc, getDoc, setDoc, updateDoc } = window.firestoreImports;
@@ -2005,7 +2003,6 @@
               createdAt: new Date().toISOString(),
               lastLogin: new Date().toISOString()
             });
-            console.log('✅ Created user document');
           } else {
             // Update last login
             await updateDoc(userDocRef, {
@@ -2018,9 +2015,7 @@
         } catch (error) {
           console.error('❌ Error signing in:', error);
           if (error.code === 'auth/popup-closed-by-user') {
-            console.log('User closed the sign-in popup');
           } else if (error.code === 'auth/cancelled-popup-request') {
-            console.log('Another popup already open');
           } else {
             alert('Error signing in. Please try again.');
           }
@@ -2055,12 +2050,10 @@
 
     // Helper function to switch to Teams tab and specific sub-tab from navigation
     window.switchToTeamsTab = function(subtab) {
-      console.log('switchToTeamsTab called with:', subtab);
 
       // First, switch to the Teams main tab
       const teamsTab = document.getElementById('tab-teams');
       if (teamsTab) {
-        console.log('Clicking teams tab');
         teamsTab.click();
       } else {
         console.error('Teams tab not found');
@@ -2068,20 +2061,17 @@
 
       // Then switch to the specific sub-tab after a delay
       setTimeout(() => {
-        console.log('Switching to subtab:', subtab);
         switchTeamsTab(subtab);
 
         // Scroll to the Teams section
         const teamsPanel = document.getElementById('panel-teams');
         if (teamsPanel) {
-          console.log('Scrolling to Teams panel');
           teamsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         // Close mobile navigation AFTER switching
         const cardNav = document.getElementById('cardNav');
         if (cardNav && cardNav.classList.contains('open')) {
-          console.log('Closing mobile nav');
           cardNav.classList.remove('open');
         }
       }, 200);
@@ -2343,7 +2333,6 @@
             // Free agency form visibility is handled in loadFreeAgents()
           } else {
             // Team doesn't exist anymore - clear stale teamId
-            console.log('⚠️ Team no longer exists, clearing stale teamId');
             await updateDoc(userDocRef, {
               teamId: null,
               teamName: null,
@@ -3114,11 +3103,6 @@
 
         const userData = userDoc.data();
 
-        console.log('=== TEAM INVITE DEBUG ===');
-        console.log('User data:', userData);
-        console.log('User UID from auth:', user.uid);
-        console.log('User email from auth:', user.email);
-        console.log('Is captain:', userData.isCaptain);
 
         if (!userData.isCaptain) {
           alert('Only the team captain can send invites');
@@ -3176,12 +3160,9 @@
           tournament: 'spring-2026'
         };
 
-        console.log('Creating team invite with data:', inviteData);
-        console.log('Current user UID:', user.uid);
 
         try {
           const inviteDocRef = await addDoc(collection(window.db, 'teamInvites'), inviteData);
-          console.log('Team invite created successfully:', inviteDocRef.id);
 
           // Create notification for the free agent
           const notificationData = {
@@ -3196,9 +3177,7 @@
             createdAt: new Date().toISOString()
           };
 
-          console.log('Creating notification with data:', notificationData);
           await addDoc(collection(window.db, 'notifications'), notificationData);
-          console.log('Notification created successfully');
 
           alert(`Team invite sent to ${playerName}!`);
         } catch (createError) {
@@ -3249,7 +3228,6 @@
         // Check if user is main admin (matches the UID in firestore.rules)
         const MAIN_ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
         if (userUid === MAIN_ADMIN_UID) {
-          console.log('✅ User is main admin:', email);
           return true;
         }
 
@@ -3262,7 +3240,6 @@
         const snapshot = await getDocs(approvedAdminsQuery);
 
         if (!snapshot.empty) {
-          console.log('✅ User is approved admin (from approved_admins):', email);
           return true;
         }
 
@@ -3270,12 +3247,10 @@
         if (userUid) {
           const requestDoc = await getDoc(doc(window.db, 'admin_requests', userUid));
           if (requestDoc.exists() && requestDoc.data().status === 'approved') {
-            console.log('✅ User is approved admin (from admin_requests):', email);
             return true;
           }
         }
 
-        console.log('❌ User is not an approved admin:', email);
         return false;
 
       } catch (error) {
@@ -3319,7 +3294,6 @@
           sessionStorage.removeItem('adminSessionToken');
           sessionStorage.removeItem('adminAuthMethod');
           sessionStorage.removeItem('adminSessionExpiry');
-          console.log('❌ Admin session invalid - user not approved');
           return;
         }
 
@@ -3333,7 +3307,6 @@
         if (quickAddSection) quickAddSection.style.display = 'block';
         const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
         if (bulkImportBtn) bulkImportBtn.style.display = 'block';
-        console.log('✅ Admin session restored');
       } else {
         // Clear expired session
         sessionStorage.removeItem('adminSessionToken');
@@ -3364,7 +3337,6 @@
         }
 
         // User is approved - enable admin mode directly
-        console.log('✅ Admin verified:', currentUser.email);
         isAdminMode = true;
         document.body.classList.add('admin-mode');
         adminBtn.textContent = 'Exit Admin';
@@ -3380,7 +3352,6 @@
         sessionStorage.setItem('adminAuthMethod', 'gmail');
         sessionStorage.setItem('adminSessionExpiry', Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-        console.log('✅ Admin mode enabled for', currentUser.email);
         return;
       } else {
         // Disable admin mode (logout)
@@ -3475,7 +3446,6 @@
         }
 
         // Verify user is an admin (will be checked by server too)
-        console.log('Registering Touch ID for user:', user.uid, user.email);
 
         // Get registration options from server
         const { httpsCallable } = window.functionsImports;
@@ -3516,7 +3486,6 @@
         };
 
         // Create credential with Touch ID/Face ID
-        console.log('Creating WebAuthn credential...');
         const credential = await navigator.credentials.create({
           publicKey: publicKeyCredentialCreationOptions
         });
@@ -3536,7 +3505,6 @@
 
         // Validate base64url format (should only contain: A-Z, a-z, 0-9, -, _)
         const isValidBase64url = /^[A-Za-z0-9\-_]+$/.test(credentialData.id);
-        console.log('Sending credential data:', {
           id: credentialData.id.substring(0, 30) + '...',
           type: credentialData.type,
           isValidBase64url,
@@ -3548,8 +3516,6 @@
         const verificationResponse = await verifyReg({ credential: credentialData });
 
         if (verificationResponse.data.verified) {
-          console.log('✅ Biometric credential registered successfully on server');
-          console.log('✅ Touch ID/Face ID is now enabled for your account!');
           // Keep user logged in - they can use Touch ID next time
           return true;
         } else {
@@ -3600,7 +3566,6 @@
         };
 
         // Get credential with Touch ID/Face ID
-        console.log('Authenticating with biometrics...');
         const assertion = await navigator.credentials.get({
           publicKey: publicKeyCredentialRequestOptions
         });
@@ -3623,7 +3588,6 @@
         const verificationResponse = await verifyAuth({ credential: assertionData });
 
         if (verificationResponse.data.verified) {
-          console.log('✅ Biometric authentication verified by server');
 
           // Store session token for this session
           sessionStorage.setItem('adminSessionToken', verificationResponse.data.sessionToken);
@@ -3633,7 +3597,6 @@
           // Note: For write operations, user will need to also be signed in with Firebase Auth
           // Check if user is already signed in with Firebase
           if (!window.auth.currentUser || window.auth.currentUser.uid !== 'seZ01FolJbSajEKTIsljwGtYHGD3') {
-            console.log('ℹ️ Note: You will need to sign in with email/password for write operations');
           }
 
           return true;
@@ -3663,7 +3626,6 @@
       sessionStorage.removeItem('adminAuthMethod');
       sessionStorage.removeItem('adminSessionExpiry');
 
-      console.log('Admin logged out');
     };
 
     // Biometric authentication button handler with server verification
@@ -3679,7 +3641,6 @@
 
         // Try to authenticate first
         try {
-          console.log('Attempting biometric authentication...');
           await authenticateWebAuthn();
 
           // Verify user is an approved admin
@@ -3712,12 +3673,10 @@
           sessionStorage.setItem('adminAuthMethod', 'biometric');
           sessionStorage.setItem('adminSessionExpiry', Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-          console.log('✅ Admin logged in successfully with server-verified biometrics');
         } catch (authError) {
           // If authentication fails because no credentials exist, offer registration
           if (authError.message?.includes('No biometric credentials registered') ||
               authError.code === 'functions/failed-precondition') {
-            console.log('No credentials found. Starting registration...');
 
             // Show registration prompt
             const shouldRegister = confirm(
@@ -3806,7 +3765,6 @@
 
         // Sign in with email and password (re-authenticate)
         const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
-        console.log('✅ Re-authenticated with password:', userCredential.user.uid);
 
         // Check if user is approved admin (from Firestore)
         const isUserApprovedAdmin4 = await isApprovedAdmin(userCredential.user.email);
@@ -3815,7 +3773,6 @@
           throw new Error('Unauthorized: Not an admin account. Please request admin access.');
         }
 
-        console.log('✅ Admin verified:', userCredential.user.email);
 
         // Success - enable admin mode
         adminModal.style.display = 'none';
@@ -3837,7 +3794,6 @@
         // Clear form
         passwordInput.value = '';
 
-        console.log('✅ Admin logged in successfully with password');
       } catch (error) {
         console.error('Email/Password authentication error:', error);
 
@@ -3936,16 +3892,13 @@
 
       // Load games from Firestore in real-time
       function loadGames() {
-        console.log('📥 Loading games from Firestore...');
         const gamesCollection = collection(db, 'games');
 
         onSnapshot(gamesCollection, (snapshot) => {
-          console.log(`📊 Loaded ${snapshot.size} games from database`);
           const tbody = document.querySelector('#scheduleTable tbody');
           tbody.innerHTML = ''; // Clear existing rows
 
           if (snapshot.empty) {
-            console.log('ℹ️ No games in database yet');
           }
 
           // Convert snapshot to array and sort by date and time
@@ -4037,14 +3990,12 @@
 
               if (completedDate < oneDayAgo) {
                 await deleteDoc(doc(db, 'games', docSnap.id));
-                console.log(`🗑️ Deleted old game: ${game.matchup}`);
                 deletedCount++;
               }
             }
           }
 
           if (deletedCount > 0) {
-            console.log(`✅ Cleaned up ${deletedCount} old completed game(s)`);
           }
         } catch (error) {
           console.error('❌ Error cleaning up old games:', error);
@@ -4063,11 +4014,9 @@
 
       // Load teams from Firestore in real-time
       function loadTeams() {
-        console.log('📥 Loading teams from Firestore...');
         const teamsCollection = collection(db, 'teams');
 
         onSnapshot(teamsCollection, (snapshot) => {
-          console.log(`📊 Loaded ${snapshot.size} teams from database`);
           teamsData = {}; // Reset teams data
 
           snapshot.forEach((docSnapshot) => {
@@ -4126,14 +4075,12 @@
 
       // Load bracket from Firestore in real-time
       function loadBracket() {
-        console.log('📥 Loading bracket from Firestore...');
         const { doc, onSnapshot } = window.firestoreImports;
         const bracketRef = doc(db, 'tournament', 'bracket');
 
         onSnapshot(bracketRef, (docSnap) => {
           if (docSnap.exists()) {
             bracketData = docSnap.data();
-            console.log('📊 Loaded bracket data from database');
 
             // Update all bracket slots
             Object.entries(bracketData).forEach(([slotId, teamName]) => {
@@ -4148,7 +4095,6 @@
               updateStatsBar();
             }
           } else {
-            console.log('ℹ️ No bracket data in database yet');
           }
         }, (error) => {
           console.error('❌ Error loading bracket:', error);
@@ -4166,7 +4112,6 @@
 
           // Check if visitor has already been counted in this session
           if (sessionStorage.getItem('visitorCounted')) {
-            console.log('Visitor already counted in this session');
             return;
           }
 
@@ -4188,7 +4133,6 @@
 
           // Mark this session as counted
           sessionStorage.setItem('visitorCounted', 'true');
-          console.log('✅ Visitor tracked');
         } catch (error) {
           console.error('❌ Error tracking visitor:', error);
         }
@@ -4306,7 +4250,6 @@
             });
           }
 
-          console.log('✅ Synced game to teams:', team1Name, 'vs', team2Name);
         } catch (error) {
           console.error('❌ Error syncing game to teams:', error);
         }
@@ -4364,7 +4307,6 @@
             });
           }
 
-          console.log('✅ Removed game from teams:', team1Name, 'vs', team2Name);
         } catch (error) {
           console.error('❌ Error removing game from teams:', error);
         }
@@ -4576,7 +4518,6 @@
       };
 
       updateDoc(teamRef, updatedData).then(() => {
-        console.log('Team updated in database');
         editTeamModal.classList.remove('active');
       }).catch(error => {
         console.error('Error updating team:', error);
@@ -4652,7 +4593,6 @@
 
           // If lock is released, log out this admin
           if (!lockData.isLocked) {
-            console.log('Admin lock released - logging out');
             isAdminMode = false;
             document.body.classList.remove('admin-mode');
             adminBtn.textContent = 'Admin';
@@ -4810,7 +4750,6 @@
       const teamRef = doc(db, 'teams', currentEditTeam);
 
       updateDoc(teamRef, { icon: selectedIcon }).then(() => {
-        console.log('Team icon updated in database');
         editIconModal.classList.remove('active');
       }).catch(error => {
         console.error('Error updating team icon:', error);
@@ -4838,7 +4777,6 @@
           currentBracket[slotId] = newName;
 
           setDoc(bracketRef, currentBracket).then(() => {
-            console.log('Bracket updated in database');
           }).catch(error => {
             console.error('Error saving bracket:', error);
             alert('Error saving bracket: ' + error.message);
@@ -4892,7 +4830,6 @@
         const bracketRef = doc(db, 'tournament', 'bracket');
 
         setDoc(bracketRef, bracketObj).then(() => {
-          console.log('✅ Bracket imported successfully');
           alert('Bracket data imported successfully!');
           bulkImportModal.classList.remove('active');
           bulkBracketData.value = '';
@@ -4985,30 +4922,20 @@
           completedAt: new Date().toISOString()
         });
 
-        console.log('🎯 Completing game:', currentCompleteGameData.matchup);
 
         // Update team records with win/loss and score
         const teams = currentCompleteGameData.matchup.split(' vs ');
         const team1Name = teams[0].trim();
         const team2Name = teams[1].trim();
 
-        console.log('👥 Team 1:', team1Name);
-        console.log('👥 Team 2:', team2Name);
-        console.log('📋 Available teams:', Object.keys(teamsData).map(id => teamsData[id].name));
-        console.log('📊 Full teamsData:', teamsData);
 
         const team1Id = findTeamIdByName(team1Name);
         const team2Id = findTeamIdByName(team2Name);
 
-        console.log('🔑 Team 1 ID:', team1Id);
-        console.log('🔑 Team 2 ID:', team2Id);
 
         if (!team1Id || !team2Id) {
           console.error('❌ Could not find team IDs!');
-          console.log('🔍 Searching for:', team1Name, 'and', team2Name);
-          console.log('📝 Team names in database:');
           Object.keys(teamsData).forEach(id => {
-            console.log(`  - "${teamsData[id].name}" (ID: ${id})`);
           });
           alert('Error: Could not find teams. Please check console for details.');
           return;
@@ -5021,8 +4948,6 @@
           const team1Doc = await getDoc(team1Ref);
           const team2Doc = await getDoc(team2Ref);
 
-          console.log('📄 Team 1 exists:', team1Doc.exists());
-          console.log('📄 Team 2 exists:', team2Doc.exists());
 
           if (team1Doc.exists() && team2Doc.exists()) {
             const team1Data = team1Doc.data();
@@ -5063,24 +4988,18 @@
               date: currentCompleteGameData.day
             });
 
-            console.log('📝 About to update teams:');
-            console.log(`  Team 1 (${team1Name}) completed games:`, team1CompletedGames);
-            console.log(`  Team 2 (${team2Name}) completed games:`, team2CompletedGames);
 
             // Update both teams (do not change win/loss records)
             await updateDoc(team1Ref, {
               upcomingGames: team1UpcomingGames,
               completedGames: team1CompletedGames
             });
-            console.log('✅ Team 1 updated successfully');
 
             await updateDoc(team2Ref, {
               upcomingGames: team2UpcomingGames,
               completedGames: team2CompletedGames
             });
-            console.log('✅ Team 2 updated successfully');
 
-            console.log('✅ Game completed and teams updated');
           }
         }
 
@@ -5189,7 +5108,6 @@
     window.deleteGame = async function(btn) {
       if (!isAdminMode) return;
       if (confirm('Are you sure you want to delete this game?')) {
-        console.log('🗑️ Deleting game...');
         const { deleteDoc, doc } = window.firestoreImports;
         const db = window.db;
 
@@ -5203,10 +5121,8 @@
           await removeGameFromTeams(matchup, day);
 
           // Then delete the game
-          console.log('Deleting document ID:', docId);
           const gameRef = doc(db, 'games', docId);
           await deleteDoc(gameRef);
-          console.log('✅ Game deleted successfully');
         } catch (error) {
           console.error('❌ Error deleting game:', error);
           alert('Error deleting game: ' + error.message);
@@ -5843,7 +5759,6 @@
           approvedBy: auth.currentUser.uid
         });
 
-        console.log('✅ Admin request approved');
         loadAdminRequests(currentFilter);
       } catch (error) {
         console.error('Error approving admin request:', error);
@@ -5865,7 +5780,6 @@
           rejectedBy: auth.currentUser.uid
         });
 
-        console.log('❌ Admin request rejected');
         loadAdminRequests(currentFilter);
       } catch (error) {
         console.error('Error rejecting admin request:', error);
@@ -5916,13 +5830,9 @@
       const navUserAvatar = document.getElementById('navUserAvatar');
       const navUserButton = document.getElementById('navUserButton');
 
-      console.log('🔐 Auth state changed. User:', user ? user.email : 'Not signed in');
-      console.log('Nav elements found:', { navUserProfile: !!navUserProfile, navUserAvatar: !!navUserAvatar });
-      console.log('Other elements found:', { loginLink: !!loginLink, userProfileChip: !!userProfileChip, userDisplayName: !!userDisplayName });
 
       if (user) {
         // User is signed in
-        console.log('✅ User is signed in:', user.email);
         if (loginLink) loginLink.style.display = 'none';
         if (userProfileChip) userProfileChip.style.display = 'block';
         if (userDisplayName) userDisplayName.textContent = user.displayName || user.email.split('@')[0];
@@ -5946,7 +5856,6 @@
         const captainEmailInput = document.getElementById('captainEmail');
         if (captainEmailInput) {
           captainEmailInput.value = user.email;
-          console.log('✅ Auto-filled captain email:', user.email);
         }
 
         // Auto-fill free agency form fields
@@ -5955,20 +5864,17 @@
         if (freeAgencyNameInput && freeAgencyEmailInput) {
           freeAgencyNameInput.value = user.displayName || user.email.split('@')[0];
           freeAgencyEmailInput.value = user.email;
-          console.log('✅ Auto-filled free agency form');
         }
 
         // Show user profile in card navigation
         if (navUserProfile) {
           navUserProfile.style.display = 'flex';
-          console.log('Showing user profile');
         }
         if (navUserAvatar) {
           // Use Google profile photo if available, otherwise use a default avatar
           const avatarUrl = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email.split('@')[0])}&background=CFB991&color=fff&size=128`;
           navUserAvatar.src = avatarUrl;
           navUserAvatar.alt = user.displayName || user.email;
-          console.log('Set avatar URL:', avatarUrl);
         }
 
         // Navigate to profile page when user button is clicked
@@ -6014,7 +5920,6 @@
 
           // Check if user is approved admin (from Firestore)
           const isAdmin = await isApprovedAdmin(user.email);
-          console.log('Is admin check:', { email: user.email, isAdmin });
 
           // Show/hide admin button based on admin status
           const adminBtn = document.getElementById('adminBtn');
@@ -6022,10 +5927,8 @@
             if (isAdmin) {
               adminBtn.style.display = 'flex';
               adminBtn.textContent = 'Admin';
-              console.log('✅ User is admin - showing admin button');
             } else {
               adminBtn.style.display = 'none';
-              console.log('❌ User is not admin - hiding admin button');
             }
           }
         } catch (error) {
@@ -6039,7 +5942,6 @@
         });
       } else {
         // User is signed out
-        console.log('❌ User is signed out');
         if (loginLink) loginLink.style.display = 'block';
         if (userProfileChip) userProfileChip.style.display = 'none';
         if (myTeamsTab) myTeamsTab.style.display = 'none';
@@ -6066,7 +5968,6 @@
         // Hide user profile in card navigation
         if (navUserProfile) {
           navUserProfile.style.display = 'none';
-          console.log('Hiding user profile');
         }
       }
     });
@@ -6081,18 +5982,14 @@
 
     // Tournament selection handler
     if (tournamentSelect) {
-      console.log('✅ Tournament select dropdown found');
       tournamentSelect.addEventListener('change', async (e) => {
         const selectedTournament = e.target.value;
-        console.log('📅 Tournament selected:', selectedTournament);
 
         if (selectedTournament === 'fall-2025') {
-          console.log('🏀 Loading Fall 2025 data...');
 
           // Show the data container
           if (previousTournamentData) {
             previousTournamentData.style.display = 'block';
-            console.log('✅ Data container shown');
           }
 
           // Update title
@@ -6111,7 +6008,6 @@
         }
       });
     } else {
-      console.log('❌ Tournament select dropdown NOT found');
     }
 
     // View switching for Previous Tournaments
@@ -6140,7 +6036,6 @@
         const { collection, getDocs, doc, getDoc } = window.firestoreImports;
         const db = window.db;
 
-        console.log('📊 Loading previous tournament data...');
 
         // Load teams for standings
         const teamsSnapshot = await getDocs(collection(db, 'teams'));
@@ -6149,7 +6044,6 @@
           teams.push({ id: teamDoc.id, ...teamDoc.data() });
         });
 
-        console.log('✅ Loaded teams:', teams.length);
 
         // Sort teams by wins, then point differential
         teams.sort((a, b) => {
@@ -6213,7 +6107,6 @@
           games.push({ id: gameDoc.id, ...gameDoc.data() });
         });
 
-        console.log('✅ Loaded games:', games.length);
 
         // Sort by date
         games.sort((a, b) => {
@@ -6235,7 +6128,6 @@
           `).join('');
         }
 
-        console.log('✅ Previous tournament data loaded successfully!');
 
       } catch (error) {
         console.error('❌ Error loading previous tournament data:', error);
@@ -6604,7 +6496,6 @@
       // Initial button state
       leftBtn.style.opacity = '0.3';
 
-      console.log('✅ Stats carousel initialized');
     }
   </script>
 </body>

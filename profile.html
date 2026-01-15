@@ -177,7 +177,6 @@
         const MAIN_ADMIN_UID = 'seZ01FolJbSajEKTIsljwGtYHGD3';
         if (user.uid === MAIN_ADMIN_UID) {
           isAdmin = true;
-          console.log('✅ User is main admin:', user.email);
         }
 
         // Check approved_admins collection
@@ -190,7 +189,6 @@
 
           if (!snapshot.empty) {
             isAdmin = true;
-            console.log('✅ User is approved admin (from approved_admins):', user.email);
           }
         }
 
@@ -199,7 +197,6 @@
           const requestDoc = await getDoc(doc(db, 'admin_requests', user.uid));
           if (requestDoc.exists() && requestDoc.data().status === 'approved') {
             isAdmin = true;
-            console.log('✅ User is approved admin (from admin_requests):', user.email);
           }
         }
       } catch (error) {
@@ -273,7 +270,6 @@
             requestAdminBtn.textContent = 'Request Pending';
             requestAdminBtn.style.opacity = '0.6';
 
-            console.log('✅ Admin access request submitted');
           } catch (error) {
             console.error('Error requesting admin access:', error);
             alert('Failed to submit admin request. Please try again.');
@@ -300,7 +296,6 @@
         signOutBtn.onclick = async () => {
           try {
             await signOut(auth);
-            console.log('✅ Signed out successfully');
             window.location.href = 'index.html';
           } catch (error) {
             console.error('Error signing out:', error);
