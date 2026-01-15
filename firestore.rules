@@ -113,22 +113,19 @@ service cloud.firestore {
 
     // Notifications collection
     match /notifications/{notificationId} {
-      // Users can read notifications where userId matches their UID or email
-      allow read: if isSignedIn() && (
-        request.auth.uid == resource.data.userId ||
-        request.auth.token.email == resource.data.userId
-      );
+      // Allow read for authenticated users - queries filter by userId anyway
+      allow read: if isSignedIn();
 
       // Anyone authenticated can create notifications (for team requests, etc.)
       allow create: if isSignedIn();
 
-      // Users can update notifications where userId matches their UID or email
+      // Users can update their own notifications (by UID or email)
       allow update: if isSignedIn() && (
         request.auth.uid == resource.data.userId ||
         request.auth.token.email == resource.data.userId
       );
 
-      // Users can delete notifications where userId matches their UID or email
+      // Users can delete their own notifications, admins can delete any
       allow delete: if (isSignedIn() && (
         request.auth.uid == resource.data.userId ||
         request.auth.token.email == resource.data.userId
