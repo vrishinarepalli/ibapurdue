@@ -5029,7 +5029,7 @@
       const { collection, query, where, getDocs } = window.firestoreImports;
 
       try {
-        const requestsRef = collection(db, 'team_join_requests');
+        const requestsRef = collection(db, 'team_requests');
         const q = query(requestsRef, where('captainUid', '==', uid), where('status', '==', 'pending'));
         const querySnapshot = await getDocs(q);
 
@@ -5263,7 +5263,7 @@
       const content = document.getElementById('notificationsContent');
 
       try {
-        const requestsRef = collection(db, 'team_join_requests');
+        const requestsRef = collection(db, 'team_requests');
         const q = query(requestsRef, where('teamId', '==', teamId), where('status', '==', 'pending'));
         const querySnapshot = await getDocs(q);
 
@@ -5297,7 +5297,7 @@
     // Accept join request
     window.acceptJoinRequest = async function(requestId, teamId) {
       try {
-        const requestRef = doc(db, 'team_join_requests', requestId);
+        const requestRef = doc(db, 'team_requests', requestId);
         const requestDoc = await getDoc(requestRef);
         const request = requestDoc.data();
 
@@ -5330,7 +5330,7 @@
     // Reject join request
     window.rejectJoinRequest = async function(requestId) {
       try {
-        const requestRef = doc(db, 'team_join_requests', requestId);
+        const requestRef = doc(db, 'team_requests', requestId);
         await updateDoc(requestRef, { status: 'rejected' });
 
         alert('Request rejected');
@@ -5423,7 +5423,7 @@
       if (!window.currentUserData) return;
 
       try {
-        const requestsRef = collection(db, 'team_join_requests');
+        const requestsRef = collection(db, 'team_requests');
         await addDoc(requestsRef, {
           teamId: teamId,
           teamName: teamName,
