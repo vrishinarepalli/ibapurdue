@@ -3505,11 +3505,6 @@
 
         // Validate base64url format (should only contain: A-Z, a-z, 0-9, -, _)
         const isValidBase64url = /^[A-Za-z0-9\-_]+$/.test(credentialData.id);
-          id: credentialData.id.substring(0, 30) + '...',
-          type: credentialData.type,
-          isValidBase64url,
-          length: credentialData.id.length
-        });
 
         // Send to server for verification and storage
         const verifyReg = httpsCallable(window.functions, 'verifyRegistration');
