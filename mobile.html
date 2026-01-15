@@ -2897,10 +2897,10 @@
           return;
         }
 
-        const { doc, getDoc, updateDoc, collection, query, where, getDocs, arrayUnion } = window.firestoreImports;
+        const { doc, getDoc, updateDoc, setDoc, collection, query, where, getDocs, deleteDoc, arrayUnion, serverTimestamp } = window.firestoreImports;
 
-        // Get team data to check current roster
-        const teamRef = doc(window.db, 'teams', teamId);
+        // Get team data to check current roster (use player_teams collection)
+        const teamRef = doc(window.db, 'player_teams', teamId);
         const teamDoc = await getDoc(teamRef);
 
         if (!teamDoc.exists()) {
@@ -2909,46 +2909,74 @@
         }
 
         const teamData = teamDoc.data();
-        const currentPlayers = teamData.players || [];
+        const currentMembers = teamData.members || [];
 
         // Check if team has space
-        if (currentPlayers.length >= 4) {
+        if (currentMembers.length >= 4) {
           alert(`Team "${teamName}" is full (4/4 players). Please check the roster and try another team.`);
           return;
         }
 
+        // Check if user is already on the team
+        if (currentMembers.includes(user.uid)) {
+          alert('You are already a member of this team.');
+          await updateDoc(doc(window.db, 'teamInvites', inviteId), {
+            status: 'accepted'
+          });
+          window.location.reload();
+          return;
+        }
+
         // Confirm acceptance
-        const confirmed = confirm(`Join "${teamName}"? You currently have ${currentPlayers.length}/4 players.`);
+        const confirmed = confirm(`Join "${teamName}"? They currently have ${currentMembers.length}/4 players.`);
         if (!confirmed) return;
 
-        // Add player to team
-        const playerName = user.displayName || user.email.split('@')[0];
+        // Add player to team (use uid, not display name)
         await updateDoc(teamRef, {
-          players: arrayUnion(playerName)
+          members: arrayUnion(user.uid)
         });
 
-        // Remove from free agency
+        // Update user document with team info and player role
+        const userRef = doc(window.db, 'users', user.uid);
+        const userDoc = await getDoc(userRef);
+
+        if (userDoc.exists()) {
+          await updateDoc(userRef, {
+            teamId: teamId,
+            teamName: teamName,
+            isCaptain: false,
+            roles: arrayUnion('player')
+          });
+        } else {
+          await setDoc(userRef, {
+            teamId: teamId,
+            teamName: teamName,
+            isCaptain: false,
+            roles: ['player'],
+            createdAt: serverTimestamp()
+          });
+        }
+
+        // Remove from free agency - delete the document entirely
         const freeAgentsQuery = query(
           collection(window.db, 'freeAgents'),
-          where('uid', '==', user.uid),
-          where('status', '==', 'active')
+          where('uid', '==', user.uid)
         );
         const freeAgentsSnapshot = await getDocs(freeAgentsQuery);
-        freeAgentsSnapshot.forEach(async (docSnapshot) => {
-          await updateDoc(doc(window.db, 'freeAgents', docSnapshot.id), {
-            status: 'inactive'
-          });
-        });
+        for (const docSnapshot of freeAgentsSnapshot.docs) {
+          await deleteDoc(doc(window.db, 'freeAgents', docSnapshot.id));
+        }
 
         // Update invite status
         await updateDoc(doc(window.db, 'teamInvites', inviteId), {
           status: 'accepted'
         });
 
-        // Create notification for team captain
+        // Create notification for team captain (use 'captain' field)
         const { addDoc } = window.firestoreImports;
+        const playerName = user.displayName || user.email.split('@')[0];
         await addDoc(collection(window.db, 'notifications'), {
-          userId: teamData.captainEmail,
+          userId: teamData.captain,
           type: 'invite_accepted',
           title: 'Team Invite Accepted',
           message: `${playerName} has joined your team "${teamName}"!`,

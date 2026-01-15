@@ -452,8 +452,8 @@
     // Accept team invite
     window.acceptTeamInvite = async function(inviteId, teamId, teamName) {
       try {
-        // Get team data to check current roster
-        const teamRef = doc(db, 'teams', teamId);
+        // Get team data to check current roster (use player_teams collection)
+        const teamRef = doc(db, 'player_teams', teamId);
         const teamDoc = await getDoc(teamRef);
 
         if (!teamDoc.exists()) {
@@ -462,10 +462,10 @@
         }
 
         const teamData = teamDoc.data();
-        const currentPlayers = teamData.players || [];
+        const currentMembers = teamData.members || [];
 
         // Check if team has space
-        if (currentPlayers.length >= 4) {
+        if (currentMembers.length >= 4) {
           alert(`Team "${teamName}" is full (4/4 players). Cannot join.`);
           // Update invite status to indicate team is full
           await updateDoc(doc(db, 'teamInvites', inviteId), {
@@ -475,35 +475,55 @@
           return;
         }
 
+        // Check if user is already on the team
+        if (currentMembers.includes(currentUser.uid)) {
+          alert('You are already a member of this team.');
+          await updateDoc(doc(db, 'teamInvites', inviteId), {
+            status: 'accepted'
+          });
+          await loadNotifications();
+          return;
+        }
+
         // Confirm acceptance
-        const confirmed = confirm(`Join "${teamName}"? They currently have ${currentPlayers.length}/4 players.`);
+        const confirmed = confirm(`Join "${teamName}"? They currently have ${currentMembers.length}/4 players.`);
         if (!confirmed) return;
 
-        // Add player to team
-        const playerName = currentUser.displayName || currentUser.email.split('@')[0];
+        // Add player to team (use uid, not display name)
         await updateDoc(teamRef, {
-          players: arrayUnion(playerName)
+          members: arrayUnion(currentUser.uid)
         });
 
-        // Update user document with team info
-        await setDoc(doc(db, 'users', currentUser.uid), {
-          teamId: teamId,
-          teamName: teamName,
-          isCaptain: false
-        }, { merge: true });
+        // Update user document with team info and player role
+        const userRef = doc(db, 'users', currentUser.uid);
+        const userDoc = await getDoc(userRef);
 
-        // Remove from free agency
+        if (userDoc.exists()) {
+          await updateDoc(userRef, {
+            teamId: teamId,
+            teamName: teamName,
+            isCaptain: false,
+            roles: arrayUnion('player')
+          });
+        } else {
+          await setDoc(userRef, {
+            teamId: teamId,
+            teamName: teamName,
+            isCaptain: false,
+            roles: ['player'],
+            createdAt: serverTimestamp()
+          });
+        }
+
+        // Remove from free agency - delete the document entirely
         const freeAgentsQuery = query(
           collection(db, 'freeAgents'),
-          where('uid', '==', currentUser.uid),
-          where('status', '==', 'active')
+          where('uid', '==', currentUser.uid)
         );
         const freeAgentsSnapshot = await getDocs(freeAgentsQuery);
-        freeAgentsSnapshot.forEach(async (docSnapshot) => {
-          await updateDoc(doc(db, 'freeAgents', docSnapshot.id), {
-            status: 'inactive'
-          });
-        });
+        for (const docSnapshot of freeAgentsSnapshot.docs) {
+          await deleteDoc(doc(db, 'freeAgents', docSnapshot.id));
+        }
 
         // Update invite status
         await updateDoc(doc(db, 'teamInvites', inviteId), {
@@ -517,13 +537,14 @@
           where('userId', '==', currentUser.email)
         );
         const notificationSnapshot = await getDocs(notificationQuery);
-        notificationSnapshot.forEach(async (notifDoc) => {
+        for (const notifDoc of notificationSnapshot.docs) {
           await deleteDoc(doc(db, 'notifications', notifDoc.id));
-        });
+        }
 
-        // Create notification for team captain
+        // Create notification for team captain (use 'captain' field, not 'captainUid')
+        const playerName = currentUser.displayName || currentUser.email.split('@')[0];
         await addDoc(collection(db, 'notifications'), {
-          userId: teamData.captainUid,
+          userId: teamData.captain,
           type: 'invite_accepted',
           title: 'Team Invite Accepted',
           message: `${playerName} has joined your team "${teamName}"!`,
