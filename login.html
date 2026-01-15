@@ -506,49 +506,35 @@
     authAPI.onAuthStateChanged(auth, async (user) => {
       currentUser = user;
 
-      console.log('🔐 Auth state changed. User:', user ? user.email : 'Not signed in');
 
       if (user) {
-        console.log('✅ User is signed in:', user.email);
-        console.log('   UID:', user.uid);
-        console.log('   Display Name:', user.displayName);
-        console.log('   Photo URL:', user.photoURL);
 
         // Check if user already has a profile
         try {
           const userDocRef = firestoreAPI.doc(db, 'users', user.uid);
-          console.log('📄 Fetching user document for UID:', user.uid);
 
           const userDoc = await firestoreAPI.getDoc(userDocRef);
-          console.log('📄 User document exists:', userDoc.exists());
 
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            console.log('📄 User document data:', userData);
-            console.log('📄 Has roles:', !!userData.roles);
-            console.log('📄 Roles array:', userData.roles);
           }
 
           if (userDoc.exists() && userDoc.data().roles && userDoc.data().roles.length > 0) {
             // Existing user - update last login and redirect to home page
-            console.log('✅ Existing user found. Redirecting to home page...');
 
             try {
               // Update last login
               await firestoreAPI.updateDoc(userDocRef, {
                 lastLogin: new Date().toISOString()
               });
-              console.log('✅ Last login updated');
             } catch (updateError) {
               console.error('⚠️ Failed to update last login (non-critical):', updateError);
             }
 
             // Redirect to main page
-            console.log('🔄 Redirecting to index.html...');
             window.location.href = 'index.html';
           } else {
             // New user - automatically create player profile and redirect
-            console.log('🆕 New user. Creating player profile...');
 
             const newUserData = {
               uid: user.uid,
@@ -560,21 +546,16 @@
               lastLogin: new Date().toISOString()
             };
 
-            console.log('📝 Creating user document with data:', newUserData);
 
             await firestoreAPI.setDoc(userDocRef, newUserData);
 
-            console.log('✅ Player profile created successfully');
 
             // Verify the document was created
             const verifyDoc = await firestoreAPI.getDoc(userDocRef);
-            console.log('✅ Verification - Document exists:', verifyDoc.exists());
             if (verifyDoc.exists()) {
-              console.log('✅ Verification - Document data:', verifyDoc.data());
             }
 
             // Redirect to main page
-            console.log('🔄 Redirecting to index.html...');
             window.location.href = 'index.html';
           }
         } catch (error) {
@@ -586,7 +567,6 @@
         }
       } else {
         // User is signed out
-        console.log('🚪 User is signed out');
         hideAllSections();
         loginSection.style.display = 'block';
       }
@@ -595,23 +575,13 @@
     // Google Sign-In
     googleSignInBtn.addEventListener('click', async () => {
       try {
-        console.log('🔵 Google Sign-In button clicked');
-        console.log('🔵 Auth object:', auth);
-        console.log('🔵 GoogleAuthProvider:', authAPI.GoogleAuthProvider);
-        console.log('🔵 signInWithPopup:', authAPI.signInWithPopup);
-        console.log('🔵 setPersistence:', setPersistence);
-        console.log('🔵 browserLocalPersistence:', browserLocalPersistence);
 
         // Set persistence to LOCAL so user stays signed in
         await setPersistence(auth, browserLocalPersistence);
-        console.log('✅ Auth persistence set to LOCAL');
 
         const provider = new authAPI.GoogleAuthProvider();
-        console.log('✅ Provider created:', provider);
 
         const result = await authAPI.signInWithPopup(auth, provider);
-        console.log('✅ Signed in successfully:', result.user.email);
-        console.log('✅ User object:', result.user);
       } catch (error) {
         console.error('❌ Sign-in error:', error);
         console.error('❌ Error code:', error.code);
@@ -625,7 +595,6 @@
     switchAccountBtn.addEventListener('click', async () => {
       try {
         await authAPI.signOut(auth);
-        console.log('✅ Signed out - ready to switch accounts');
         // Auth state listener will automatically show login screen
       } catch (error) {
         console.error('Sign-out error:', error);
@@ -637,7 +606,6 @@
     switchAccountFromRequest.addEventListener('click', async () => {
       try {
         await authAPI.signOut(auth);
-        console.log('✅ Signed out from request form');
         // Auth state listener will automatically show login screen
       } catch (error) {
         console.error('Sign-out error:', error);
@@ -662,7 +630,6 @@
           lastLogin: new Date().toISOString()
         });
 
-        console.log('✅ Player profile created');
         // Redirect to main page
         window.location.href = 'index.html';
       } catch (error) {
@@ -709,7 +676,6 @@
             lastLogin: new Date().toISOString()
           });
 
-          console.log('✅ Admin authenticated and profile created');
 
           // Enable admin mode
           enableAdminMode();
@@ -767,7 +733,6 @@
             lastLogin: new Date().toISOString()
           });
 
-          console.log('✅ Both roles (player + admin) authenticated and profile created');
 
           // Enable admin mode
           enableAdminMode();
@@ -831,7 +796,6 @@
           approvedBy: null
         });
 
-        console.log('✅ Admin request submitted');
 
         // Show success message
         hideAllSections();
@@ -849,7 +813,6 @@
     signOutBtn.addEventListener('click', async () => {
       try {
         await authAPI.signOut(auth);
-        console.log('✅ Signed out');
         window.location.reload();
       } catch (error) {
         console.error('Sign-out error:', error);
