@@ -1687,7 +1687,37 @@
   </div>
 
   <script>
-    // Wait for Firebase to be available
+    /**
+     * =============================================================================
+     * IBA BASKETBALL - INLINE SCRIPTS
+     * =============================================================================
+     *
+     * This script contains the main application logic for the IBA website.
+     *
+     * SECTIONS:
+     * 1. Firebase Helpers (line ~1691)     - waitForFirebase utility
+     * 2. Authentication (line ~1702)       - signInWithGoogle
+     * 3. Teams Tab (line ~1756)            - Team CRUD, roster management
+     * 4. Free Agency (line ~2400)          - Free agent registration, invites
+     * 5. WebAuthn/Biometric (line ~3100)   - Admin biometric authentication
+     * 6. Tournament Data (line ~3600)      - Games, schedule, bracket
+     * 7. Admin Functions (line ~4800)      - Admin mode, requests
+     * 8. Team Management (line ~5000)      - Detailed team operations
+     * 9. Auth State Listener (line ~5600)  - Main auth state handler
+     *
+     * See ARCHITECTURE.md for full module documentation.
+     * See js/app.js for modular entry point.
+     * =============================================================================
+     */
+
+    // =============================================================================
+    // SECTION 1: FIREBASE HELPERS
+    // =============================================================================
+
+    /**
+     * Wait for Firebase to be fully initialized before executing callback.
+     * @param {Function} callback - Function to execute once Firebase is ready
+     */
     function waitForFirebase(callback) {
       if (window.db && window.firestoreImports) {
         callback();
@@ -1696,9 +1726,15 @@
       }
     }
 
-    // ============================================
-    // Google Sign-In Function for Non-Authenticated Users
-    // ============================================
+    // =============================================================================
+    // SECTION 2: AUTHENTICATION
+    // =============================================================================
+
+    /**
+     * Google Sign-In for non-authenticated users.
+     * Creates user document in Firestore if new user.
+     * Updates lastLogin timestamp for existing users.
+     */
     function signInWithGoogle() {
       // Use waitForFirebase to ensure Firebase is ready before proceeding
       waitForFirebase(async () => {
@@ -1753,9 +1789,10 @@
     // Hero button click handler is set dynamically in the auth state listener
     // based on whether user is signed in or not
 
-    // ============================================
-    // Teams Tab Functions
-    // ============================================
+    // =============================================================================
+    // SECTION 3: TEAMS TAB FUNCTIONS
+    // =============================================================================
+    // Team creation, roster management, player operations
 
     // Switch between teams sub-tabs
     window.switchTeamsTab = function(tab) {
