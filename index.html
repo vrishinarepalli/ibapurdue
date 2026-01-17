@@ -2614,6 +2614,7 @@
                 </div>
               ` : ''}
 
+              <!-- TEAM INVITES TEMPORARILY DISABLED
               ${canSendInvite || isAdmin ? `
                 <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb; ${canSendInvite && isAdmin ? 'display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;' : ''}">
                   ${canSendInvite ? `
@@ -2621,11 +2622,14 @@
                       Send Team Invite
                     </button>
                   ` : ''}
-                  ${isAdmin ? `
-                    <button onclick="removeFreeAgent('${agentId}', '${agent.playerName}')" style="width: 100%; padding: 0.75rem; background: #dc3545; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(220, 53, 69, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                      Remove
-                    </button>
-                  ` : ''}
+                </div>
+              ` : ''}
+              -->
+              ${isAdmin ? `
+                <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                  <button onclick="removeFreeAgent('${agentId}', '${agent.playerName}')" style="width: 100%; padding: 0.75rem; background: #dc3545; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(220, 53, 69, 0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    Remove
+                  </button>
                 </div>
               ` : ''}
             </div>
