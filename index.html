@@ -55,7 +55,6 @@
         // --- HERO entrance (stagger on load) ---
         const heroTl = gsap.timeline({ defaults: { ease: 'power3.out' } });
         heroTl
-          .to('.hero-badge',        { opacity: 1, y: 0, duration: 0.7, delay: 0.2 })
           .to('.hero-content h2',   { opacity: 1, y: 0, duration: 0.8 }, '-=0.4')
           .to('.hero-subtitle-row', { opacity: 1, y: 0, duration: 0.6 }, '-=0.5')
           .to('.hero-cta-group',    { opacity: 1, y: 0, duration: 0.6 }, '-=0.4')
@@ -363,7 +362,6 @@
         <div class="hero-overlay"></div>
       </div>
       <div class="hero-content">
-        <div class="hero-badge">🏀 IBA Purdue Basketball</div>
         <h2>The Court.<br><span class="hero-title-accent">The Teams.</span><br>The Glory.</h2>
         <div class="hero-subtitle-row">
           <span class="hero-pill active">Spring 2026</span>
