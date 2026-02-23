@@ -801,7 +801,7 @@ details p { margin: .75rem 0 0; color: #666; font-size: 0.9rem; line-height: 1.6
     font-size: clamp(5.5rem, 12vw, 11rem);
     line-height: 1.05;
     letter-spacing: 4px;
-    margin-bottom: 0.15em;
+    margin-bottom: 0.25em;
 }
 
 /* Hero subtitle pills row */
