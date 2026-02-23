@@ -543,7 +543,7 @@ tbody tr:hover { background: #f6f6f6; }
     flex-shrink: 0;
 }
 
-.team-card h4 { margin: 0; font-size: 0.95rem; font-weight: 700; color: #0a1122; }
+.team-card h4 { margin: 0; font-size: 0.95rem; font-weight: 700; color: #111111; }
 .team-card p { margin: .2rem 0 0; color: #888; font-size: .82rem; }
 
 /* Modal styles */
@@ -679,7 +679,7 @@ summary {
     cursor: pointer;
     font-weight: 700;
     list-style: none;
-    color: #0a1122;
+    color: #111111;
     font-size: 0.95rem;
     display: flex;
     align-items: center;
@@ -706,7 +706,7 @@ details p { margin: .75rem 0 0; color: #666; font-size: 0.9rem; line-height: 1.6
     width: 100%;
     overflow: hidden;
     margin-top: 0;
-    background-color: #060c18;
+    background-color: #000000;
     min-height: 100vh;
 }
 .hero-bg {
@@ -1387,7 +1387,7 @@ footer {
 .bracket-round-title {
     text-align: center;
     font-weight: 800;
-    color: #0a1122;
+    color: #111111;
     margin-bottom: 1.5rem;
     font-size: 0.72rem;
     letter-spacing: 2px;
@@ -1439,7 +1439,7 @@ footer {
     background: linear-gradient(to right, #fffdf6, #fff8e8);
     border-color: rgba(207, 185, 145, 0.55);
     font-weight: 700;
-    color: #0a1122;
+    color: #111111;
 }
 
 .bracket-team.champion {
@@ -1552,7 +1552,7 @@ footer {
 .stats-carousel-section {
     width: 100%;
     padding: 5rem 0 5.5rem;
-    background: #060c18;
+    background: #000000;
     overflow: hidden;
     border-bottom: 1px solid rgba(207, 185, 145, 0.12);
 }
@@ -1688,7 +1688,7 @@ footer {
     width: 100%;
     overflow: hidden;
     line-height: 0;
-    background: #060c18;
+    background: #000000;
 }
 .stats-to-content-wave svg {
     display: block;
