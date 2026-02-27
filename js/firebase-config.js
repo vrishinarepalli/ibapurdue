@@ -22,6 +22,7 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
 import {
   getFirestore,
+  connectFirestoreEmulator,
   collection,
   getDocs,
   addDoc,
@@ -30,10 +31,14 @@ import {
   doc,
   onSnapshot,
   getDoc,
-  setDoc
+  setDoc,
+  query,
+  where,
+  arrayUnion
 } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 import {
   getAuth,
+  connectAuthEmulator,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
@@ -82,7 +87,10 @@ export const firestoreAPI = {
   doc,
   onSnapshot,
   getDoc,
-  setDoc
+  setDoc,
+  query,
+  where,
+  arrayUnion
 };
 
 export const authAPI = {
@@ -120,4 +128,39 @@ window.authImports = authAPI;
 window.functionsImports = functionsAPI;
 window.firestoreImports = firestoreAPI;
 
-console.log('✅ Firebase initialized successfully');
+// Connect to local emulators when running Playwright tests
+// Playwright injects window.__FIREBASE_EMULATOR__ = true via addInitScript before page load
+if (window.__FIREBASE_EMULATOR__) {
+  connectFirestoreEmulator(db, 'localhost', 8080);
+  connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+  console.log('🧪 Connected to Firebase Emulators');
+} else {
+  console.log('✅ Firebase initialized successfully');
+}
+
+// ─── Fast auth listener ────────────────────────────────────────────────────────
+// Registered here — in the module script — so it fires as soon as Firebase Auth
+// resolves the stored session, without waiting for the inline script's
+// waitForFirebase() polling loop (which adds up to 100 ms + CDN load time).
+//
+// This listener ONLY handles immediate nav-bar UI updates (show/hide the
+// sign-in link vs. the profile chip).  The full app-level onAuthStateChanged
+// in index.html's inline script still runs for everything else (Firestore reads,
+// team loading, etc.).
+onAuthStateChanged(auth, (user) => {
+  const loginLink       = document.getElementById('loginLink');
+  const userProfileChip = document.getElementById('userProfileChip');
+  const userDisplayName = document.getElementById('userDisplayName');
+  const notifIcon       = document.getElementById('notificationsIcon');
+
+  if (user) {
+    if (loginLink)        loginLink.style.display        = 'none';
+    if (userProfileChip)  userProfileChip.style.display  = 'block';
+    if (userDisplayName)  userDisplayName.textContent    = user.displayName || user.email.split('@')[0];
+    if (notifIcon)        notifIcon.style.display        = 'block';
+  } else {
+    if (loginLink)        loginLink.style.display        = 'block';
+    if (userProfileChip)  userProfileChip.style.display  = 'none';
+    if (notifIcon)        notifIcon.style.display        = 'none';
+  }
+});

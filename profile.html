@@ -36,8 +36,8 @@
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-    import { getFirestore, collection, query, where, getDocs, doc, getDoc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-    import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, connectFirestoreEmulator, collection, query, where, getDocs, doc, getDoc, setDoc, addDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, connectAuthEmulator, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
     import { signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
     const firebaseConfig = {
@@ -57,10 +57,16 @@
     // Set auth persistence
     setPersistence(auth, browserLocalPersistence);
 
+    // Connect to local emulators when running Playwright tests
+    if (window.__FIREBASE_EMULATOR__) {
+      connectFirestoreEmulator(db, 'localhost', 8080);
+      connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+    }
+
     // Make Firebase available globally
     window.db = db;
     window.auth = auth;
-    window.firestoreImports = { collection, query, where, getDocs, doc, getDoc, setDoc };
+    window.firestoreImports = { collection, query, where, getDocs, doc, getDoc, setDoc, addDoc, updateDoc };
     window.authImports = { onAuthStateChanged, signOut, signInWithPopup, GoogleAuthProvider };
 
     // Initialize authentication
@@ -139,17 +145,24 @@
 
         if (profileTeam) profileTeam.textContent = teamText;
         if (profileTeamDetail) profileTeamDetail.textContent = teamText;
+
+        // Show link-to-team section only if player has no team yet
+        if (teamText === 'No team yet') {
+          loadLinkToTeam(user);
+        }
       } catch (error) {
         console.error('Error loading team:', error);
         if (profileTeam) profileTeam.textContent = 'Error loading team';
         if (profileTeamDetail) profileTeamDetail.textContent = 'Error loading team';
+        // Can't determine team status — show link section as fallback
+        loadLinkToTeam(user);
       }
 
       // Load unread notification count
       try {
         const notificationsQuery = query(
           collection(db, 'notifications'),
-          where('userId', '==', user.uid),
+          where('userId', '==', user.email),
           where('read', '==', false)
         );
         const notificationsSnapshot = await getDocs(notificationsQuery);
@@ -279,6 +292,140 @@
         adminAccessSection.style.display = 'none';
       }
     }
+
+    // Show link-to-team section for players without a team
+    async function loadLinkToTeam(user) {
+      const section = document.getElementById('linkToTeamSection');
+      if (!section) return;
+      section.style.display = 'block';
+      window._linkUser = user;
+
+      const contentDiv = document.getElementById('linkToTeamContent');
+
+      // Check for existing pending request
+      try {
+        const pendingQuery = query(
+          collection(db, 'team_link_requests'),
+          where('playerUid', '==', user.uid),
+          where('status', '==', 'pending')
+        );
+        const pendingSnap = await getDocs(pendingQuery);
+        if (!pendingSnap.empty) {
+          const req = pendingSnap.docs[0].data();
+          const reqId = pendingSnap.docs[0].id;
+          contentDiv.innerHTML = `
+            <div style="padding: 1rem; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 8px;">
+              <p style="margin: 0 0 0.4rem 0; font-weight: 600; color: #856404;">Request Pending</p>
+              <p style="margin: 0 0 0.75rem 0; color: #856404; font-size: 0.9rem; line-height: 1.5;">Your request to link to <strong>${req.teamName}</strong> as <strong>${req.rosterName}</strong> is awaiting captain approval.</p>
+              <button onclick="window.cancelLinkRequest('${reqId}')" style="padding: 0.4rem 0.875rem; background: #6c757d; color: white; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer;">Cancel Request</button>
+            </div>
+          `;
+          return;
+        }
+      } catch (e) { console.error('Error checking pending link request:', e); }
+
+      // Show search form
+      contentDiv.innerHTML = `
+        <p style="margin: 0 0 0.75rem 0; color: #555; font-size: 0.95rem; line-height: 1.5;">If your captain has registered a team and added your name to the roster, you can link your account to it here. Your captain will need to approve the request.</p>
+        <div style="display: flex; gap: 0.75rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+          <input type="text" id="teamNameSearch" placeholder="Enter your exact team name" style="flex: 1; min-width: 180px; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 0.95rem;" />
+          <button onclick="window.searchTeamForLink()" style="padding: 0.75rem 1.25rem; background: #CFB991; color: #000; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; white-space: nowrap;">Search</button>
+        </div>
+        <div id="teamSearchResults"></div>
+      `;
+    }
+
+    window.searchTeamForLink = async function() {
+      const input = document.getElementById('teamNameSearch');
+      const resultsDiv = document.getElementById('teamSearchResults');
+      const teamName = input?.value.trim();
+      if (!teamName) {
+        resultsDiv.innerHTML = '<p style="color: #e74c3c; font-size: 0.9rem; margin: 0;">Please enter a team name.</p>';
+        return;
+      }
+      resultsDiv.innerHTML = '<p style="color: #666; font-size: 0.9rem; margin: 0;">Searching...</p>';
+      try {
+        const q = query(collection(db, 'teams'), where('teamName', '==', teamName));
+        const snap = await getDocs(q);
+        if (snap.empty) {
+          resultsDiv.innerHTML = '<p style="color: #e74c3c; font-size: 0.9rem; margin: 0;">No team found with that exact name. Check the spelling and try again.</p>';
+          return;
+        }
+        const teamDoc = snap.docs[0];
+        const teamData = teamDoc.data();
+        const players = teamData.players || [];
+        if (players.length === 0) {
+          resultsDiv.innerHTML = '<p style="color: #666; font-size: 0.9rem; margin: 0;">This team has no players listed yet. Ask your captain to add you first.</p>';
+          return;
+        }
+        window._foundTeam = { id: teamDoc.id, ...teamData };
+        let html = `
+          <div style="background: #f8f9fa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; margin-top: 0.5rem;">
+            <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #000;">Found: ${teamData.teamName}</p>
+            <p style="margin: 0 0 0.75rem 0; color: #666; font-size: 0.9rem;">Select your name from the roster to send a link request:</p>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              ${players.map(player => `
+                <button data-player="${player.replace(/"/g, '&quot;')}" onclick="window.sendLinkRequest(this.getAttribute('data-player'))" style="padding: 0.6rem 1rem; background: white; color: #000; border: 2px solid #CFB991; border-radius: 8px; font-size: 0.95rem; font-weight: 500; cursor: pointer; text-align: left;" onmouseover="this.style.background='#faf7f2'" onmouseout="this.style.background='white'">${player}</button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+        resultsDiv.innerHTML = html;
+      } catch (e) {
+        console.error('Error searching for team:', e);
+        resultsDiv.innerHTML = '<p style="color: #e74c3c; font-size: 0.9rem; margin: 0;">Error searching. Please try again.</p>';
+      }
+    };
+
+    window.sendLinkRequest = async function(rosterName) {
+      const user = window._linkUser;
+      const team = window._foundTeam;
+      if (!user || !team) return;
+      if (!confirm(`Send a link request to join "${team.teamName}" as "${rosterName}"?\n\nYour captain will need to approve this.`)) return;
+      try {
+        await addDoc(collection(db, 'team_link_requests'), {
+          playerUid: user.uid,
+          playerEmail: user.email,
+          playerDisplayName: user.displayName || user.email.split('@')[0],
+          teamId: team.id,
+          teamName: team.teamName,
+          rosterName: rosterName,
+          captainUid: team.captainUid || '',
+          captainEmail: team.captainEmail || '',
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+        // Notify the captain
+        await addDoc(collection(db, 'notifications'), {
+          userId: team.captainEmail || team.captainUid,
+          type: 'link_request',
+          message: `${user.displayName || user.email.split('@')[0]} wants to link their account to your team "${team.teamName}" as "${rosterName}". Go to My Team to approve or deny.`,
+          teamId: team.id,
+          teamName: team.teamName,
+          read: false,
+          createdAt: new Date().toISOString()
+        });
+        loadLinkToTeam(user);
+      } catch (e) {
+        console.error('Error sending link request:', e);
+        alert('Failed to send request. Please try again.');
+      }
+    };
+
+    window.cancelLinkRequest = async function(requestId) {
+      if (!confirm('Cancel your link request?')) return;
+      try {
+        await updateDoc(doc(db, 'team_link_requests', requestId), {
+          status: 'cancelled',
+          updatedAt: new Date().toISOString()
+        });
+        loadLinkToTeam(window._linkUser);
+      } catch (e) {
+        console.error('Error cancelling link request:', e);
+        alert('Failed to cancel request. Please try again.');
+      }
+    };
 
     // Navigation and button handlers
     document.addEventListener('DOMContentLoaded', () => {
@@ -498,6 +645,17 @@
               <label style="display: block; color: #666; font-size: 0.85rem; margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Current Team</label>
               <div id="profileTeamDetail" style="color: #0a1122; font-size: 1.1rem; font-weight: 600;">Loading...</div>
             </div>
+          </div>
+        </div>
+
+        <!-- Link to Team Section (shown only when player has no team) -->
+        <div id="linkToTeamSection" style="display: none; background: linear-gradient(135deg, #f8f5f0, #faf7f2); border: 2px solid var(--brand); border-radius: 15px; padding: 2rem; box-shadow: 0 4px 20px rgba(207, 185, 145, 0.15);">
+          <h3 style="color: #0a1122; margin: 0 0 0.5rem 0; font-size: 1.3rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 700;">
+            <span style="font-size: 1.4rem;">🔗</span>
+            Link to Your Team
+          </h3>
+          <div id="linkToTeamContent">
+            <!-- Filled by loadLinkToTeam() -->
           </div>
         </div>
 

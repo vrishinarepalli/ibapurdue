@@ -5,8 +5,8 @@
  */
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc, query, where, deleteField } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+import { getFirestore, connectFirestoreEmulator, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc, query, where, deleteField, arrayUnion } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getAuth, connectAuthEmulator, signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken, setPersistence, browserLocalPersistence } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js';
 
 const firebaseConfig = {
@@ -35,6 +35,14 @@ setPersistence(auth, browserLocalPersistence).then(() => {
   console.error('❌ Failed to set persistence:', error);
 });
 
+// Connect to local emulators when running Playwright tests
+// Playwright injects window.__FIREBASE_EMULATOR__ = true via addInitScript before page load
+if (window.__FIREBASE_EMULATOR__) {
+  connectFirestoreEmulator(db, 'localhost', 8080);
+  connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+  console.log('🧪 Connected to Firebase Emulators');
+}
+
 // Export Firebase instances and imports for global access
 export function initializeFirebase() {
   // Make Firebase available globally for legacy code compatibility
@@ -42,7 +50,7 @@ export function initializeFirebase() {
   window.auth = auth;
   window.functions = functions;
   window.ADMIN_UID = ADMIN_UID;
-  window.firestoreImports = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc, query, where, deleteField };
+  window.firestoreImports = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDoc, setDoc, query, where, deleteField, arrayUnion };
   window.authImports = { signInWithEmailAndPassword, signOut, onAuthStateChanged, signInWithCustomToken, setPersistence, browserLocalPersistence };
   window.functionsImports = { httpsCallable };
 

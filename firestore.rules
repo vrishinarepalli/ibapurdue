@@ -78,10 +78,11 @@ service cloud.firestore {
       // Anyone can read teams
       allow read: if true;
 
-      // Only authenticated users can create teams
-      allow create: if isSignedIn() &&
-                      request.resource.data.captain == request.auth.uid &&
-                      request.resource.data.members[0] == request.auth.uid;
+      // Team captain creates their own entry; admin can create on behalf of any team
+      allow create: if isAdmin() ||
+                      (isSignedIn() &&
+                       request.resource.data.captain == request.auth.uid &&
+                       request.resource.data.members[0] == request.auth.uid);
 
       // Only team captain or admin can update/delete team
       allow update: if isTeamCaptain(teamId) || isAdmin();
@@ -160,20 +161,28 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Tournament entries (Winter Mini Tournament)
+    // Tournament entries (Spring Tournament)
     match /tournament_entries/{entryId} {
-      // Anyone can read active entries
-      allow read: if resource.data.status == 'active';
+      // Owner or admin can read
+      allow read: if (request.auth != null && request.auth.uid == entryId) || isAdmin();
 
-      // Anyone can create entries (no authentication required)
-      // Add size limit to prevent abuse
-      allow create: if request.resource.data.size() < 10000;
+      // Only authenticated user can create their own entry (doc ID must match uid)
+      allow create: if request.auth != null
+                    && request.auth.uid == entryId
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.status == 'pending';
 
-      // Only admins can update entries
-      allow update: if isAdmin();
+      // Owner can update (edits + withdraw). Admin can update (approve/reject).
+      allow update: if (request.auth != null && request.auth.uid == entryId) || isAdmin();
 
-      // Only admins can delete entries
+      // Only admin can delete
       allow delete: if isAdmin();
+
+      // History subcollection — owner creates, owner + admin reads
+      match /history/{historyId} {
+        allow read: if (request.auth != null && request.auth.uid == entryId) || isAdmin();
+        allow create: if request.auth != null && request.auth.uid == entryId;
+      }
     }
 
     // Free agents collection (players looking for teams)
@@ -229,6 +238,26 @@ service cloud.firestore {
       // Allow creation with size limits to prevent abuse
       allow create: if request.resource.data.size() < 10000; // Limit message size
       allow read, update, delete: if isAdmin();
+    }
+
+    // Team link requests (players linking their account to a roster name)
+    match /team_link_requests/{requestId} {
+      allow read: if isSignedIn() && (
+        resource.data.playerUid == request.auth.uid ||
+        resource.data.captainUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isSignedIn() && request.resource.data.playerUid == request.auth.uid;
+      allow update: if isSignedIn() && (
+        resource.data.captainUid == request.auth.uid ||
+        resource.data.playerUid == request.auth.uid ||
+        isAdmin()
+      );
+      allow delete: if isSignedIn() && (
+        resource.data.playerUid == request.auth.uid ||
+        resource.data.captainUid == request.auth.uid ||
+        isAdmin()
+      );
     }
 
     // System collection - read by anyone, write restricted to prevent abuse
