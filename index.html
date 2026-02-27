@@ -2775,7 +2775,7 @@
         let userTeam = null;
         let userIsInFreeAgency = false;
         let userHasTeam = false;
-        let isAdmin = window.currentUserData?.roles?.includes('admin') || false;
+        let isAdmin = user ? await isApprovedAdmin(user.email) : false;
 
         // Check if user has a team
         if (user) {
@@ -3055,7 +3055,8 @@
     window.removeFreeAgent = async function(agentId, playerName) {
       try {
         // Check if user is admin
-        if (!window.currentUserData?.roles?.includes('admin')) {
+        const currentUser = window.auth?.currentUser;
+        if (!currentUser || !(await isApprovedAdmin(currentUser.email))) {
           alert('Only admins can remove free agents.');
           return;
         }
