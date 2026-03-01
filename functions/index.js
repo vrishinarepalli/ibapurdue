@@ -1,6 +1,7 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
+const Anthropic = require('@anthropic-ai/sdk');
 const {
   generateRegistrationOptions,
   verifyRegistrationResponse,
@@ -431,6 +432,105 @@ exports.checkAdminStatus = functions.https.onCall(async (data, context) => {
     uid: context.auth.uid,
     authMethod: context.auth.token?.authMethod || 'unknown',
   };
+});
+
+/**
+ * Claude AI Assistant
+ * Secure proxy that calls the Anthropic Claude API server-side so the API key
+ * is never exposed to the browser.
+ *
+ * Rate limits (per authenticated user):
+ *   - Max 5 requests per hour
+ *   - Max 20 requests per day
+ *
+ * Setup: firebase functions:config:set anthropic.api_key="sk-ant-..."
+ */
+exports.claudeAssistant = functions.https.onCall(async (data, context) => {
+  // Require authentication — prevents anonymous abuse
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'You must be signed in to use the AI assistant.'
+    );
+  }
+
+  const { message } = data;
+
+  if (!message || typeof message !== 'string' || message.trim().length === 0) {
+    throw new functions.https.HttpsError('invalid-argument', 'Message is required');
+  }
+
+  // ── Rate limiting ──────────────────────────────────────────────────────────
+  const HOURLY_LIMIT = 5;
+  const DAILY_LIMIT  = 20;
+  const uid          = context.auth.uid;
+  const now          = Date.now();
+  const oneHourAgo   = now - 60 * 60 * 1000;
+  const oneDayAgo    = now - 24 * 60 * 60 * 1000;
+  const rateLimitRef = db.collection('rate_limits').doc(uid);
+
+  try {
+    const rateLimitDoc = await rateLimitRef.get();
+    const requests = rateLimitDoc.exists ? (rateLimitDoc.data().requests || []) : [];
+
+    // Keep only requests within the last 24 hours
+    const recent = requests.filter(ts => ts > oneDayAgo);
+
+    const hourlyCount = recent.filter(ts => ts > oneHourAgo).length;
+    const dailyCount  = recent.length;
+
+    if (hourlyCount >= HOURLY_LIMIT) {
+      throw new functions.https.HttpsError(
+        'resource-exhausted',
+        `Hourly limit reached (${HOURLY_LIMIT} requests/hour). Please try again later.`
+      );
+    }
+    if (dailyCount >= DAILY_LIMIT) {
+      throw new functions.https.HttpsError(
+        'resource-exhausted',
+        `Daily limit reached (${DAILY_LIMIT} requests/day). Please try again tomorrow.`
+      );
+    }
+
+    // Record this request
+    await rateLimitRef.set({ requests: [...recent, now] });
+  } catch (error) {
+    // Re-throw rate limit errors, log anything else
+    if (error.code === 'functions/resource-exhausted') throw error;
+    console.error('Rate limit check error:', error);
+  }
+  // ──────────────────────────────────────────────────────────────────────────
+
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new functions.https.HttpsError(
+      'failed-precondition',
+      'Claude API key not configured.'
+    );
+  }
+
+  try {
+    const client = new Anthropic({ apiKey });
+
+    const response = await client.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 512,
+      system: `You are the IBA Assistant — a helpful AI for the Indian Basketball Association at Purdue University, a student-run intramural basketball league. Help users with:
+- Tournament schedules, game times, and court locations
+- Team info, rosters, standings, and the bracket (Gold Division and other brackets)
+- How to register a team as captain or join an existing team as a player
+- Fair play policies and rules (note: deliberately losing to manipulate bracket seeding leads to disqualification)
+- Payment info ($150 prize for each division champion)
+- General basketball and tournament FAQs
+Be concise, friendly, and encouraging. For live/real-time data (today's scores, current standings), tell users to check the Schedule or Bracket tabs on the site.`,
+      messages: [{ role: 'user', content: message.trim() }]
+    });
+
+    return { reply: response.content[0].text };
+  } catch (error) {
+    console.error('Claude API error:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to get AI response');
+  }
 });
 
 /**

@@ -44,6 +44,12 @@
   <!-- Modular JavaScript - All features organized in js/ directory -->
   <script type="module" src="js/app.js"></script>
 
+  <!-- Claude AI Assistant (commented out — pending API key setup) -->
+  <!-- <script type="module" src="js/claude-assistant.js"></script> -->
+
+  <!-- Claude AI Frontend Enhancements (FAQ search, team names, contact helper, bio generator) -->
+  <script type="module" src="js/claude-enhancements.js"></script>
+
   <!-- Page-level animations -->
   <script>
     (function() {
@@ -443,6 +449,7 @@
         <!-- <button role="tab" id="tab-previous" aria-selected="false" aria-controls="panel-previous" style="display: none;">Previous Tournaments</button> -->
         <button role="tab" id="tab-myteams" aria-selected="false" aria-controls="panel-myteams" style="display: none;" class="player-only">My Teams</button>
         <button role="tab" id="tab-adminrequests" aria-selected="false" aria-controls="panel-adminrequests" style="display: none;" class="admin-only">Admin Requests</button>
+        <button role="tab" id="tab-payments" aria-selected="false" aria-controls="panel-payments" style="display: none;" class="admin-only">Payments</button>
         <a href="about.html" style="text-decoration: none;">
           <button role="tab" style="background: transparent; border: none; cursor: pointer;">About Us</button>
         </a>
@@ -548,7 +555,8 @@
                 IBA is committed to maintaining fair and competitive play throughout the tournament. To ensure balanced competition:
                 <ul style="margin: 0.5rem 0 0 1.25rem; padding: 0;">
                   <li style="margin-bottom: 0.25rem;">IBA may ask teams to split up if their skill level is significantly higher than other teams.</li>
-                  <li>Teams should refrain from having multiple players who have played basketball at any level higher than high school.</li>
+                  <li style="margin-bottom: 0.25rem;">Teams should refrain from having multiple players who have played basketball at any level higher than high school.</li>
+                  <li>Any team found to be purposefully losing games in order to be placed into the Gold Division bracket will be immediately disqualified from the tournament.</li>
                 </ul>
               </div>
             </div>
@@ -1307,6 +1315,24 @@
         </div>
       </section>
 
+      <!-- Payments Panel (admin only) -->
+      <section id="panel-payments" class="tabpanel" role="tabpanel" aria-labelledby="tab-payments">
+        <div style="margin-bottom: 2rem;">
+          <h2 style="color: var(--brand); margin-bottom: 0.5rem;">Team Payments</h2>
+          <p style="color: var(--muted); margin-bottom: 2rem;">Mark teams as paid or unpaid. Changes are saved immediately.</p>
+
+          <div style="margin-bottom: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+            <button id="payFilterAll" class="admin-submit" style="padding: 0.5rem 1rem;">All Teams</button>
+            <button id="payFilterUnpaid" class="admin-submit" style="padding: 0.5rem 1rem; background: #dc2626;">Unpaid</button>
+            <button id="payFilterPaid" class="admin-submit" style="padding: 0.5rem 1rem; background: #16a34a;">Paid</button>
+          </div>
+
+          <div id="paymentsContainer" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.25rem;">
+            <p style="color: var(--muted);">Loading teams...</p>
+          </div>
+        </div>
+      </section>
+
       <section id="panel-faq" class="tabpanel" role="tabpanel" aria-labelledby="tab-faq">
         <div class="faq">
           <details>
@@ -1323,8 +1349,7 @@
           </details>
           <details>
             <summary>What are the game rules and scoring?</summary>
-            <p><strong>Regular Season:</strong> Games are 20 minutes, played to 11 points using 1s and 2s (1 point inside the arc, 2 points outside). No halftime.</p>
-            <p><strong>Playoffs:</strong> Games are 30 minutes, played to 21 points with a halftime break at 11 points.</p>
+            <p>Games are 30 minutes and played to 21 points using 1s and 2s (1 point inside the arc, 2 points outside). Halftime is optional — if both teams and time allow, teams can take a break at 11. If the gym is running short on time, scoring switches to 2s and 3s to speed things up.</p>
           </details>
           <details>
             <summary>How do I know what jersey colors to wear?</summary>
@@ -1641,8 +1666,8 @@
       </div>
     </div>
 
-    <!-- Admin button -->
-    <button class="admin-btn" id="adminBtn">Admin</button>
+    <!-- Admin button (links to admin dashboard for approved admins) -->
+    <button class="admin-btn" id="adminBtn" style="display:none;" onclick="window.location.href='iba-admin.html'">Admin</button>
 
     <!-- Admin login modal -->
     <div id="adminModal" class="admin-modal">
@@ -2004,7 +2029,8 @@
           players: players,
           createdAt: new Date().toISOString(),
           tournament: 'spring-2026',
-          status: 'active'
+          status: 'active',
+          paymentStatus: 'unpaid'
         };
 
         const { collection, addDoc, doc, setDoc, query, where, getDocs, updateDoc } = window.firestoreImports;
@@ -2117,7 +2143,8 @@
                     <!-- Team Name Section -->
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                       <div style="flex: 1;">
-                        <h3 id="displayTeamName" style="margin: 0; color: #000; font-weight: 700; font-size: 1.5rem;">${teamData.teamName}</h3>
+                        <h3 id="displayTeamName" style="margin: 0 0 0.25rem 0; color: #000; font-weight: 700; font-size: 1.5rem;">${teamData.teamName}</h3>
+                        <p style="margin: 0; font-size: 0.85rem; font-weight: 700; color: ${teamData.paymentStatus === 'paid' ? '#16a34a' : '#dc2626'};">Payment: ${teamData.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}</p>
                         <div id="editTeamNameForm" style="display: none;">
                           <input type="text" id="editTeamNameInput" value="${teamData.teamName}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1.1rem; font-weight: 700;" />
                           <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
@@ -2215,12 +2242,6 @@
 
                     <!-- Captain Actions -->
                     ${(userData.isCaptain || teamData.captainUid === window.auth.currentUser?.uid) ? `
-                      <!-- Link Requests -->
-                      <div id="linkRequestsSection" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid #e5e7eb;">
-                        <h4 style="margin: 0 0 0.5rem 0; color: #000; font-weight: 700;">Link Requests</h4>
-                        <p style="margin: 0 0 0.75rem 0; color: #666; font-size: 0.9rem;">Players can request to link their Google account to a roster name. Approve to verify them as a team member.</p>
-                        <div id="linkRequestsList" style="color: #666; font-size: 0.9rem;">Loading...</div>
-                      </div>
                       <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid #e5e7eb;">
                         <h4 style="margin: 0 0 1rem 0; color: #000; font-weight: 700;">Captain Actions</h4>
                         <button onclick="deleteTeam('${userData.teamId}', '${teamData.teamName}')" style="padding: 0.75rem 1.5rem; background: #dc3545; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#c82333'" onmouseout="this.style.background='#dc3545'">
@@ -2235,10 +2256,6 @@
                 </div>
               `;
 
-              // Load link requests for captain
-              if (userData.isCaptain || teamData.captainUid === window.auth.currentUser?.uid) {
-                setTimeout(() => loadLinkRequests(userData.teamId), 0);
-              }
             }
 
             // Free agency form visibility is handled in loadFreeAgents()
@@ -2659,7 +2676,8 @@
                 </div>
                 <div style="flex: 1;">
                   <h4 style="margin: 0 0 0.25rem 0; color: #000; font-weight: 700; font-size: 1.1rem;">${team.teamName}</h4>
-                  <p style="margin: 0; color: #666; font-size: 0.85rem;">Captain: ${team.captainName || team.captainEmail}</p>
+                  <p style="margin: 0 0 0.2rem 0; color: #666; font-size: 0.85rem;">Captain: ${team.captainName || team.captainEmail}</p>
+                  <p style="margin: 0; font-size: 0.8rem; font-weight: 700; color: ${team.paymentStatus === 'paid' ? '#16a34a' : '#dc2626'};">${team.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}</p>
                 </div>
               </div>
               <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb;">
@@ -3352,6 +3370,8 @@
         if (quickAddSection) quickAddSection.style.display = 'block';
         const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
         if (bulkImportBtn) bulkImportBtn.style.display = 'block';
+        const paymentsTabSession = document.getElementById('tab-payments');
+        if (paymentsTabSession) paymentsTabSession.style.display = 'block';
       } else {
         // Clear expired session
         sessionStorage.removeItem('adminSessionToken');
@@ -3391,6 +3411,8 @@
         if (quickAddSection) quickAddSection.style.display = 'block';
         const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
         if (bulkImportBtn) bulkImportBtn.style.display = 'block';
+        const paymentsTabGmail = document.getElementById('tab-payments');
+        if (paymentsTabGmail) paymentsTabGmail.style.display = 'block';
 
         // Store session info
         sessionStorage.setItem('adminSessionToken', 'gmail-' + Date.now());
@@ -3660,6 +3682,8 @@
       if (quickAddSection) quickAddSection.style.display = 'none';
       const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
       if (bulkImportBtn) bulkImportBtn.style.display = 'none';
+      const paymentsTabLogout = document.getElementById('tab-payments');
+      if (paymentsTabLogout) paymentsTabLogout.style.display = 'none';
 
       // Clear session storage
       sessionStorage.removeItem('adminSessionToken');
@@ -3707,6 +3731,8 @@
           if (quickAddSection) quickAddSection.style.display = 'block';
           const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
           if (bulkImportBtn) bulkImportBtn.style.display = 'block';
+          const paymentsTabBio = document.getElementById('tab-payments');
+          if (paymentsTabBio) paymentsTabBio.style.display = 'block';
 
           // Store session info
           sessionStorage.setItem('adminSessionToken', 'biometric-' + Date.now());
@@ -3825,6 +3851,8 @@
         if (quickAddSection) quickAddSection.style.display = 'block';
         const bulkImportBtn = document.getElementById('bulkImportBracketBtn');
         if (bulkImportBtn) bulkImportBtn.style.display = 'block';
+        const paymentsTabEmail = document.getElementById('tab-payments');
+        if (paymentsTabEmail) paymentsTabEmail.style.display = 'block';
 
         // Store session info
         sessionStorage.setItem('adminSessionToken', 'email-' + Date.now());
@@ -5853,6 +5881,82 @@
       loadAdminRequests(currentFilter);
     });
 
+    // ── Payments panel ────────────────────────────────────────────────────────
+    let payCurrentFilter = 'all';
+
+    async function loadPayments(filter = 'all') {
+      const container = document.getElementById('paymentsContainer');
+      if (!container) return;
+      container.innerHTML = '<p style="color: var(--muted);">Loading...</p>';
+
+      const { collection, query, where, getDocs, doc, updateDoc } = window.firestoreImports;
+      try {
+        const q = query(
+          collection(window.db, 'teams'),
+          where('tournament', '==', 'spring-2026'),
+          where('status', '==', 'active')
+        );
+        const snap = await getDocs(q);
+
+        let teams = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        if (filter === 'paid')   teams = teams.filter(t => t.paymentStatus === 'paid');
+        if (filter === 'unpaid') teams = teams.filter(t => t.paymentStatus !== 'paid');
+
+        if (teams.length === 0) {
+          container.innerHTML = '<p style="color: var(--muted); grid-column: 1/-1;">No teams found.</p>';
+          return;
+        }
+
+        container.innerHTML = teams.map(team => {
+          const isPaid = team.paymentStatus === 'paid';
+          return `
+            <div style="background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 2px solid ${isPaid ? '#bbf7d0' : '#fecaca'}; display: flex; flex-direction: column; gap: 0.75rem;">
+              <div>
+                <p style="margin: 0 0 0.2rem 0; font-weight: 700; font-size: 1rem; color: #000;">${team.teamName}</p>
+                <p style="margin: 0 0 0.2rem 0; font-size: 0.85rem; color: #666;">Captain: ${team.captainName || team.captainEmail}</p>
+                <p style="margin: 0; font-size: 0.85rem; font-weight: 700; color: ${isPaid ? '#16a34a' : '#dc2626'};">${isPaid ? 'Paid' : 'Unpaid'}</p>
+              </div>
+              <button
+                onclick="togglePayment('${team.id}', '${isPaid ? 'unpaid' : 'paid'}')"
+                style="padding: 0.5rem 1rem; background: ${isPaid ? '#dc2626' : '#16a34a'}; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.875rem;">
+                Mark as ${isPaid ? 'Unpaid' : 'Paid'}
+              </button>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error('Error loading payments:', e);
+        container.innerHTML = '<p style="color: #dc2626;">Failed to load teams.</p>';
+      }
+    }
+
+    window.togglePayment = async function(teamId, newStatus) {
+      const { doc, updateDoc } = window.firestoreImports;
+      try {
+        await updateDoc(doc(window.db, 'teams', teamId), { paymentStatus: newStatus });
+        loadPayments(payCurrentFilter);
+      } catch (e) {
+        console.error('Error updating payment status:', e);
+        alert('Failed to update payment status. Please try again.');
+      }
+    };
+
+    document.getElementById('payFilterAll')?.addEventListener('click', () => {
+      payCurrentFilter = 'all';
+      loadPayments('all');
+    });
+    document.getElementById('payFilterUnpaid')?.addEventListener('click', () => {
+      payCurrentFilter = 'unpaid';
+      loadPayments('unpaid');
+    });
+    document.getElementById('payFilterPaid')?.addEventListener('click', () => {
+      payCurrentFilter = 'paid';
+      loadPayments('paid');
+    });
+    document.getElementById('tab-payments')?.addEventListener('click', () => {
+      loadPayments(payCurrentFilter);
+    });
+
     // Auth state listener for user profile display
     const { onAuthStateChanged, signOut } = window.authImports;
     onAuthStateChanged(auth, async (user) => {
@@ -5983,15 +6087,10 @@
           // Check if user is approved admin (from Firestore)
           const isAdmin = await isApprovedAdmin(user.email);
 
-          // Show/hide admin button based on admin status
+          // Show Admin button for approved admins (links to /iba-admin)
           const adminBtn = document.getElementById('adminBtn');
           if (adminBtn) {
-            if (isAdmin) {
-              adminBtn.style.display = 'flex';
-              adminBtn.textContent = 'Admin';
-            } else {
-              adminBtn.style.display = 'none';
-            }
+            adminBtn.style.display = isAdmin ? 'flex' : 'none';
           }
         } catch (error) {
           console.error('Error checking user roles:', error);

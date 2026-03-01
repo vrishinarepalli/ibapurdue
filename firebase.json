@@ -9,6 +9,10 @@
     ],
     "rewrites": [
       {
+        "source": "/iba-admin",
+        "destination": "/iba-admin.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

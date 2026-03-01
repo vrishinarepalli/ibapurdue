@@ -8,6 +8,17 @@ ui-debug.log
 functions/node_modules/
 functions/.runtimeconfig.json
 functions/package-lock.json
+functions/.env
+functions/.env.*
+functions/.env.example
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Test artifacts
+playwright-report/
+test-results/
 
 # Logs
 *.log
