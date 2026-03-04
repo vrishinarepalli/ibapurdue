@@ -1723,6 +1723,15 @@
                   onblur="this.style.borderColor='rgba(207, 185, 145, 0.4)'; this.style.boxShadow='none'"></textarea>
               </div>
 
+              <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; color: #111111; font-weight: 600; margin-bottom: 0.5rem;">Referred by Team <span style="font-weight: 400; color: #888;">(Optional)</span></label>
+                <input type="text" id="tournamentReferredBy" placeholder="Enter the exact team name that referred you"
+                  style="width: 100%; padding: 0.75rem; background: #ffffff; border: 2px solid rgba(207, 185, 145, 0.4); border-radius: 8px; color: #111111; font-size: 1rem; transition: all 0.2s;"
+                  onfocus="this.style.borderColor='var(--brand)'; this.style.boxShadow='0 0 0 3px rgba(207, 185, 145, 0.1)'"
+                  onblur="this.style.borderColor='rgba(207, 185, 145, 0.4)'; this.style.boxShadow='none'" />
+                <p id="referralStatus" style="margin-top: 0.35rem; font-size: 0.82rem; min-height: 1.1rem;"></p>
+              </div>
+
               <button type="submit" id="submitTournamentBtn"
                 style="width: 100%; padding: 1rem; background: linear-gradient(135deg, var(--brand), #d4be9c); color: #000; font-weight: 700; font-size: 1.1rem; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(207, 185, 145, 0.3);"
                 onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(207, 185, 145, 0.4)'"
@@ -6514,6 +6523,43 @@
       }
     }
 
+    // Referral field live validation
+    let referralValid = true;
+    let referralDebounceTimer;
+    const referralInput  = document.getElementById('tournamentReferredBy');
+    const referralStatus = document.getElementById('referralStatus');
+    if (referralInput) {
+      referralInput.addEventListener('input', () => {
+        clearTimeout(referralDebounceTimer);
+        const val = referralInput.value.trim();
+        if (!val) {
+          referralStatus.textContent = '';
+          referralValid = true;
+          return;
+        }
+        referralStatus.textContent = 'Checking…';
+        referralStatus.style.color = '#6b7280';
+        referralDebounceTimer = setTimeout(async () => {
+          try {
+            const { collection, query, where, getDocs } = window.firestoreImports;
+            const snap = await getDocs(query(
+              collection(window.db, 'tournament_entries'),
+              where('teamName', '==', val)
+            ));
+            if (!snap.empty) {
+              referralStatus.textContent = '✓ Team found';
+              referralStatus.style.color = '#16a34a';
+              referralValid = true;
+            } else {
+              referralStatus.textContent = 'No registered team with that name — check spelling.';
+              referralStatus.style.color = '#dc2626';
+              referralValid = false;
+            }
+          } catch { referralStatus.textContent = ''; referralValid = true; }
+        }, 500);
+      });
+    }
+
     // Submit tournament entry
     const tournamentForm = document.getElementById('springTournamentForm');
     if (tournamentForm) {
@@ -6537,6 +6583,13 @@
         const player2 = document.getElementById('tournamentPlayer2').value.trim();
         const player3 = document.getElementById('tournamentPlayer3').value.trim();
         const notes = document.getElementById('tournamentNotes').value.trim();
+        const referredBy = document.getElementById('tournamentReferredBy')?.value.trim() || '';
+
+        // Block if referral name entered but doesn't match any team
+        if (referredBy && !referralValid) {
+          alert('The referral team name doesn\'t match any registered team. Please check the spelling or leave it blank.');
+          return;
+        }
 
         // Build player names string
         const playerNamesArray = [player1, player2];
@@ -6563,7 +6616,7 @@
               await addDoc(historyRef, { ...oldData, savedAt: now });
               const prevEditCount = oldData.editCount || 0;
               await setDoc(userDocRef, {
-                teamName, captainName, captainEmail, captainInstagram, playerNames, notes,
+                teamName, captainName, captainEmail, captainInstagram, playerNames, notes, referredBy,
                 userId, status: oldData.status || 'pending',
                 createdAt: oldData.createdAt || now,
                 updatedAt: now,
@@ -6583,7 +6636,7 @@
               }
             }
             await setDoc(userDocRef, {
-              teamName, captainName, captainEmail, captainInstagram, playerNames, notes,
+              teamName, captainName, captainEmail, captainInstagram, playerNames, notes, referredBy,
               userId, status: 'pending',
               createdAt: now, updatedAt: now, editCount: 0
             });
@@ -6630,6 +6683,8 @@
             document.getElementById('tournamentPlayer3').value = players[2] || '';
 
             document.getElementById('tournamentNotes').value = data.notes || '';
+            const rbField = document.getElementById('tournamentReferredBy');
+            if (rbField) rbField.value = data.referredBy || '';
 
             // Show form, hide status
             document.getElementById('userSubmissionStatus').style.display = 'none';
