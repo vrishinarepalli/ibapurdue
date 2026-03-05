@@ -718,6 +718,15 @@
                   </div>
                 </div>
 
+                <!-- Referral -->
+                <div style="margin-bottom: 1.5rem;">
+                  <label for="referredByTeam" style="display: block; margin-bottom: 0.5rem; color: #000; font-weight: 600; font-size: 0.95rem;">Referred by Team <span style="font-weight: 400; color: #888;">(Optional)</span></label>
+                  <input type="text" id="referredByTeam" name="referredByTeam"
+                    style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1rem; transition: border-color 0.2s;"
+                    placeholder="Enter the exact team name that referred you" />
+                  <p id="createReferralStatus" style="margin-top: 0.35rem; font-size: 0.82rem; min-height: 1.1rem;"></p>
+                </div>
+
                 <!-- Submit Button -->
                 <button type="submit" style="width: 100%; padding: 1rem; background: linear-gradient(135deg, #CFB991 0%, #A89968 100%); color: #000; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; box-shadow: 0 4px 12px rgba(207, 185, 145, 0.3);">
                   Create Team
@@ -1997,6 +2006,40 @@
       }, 200);
     };
 
+    // Referral validation for createTeamForm
+    let createReferralValid = true;
+    let createReferralTimer;
+    const createReferralInput  = document.getElementById('referredByTeam');
+    const createReferralStatus = document.getElementById('createReferralStatus');
+    if (createReferralInput) {
+      createReferralInput.addEventListener('input', () => {
+        clearTimeout(createReferralTimer);
+        const val = createReferralInput.value.trim();
+        if (!val) { createReferralStatus.textContent = ''; createReferralValid = true; return; }
+        createReferralStatus.textContent = 'Checking…';
+        createReferralStatus.style.color = '#6b7280';
+        createReferralTimer = setTimeout(async () => {
+          try {
+            const { collection, query, where, getDocs } = window.firestoreImports;
+            const snap = await getDocs(query(
+              collection(window.db, 'teams'),
+              where('teamName', '==', val),
+              where('tournament', '==', 'spring-2026')
+            ));
+            if (!snap.empty) {
+              createReferralStatus.textContent = '✓ Team found';
+              createReferralStatus.style.color = '#16a34a';
+              createReferralValid = true;
+            } else {
+              createReferralStatus.textContent = 'No registered team with that name — check spelling.';
+              createReferralStatus.style.color = '#dc2626';
+              createReferralValid = false;
+            }
+          } catch { createReferralStatus.textContent = ''; createReferralValid = true; }
+        }, 500);
+      });
+    }
+
     // Handle create team form submission
     window.handleCreateTeam = async function(event) {
       event.preventDefault();
@@ -2027,6 +2070,12 @@
           throw new Error('Please add at least the captain');
         }
 
+        // Validate referral if provided
+        const referredBy = (form.referredByTeam?.value || '').trim();
+        if (referredBy && !createReferralValid) {
+          throw new Error('The referral team name doesn\'t match any registered team. Please check the spelling or leave it blank.');
+        }
+
         // Create team document
         const teamData = {
           teamName: form.teamName.value.trim(),
@@ -2035,6 +2084,7 @@
           captainUid: user.uid,
           instagram: form.instagramHandle.value.trim() || '',
           groupme: form.groupmeLink.value.trim() || '',
+          referredBy: referredBy || '',
           players: players,
           createdAt: new Date().toISOString(),
           tournament: 'spring-2026',
