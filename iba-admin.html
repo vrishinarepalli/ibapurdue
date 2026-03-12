@@ -92,7 +92,7 @@
     .nav-item:hover  { color: #fff; background: rgba(255,255,255,0.05); }
     .nav-item.active { color: var(--brand); border-left-color: var(--brand); background: rgba(207,185,145,0.08); }
     .nav-icon { width: 20px; text-align: center; font-size: 1rem; }
-    #reqBadge { background: var(--warn); color: #fff; border-radius: 10px; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.45rem; margin-left: auto; display: none; }
+    #reqBadge, #reqBadgeMobile { background: var(--warn); color: #fff; border-radius: 10px; font-size: 0.7rem; font-weight: 700; padding: 0.1rem 0.45rem; margin-left: auto; display: none; }
 
     /* ── Content ───────────────────────────────────────────────────────── */
     main.content { flex: 1; padding: 2rem; max-width: 1100px; }
@@ -239,8 +239,36 @@
     #toast.ok  { border-left: 4px solid var(--success); }
     #toast.err { border-left: 4px solid var(--danger); }
 
+    /* ── Hamburger ─────────────────────────────────────────────────────── */
+    #hamburgerBtn {
+      display: none; background: none; border: none; cursor: pointer;
+      padding: 0.4rem; color: #fff; flex-direction: column; gap: 5px; align-items: center; justify-content: center;
+    }
+    #hamburgerBtn span {
+      display: block; width: 22px; height: 2px; background: #fff; border-radius: 2px; transition: all 0.2s;
+    }
+
+    /* ── Mobile drawer ──────────────────────────────────────────────────── */
+    #mobileDrawer {
+      display: none; position: fixed; inset: 0; z-index: 200;
+    }
+    #mobileDrawer.open { display: block; }
+    #drawerOverlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+    }
+    #drawerMenu {
+      position: absolute; top: 0; left: 0; width: 240px; height: 100%;
+      background: var(--dark); padding: 1.25rem 0; display: flex; flex-direction: column; gap: 0.2rem;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.3);
+    }
+    #drawerMenu .drawer-close {
+      align-self: flex-end; margin-right: 1rem; margin-bottom: 0.5rem;
+      background: none; border: none; color: rgba(255,255,255,0.5); font-size: 1.3rem; cursor: pointer;
+    }
+
     @media (max-width: 680px) {
       aside.sidebar { display: none; }
+      #hamburgerBtn { display: flex; }
       main.content  { padding: 1rem; }
       .cards-grid   { grid-template-columns: 1fr; }
       .form-grid    { grid-template-columns: 1fr; }
@@ -267,6 +295,9 @@
 <div id="app">
   <header class="topbar">
     <div class="topbar-brand">
+      <button id="hamburgerBtn" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
       <img src="assets/iba-logo.png" alt="IBA" onerror="this.style.display='none'" />
       <span>IBA Admin</span>
     </div>
@@ -278,6 +309,33 @@
       <button class="btn-top" id="logoutBtn">Sign Out</button>
     </div>
   </header>
+
+  <!-- Mobile nav drawer -->
+  <div id="mobileDrawer">
+    <div id="drawerOverlay"></div>
+    <nav id="drawerMenu">
+      <button class="drawer-close" id="drawerClose">✕</button>
+      <button class="nav-item active" data-panel="payments" data-drawer-nav>
+        <span class="nav-icon">💳</span> Payments
+      </button>
+      <button class="nav-item" data-panel="teams" data-drawer-nav>
+        <span class="nav-icon">🏀</span> Teams
+      </button>
+      <button class="nav-item" data-panel="schedule" data-drawer-nav>
+        <span class="nav-icon">📅</span> Schedule
+      </button>
+      <button class="nav-item" data-panel="bracket" data-drawer-nav>
+        <span class="nav-icon">🏆</span> Bracket
+      </button>
+      <button class="nav-item" data-panel="applications" data-drawer-nav>
+        <span class="nav-icon">📋</span> Applications
+      </button>
+      <button class="nav-item" data-panel="requests" data-drawer-nav>
+        <span class="nav-icon">🔑</span> Admin Requests
+        <span id="reqBadgeMobile"></span>
+      </button>
+    </nav>
+  </div>
 
   <div class="layout">
     <aside class="sidebar">
@@ -655,13 +713,38 @@ function refreshActivePanel() {
   }
 }
 
+// ── Hamburger / mobile drawer ────────────────────────────────────────────
+const drawer        = document.getElementById('mobileDrawer');
+const drawerOverlay = document.getElementById('drawerOverlay');
+const drawerClose   = document.getElementById('drawerClose');
+const hamburgerBtn  = document.getElementById('hamburgerBtn');
+
+hamburgerBtn.addEventListener('click', () => drawer.classList.add('open'));
+drawerClose.addEventListener('click',  () => drawer.classList.remove('open'));
+drawerOverlay.addEventListener('click',() => drawer.classList.remove('open'));
+
+document.querySelectorAll('[data-drawer-nav]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    drawer.classList.remove('open');
+    const panel = btn.dataset.panel;
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    // sync sidebar active state too
+    document.querySelectorAll(`[data-panel="${panel}"]`).forEach(b => b.classList.add('active'));
+    document.getElementById('panel-' + panel).classList.add('active');
+    loadPanel(panel);
+  });
+});
+
 // ── Dashboard init ──────────────────────────────────────────────────────
 function initDashboard() {
-  document.querySelectorAll('.nav-item').forEach(btn => {
+  document.querySelectorAll('.nav-item:not([data-drawer-nav])').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
+      // sync drawer active state
+      document.querySelectorAll(`[data-panel="${btn.dataset.panel}"]`).forEach(b => b.classList.add('active'));
       document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
       loadPanel(btn.dataset.panel);
     });
@@ -1263,6 +1346,8 @@ async function loadReqBadge() {
     const badge = document.getElementById('reqBadge');
     badge.textContent  = s.size;
     badge.style.display = s.size > 0 ? 'inline-block' : 'none';
+    const badgeMobile = document.getElementById('reqBadgeMobile');
+    if (badgeMobile) { badgeMobile.textContent = s.size; badgeMobile.style.cssText = badge.style.cssText; }
   } catch (e) {}
 }
 
