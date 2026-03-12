@@ -327,6 +327,15 @@
           </div>
           <p>View, edit, and manage all registered teams. Click <strong>Edit</strong> to update players, bio, and team info.</p>
         </div>
+        <div class="filter-bar" style="flex-wrap:wrap;gap:.4rem;">
+          <span style="font-size:.78rem;color:var(--muted);align-self:center;margin-right:.25rem;">Sort:</span>
+          <button class="filter-btn active" data-team-sort="name-asc">Name A–Z</button>
+          <button class="filter-btn" data-team-sort="name-desc">Name Z–A</button>
+          <button class="filter-btn" data-team-sort="date-desc">Newest</button>
+          <button class="filter-btn" data-team-sort="date-asc">Oldest</button>
+          <button class="filter-btn" data-team-sort="paid-first">Paid First</button>
+          <button class="filter-btn" data-team-sort="unpaid-first">Unpaid First</button>
+        </div>
         <div class="cards-grid" id="teamsGrid"></div>
       </div>
 
@@ -740,6 +749,16 @@ document.querySelectorAll('[data-pay]').forEach(btn => {
 // TEAMS
 // ══════════════════════════════════════════════════════════════════════
 let teamsData = [];
+let teamSort  = 'name-asc';
+
+document.querySelectorAll('[data-team-sort]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    teamSort = btn.dataset.teamSort;
+    document.querySelectorAll('[data-team-sort]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTeams();
+  });
+});
 
 async function loadTeams() {
   const grid = document.getElementById('teamsGrid');
@@ -770,7 +789,17 @@ function renderTeams() {
 
   if (!teamsData.length) { grid.innerHTML = '<p class="empty"><span>🏀</span>No teams.</p>'; return; }
 
-  grid.innerHTML = teamsData.map(t => {
+  const sorted = [...teamsData].sort((a, b) => {
+    if (teamSort === 'name-asc')      return (a.teamName||a.name||'').localeCompare(b.teamName||b.name||'');
+    if (teamSort === 'name-desc')     return (b.teamName||b.name||'').localeCompare(a.teamName||a.name||'');
+    if (teamSort === 'date-desc')     return (b.createdAt||0) - (a.createdAt||0);
+    if (teamSort === 'date-asc')      return (a.createdAt||0) - (b.createdAt||0);
+    if (teamSort === 'paid-first')    return ((b.paymentStatus==='paid')?1:0) - ((a.paymentStatus==='paid')?1:0);
+    if (teamSort === 'unpaid-first')  return ((a.paymentStatus==='paid')?1:0) - ((b.paymentStatus==='paid')?1:0);
+    return 0;
+  });
+
+  grid.innerHTML = sorted.map(t => {
     const isDeleted = deletedIds.includes(t.id);
     const staged    = editPending[t.id];
     const disp      = staged ? { ...t, ...staged } : t;
