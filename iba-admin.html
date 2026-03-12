@@ -872,7 +872,14 @@ function renderTeams() {
 
   if (!teamsData.length) { grid.innerHTML = '<p class="empty"><span>🏀</span>No teams.</p>'; return; }
 
-  const tsMillis = t => t.createdAt?.toMillis?.() ?? (typeof t.createdAt === 'number' ? t.createdAt : 0);
+  const tsMillis = t => {
+    const c = t.createdAt;
+    if (!c) return 0;
+    if (typeof c.toMillis === 'function') return c.toMillis();
+    if (typeof c.seconds === 'number') return c.seconds * 1000 + Math.floor((c.nanoseconds || 0) / 1e6);
+    if (typeof c === 'number') return c;
+    return 0;
+  };
   const sorted = [...teamsData].sort((a, b) => {
     if (teamSort === 'name-asc')      return (a.teamName||a.name||'').localeCompare(b.teamName||b.name||'');
     if (teamSort === 'name-desc')     return (b.teamName||b.name||'').localeCompare(a.teamName||a.name||'');
@@ -892,7 +899,7 @@ function renderTeams() {
     const instagram = disp.instagram || t.instagram || '';
     const groupme   = disp.groupme   || t.groupme   || '';
     const bio       = disp.bio       || t.bio       || '';
-    const joinedAt  = t.createdAt ? new Date(t.createdAt?.toMillis?.() ?? t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+    const joinedAt  = t.createdAt ? new Date(tsMillis(t)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
     return `<div class="card ${staged ? 'pending-change' : ''}" style="${isDeleted ? 'opacity:.4;' : ''}border-left:4px solid var(--brand);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.4rem;">
         <strong style="font-size:.95rem;">${disp.teamName || disp.name}${staged ? ' <span style="color:var(--warn);font-size:.7rem;">*</span>' : ''}</strong>
