@@ -321,7 +321,10 @@
       <!-- Teams -->
       <div class="panel" id="panel-teams">
         <div class="panel-hdr">
-          <h2>Teams</h2>
+          <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+            <h2 style="margin:0;">Teams</h2>
+            <span id="teamsTotalBadge" style="background:var(--brand);color:var(--dark);font-size:.75rem;font-weight:700;padding:.2rem .65rem;border-radius:99px;display:none;">0 teams</span>
+          </div>
           <p>View, edit, and manage all registered teams. Click <strong>Edit</strong> to update players, bio, and team info.</p>
         </div>
         <div class="cards-grid" id="teamsGrid"></div>
@@ -757,6 +760,14 @@ function renderTeams() {
   const editPending = {};
   pendingChanges.filter(c => c.type === 'update' && c.section === 'team-edit').forEach(c => { editPending[c.teamId] = c.data; });
 
+  // Update total badge
+  const badge = document.getElementById('teamsTotalBadge');
+  if (badge) {
+    const total = teamsData.length;
+    badge.textContent = `${total} team${total !== 1 ? 's' : ''}`;
+    badge.style.display = total > 0 ? 'inline-block' : 'none';
+  }
+
   if (!teamsData.length) { grid.innerHTML = '<p class="empty"><span>🏀</span>No teams.</p>'; return; }
 
   grid.innerHTML = teamsData.map(t => {
@@ -768,6 +779,7 @@ function renderTeams() {
     const instagram = disp.instagram || t.instagram || '';
     const groupme   = disp.groupme   || t.groupme   || '';
     const bio       = disp.bio       || t.bio       || '';
+    const joinedAt  = t.createdAt ? new Date(t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
     return `<div class="card ${staged ? 'pending-change' : ''}" style="${isDeleted ? 'opacity:.4;' : ''}border-left:4px solid var(--brand);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.4rem;">
         <strong style="font-size:.95rem;">${disp.teamName || disp.name}${staged ? ' <span style="color:var(--warn);font-size:.7rem;">*</span>' : ''}</strong>
@@ -776,6 +788,7 @@ function renderTeams() {
       <p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">👤 Captain: ${disp.captainName || '—'}</p>
       <p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">✉️ ${t.captainEmail || '—'}</p>
       <p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">🏀 Players (${players.length}): ${players.slice(0,3).join(', ')}${players.length > 3 ? ` +${players.length-3}` : ''}</p>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">📅 Joined: ${joinedAt}</p>
       ${instagram ? `<p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">📷 ${instagram}</p>` : ''}
       ${groupme   ? `<p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">💬 <a href="${groupme}" target="_blank" style="color:var(--brand);">GroupMe</a></p>` : ''}
       ${bio       ? `<p style="font-size:.75rem;color:var(--muted);font-style:italic;margin-bottom:.2rem;">"${bio.slice(0,70)}${bio.length>70?'…':''}"</p>` : ''}
