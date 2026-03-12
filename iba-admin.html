@@ -850,7 +850,6 @@ async function loadTeams() {
     const q    = query(collection(db, 'teams'), where('tournament','==','spring-2026'), where('status','==','active'));
     const snap = await getDocs(q);
     teamsData  = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    console.log('createdAt sample:', teamsData[0]?.createdAt, typeof teamsData[0]?.createdAt);
     renderTeams();
   } catch (e) {
     grid.innerHTML = '<p class="empty"><span>❌</span>Failed to load.</p>';
@@ -879,6 +878,7 @@ function renderTeams() {
     if (typeof c.toMillis === 'function') return c.toMillis();
     if (typeof c.seconds === 'number') return c.seconds * 1000 + Math.floor((c.nanoseconds || 0) / 1e6);
     if (typeof c === 'number') return c;
+    if (typeof c === 'string') return new Date(c).getTime() || 0;
     return 0;
   };
   const sorted = [...teamsData].sort((a, b) => {
@@ -900,7 +900,8 @@ function renderTeams() {
     const instagram = disp.instagram || t.instagram || '';
     const groupme   = disp.groupme   || t.groupme   || '';
     const bio       = disp.bio       || t.bio       || '';
-    const joinedAt  = t.createdAt ? new Date(tsMillis(t)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+    const joinedMs  = tsMillis(t);
+    const joinedAt  = joinedMs ? new Date(joinedMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
     return `<div class="card ${staged ? 'pending-change' : ''}" style="${isDeleted ? 'opacity:.4;' : ''}border-left:4px solid var(--brand);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.4rem;">
         <strong style="font-size:.95rem;">${disp.teamName || disp.name}${staged ? ' <span style="color:var(--warn);font-size:.7rem;">*</span>' : ''}</strong>
