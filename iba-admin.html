@@ -273,6 +273,95 @@
       .cards-grid   { grid-template-columns: 1fr; }
       .form-grid    { grid-template-columns: 1fr; }
     }
+
+    /* ── Divisions Panel ──────────────────────────────────────────────── */
+    .div-steps { display: flex; gap: .45rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .div-step-btn {
+      padding: .42rem 1rem; border-radius: 20px; border: 1.5px solid var(--border);
+      background: var(--surface); font-size: .82rem; font-weight: 700; cursor: pointer;
+      color: var(--muted); transition: all .15s;
+    }
+    .div-step-btn.active { background: var(--brand); border-color: var(--brand); color: var(--dark); }
+    .div-step-panel { display: none; }
+    .div-step-panel.active { display: block; }
+
+    .div-controls { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .div-controls label { font-size: .78rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+
+    #divisionsBoard { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .div-column {
+      flex: 1; min-width: 160px; max-width: 280px;
+      background: var(--surface); border: 2px solid var(--border); border-radius: 12px;
+      padding: .85rem; min-height: 160px; transition: border-color .2s, background .2s;
+    }
+    .div-column.drag-over { border-color: var(--brand); background: rgba(207,185,145,.07); }
+    .div-col-header { display: flex; align-items: center; gap: .45rem; margin-bottom: .75rem; }
+    .div-name-input {
+      flex: 1; border: none; background: transparent; font-size: .88rem; font-weight: 800;
+      color: var(--dark); outline: none; padding: .15rem .3rem; border-radius: 4px; min-width: 0;
+    }
+    .div-name-input:focus { background: var(--bg); }
+    .div-count {
+      flex-shrink: 0; background: var(--brand); color: var(--dark); border-radius: 99px;
+      font-size: .68rem; font-weight: 700; padding: .12rem .5rem;
+    }
+    .div-teams-list { display: flex; flex-direction: column; gap: .35rem; min-height: 50px; }
+    .team-chip {
+      background: var(--bg); border: 1.5px solid var(--border); border-radius: 7px;
+      padding: .35rem .6rem; font-size: .8rem; font-weight: 600; cursor: grab;
+      transition: all .15s; user-select: none;
+    }
+    .team-chip:hover { border-color: var(--brand); background: rgba(207,185,145,.12); }
+    .team-chip.dragging { opacity: .35; cursor: grabbing; }
+
+    .court-slot-row {
+      display: flex; gap: .65rem; align-items: flex-end; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 10px; padding: .8rem; margin-bottom: .6rem;
+      flex-wrap: wrap;
+    }
+    .court-slot-row .form-grid { flex: 1; min-width: 280px; }
+
+    .sched-date-section { margin-bottom: 2rem; }
+    .sched-date-header {
+      font-weight: 800; font-size: .85rem; letter-spacing: .5px;
+      padding: .55rem .85rem; background: var(--dark); color: var(--brand); border-radius: 8px 8px 0 0;
+    }
+    .sched-grid-wrap { overflow-x: auto; border-radius: 0 0 10px 10px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .sched-grid-table { width: 100%; border-collapse: collapse; background: var(--surface); }
+    .sched-grid-table th {
+      background: #f0ece3; color: var(--muted); padding: .55rem .75rem;
+      font-size: .72rem; font-weight: 700; text-align: left; border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .sched-grid-table td { border: 1px solid var(--border); vertical-align: top; }
+    .sched-time-col { width: 88px; }
+    .sched-time-label {
+      padding: .55rem .75rem; font-size: .8rem; font-weight: 700; color: var(--muted);
+      white-space: nowrap; background: var(--bg);
+    }
+    .sched-cell {
+      padding: .35rem; min-width: 155px; min-height: 66px;
+      transition: background .15s;
+    }
+    .sched-cell.sched-drag-over { background: rgba(207,185,145,.2); }
+    .game-block {
+      background: #eef6fd; border: 1.5px solid #bde3f7; border-radius: 7px;
+      padding: .32rem .52rem; margin-bottom: .28rem; cursor: grab;
+      transition: all .15s; font-size: .77rem;
+    }
+    .game-block:hover { border-color: var(--brand); background: rgba(207,185,145,.15); }
+    .game-block.dragging { opacity: .35; cursor: grabbing; }
+    .game-block-div { display: block; font-size: .65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: .1rem; }
+    .game-block-matchup { font-weight: 700; color: var(--dark); line-height: 1.3; }
+    .game-block-empty { color: #d1d5db; font-size: .7rem; font-style: italic; text-align: center; padding: .5rem 0; }
+    .sched-toolbar { display: flex; gap: .65rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.1rem; }
+    .unscheduled-section { margin-top: 1.5rem; }
+    .unscheduled-section h4 { font-size: .82rem; font-weight: 700; color: var(--warn); margin-bottom: .6rem; }
+    .unscheduled-chip {
+      display: inline-block; background: #fff7e6; border: 1.5px solid #fde68a;
+      border-radius: 7px; padding: .3rem .65rem; font-size: .78rem; font-weight: 600;
+      margin: .2rem; color: #92400e;
+    }
   </style>
 </head>
 <body>
@@ -327,6 +416,9 @@
       <button class="nav-item" data-panel="bracket" data-drawer-nav>
         <span class="nav-icon">🏆</span> Bracket
       </button>
+      <button class="nav-item" data-panel="divisions" data-drawer-nav>
+        <span class="nav-icon">⚡</span> Divisions
+      </button>
       <button class="nav-item" data-panel="applications" data-drawer-nav>
         <span class="nav-icon">📋</span> Applications
       </button>
@@ -350,6 +442,9 @@
       </button>
       <button class="nav-item" data-panel="bracket">
         <span class="nav-icon">🏆</span> Bracket
+      </button>
+      <button class="nav-item" data-panel="divisions">
+        <span class="nav-icon">⚡</span> Divisions
       </button>
       <button class="nav-item" data-panel="applications">
         <span class="nav-icon">📋</span> Applications
@@ -447,6 +542,60 @@
           <button class="filter-btn" data-app="referred">Has Referral</button>
         </div>
         <div id="appsList" style="display:flex;flex-direction:column;gap:1rem;margin-top:1rem;"></div>
+      </div>
+
+      <!-- Divisions & Schedule Maker -->
+      <div class="panel" id="panel-divisions">
+        <div class="panel-hdr">
+          <h2>Divisions &amp; Schedule Maker</h2>
+          <p>Randomly assign teams to divisions, set court times, generate a schedule, then publish to the main site.</p>
+        </div>
+
+        <!-- Step tabs -->
+        <div class="div-steps">
+          <button class="div-step-btn active" data-div-step="1">1 · Divisions</button>
+          <button class="div-step-btn" data-div-step="2">2 · Court Times</button>
+          <button class="div-step-btn" data-div-step="3">3 · Schedule</button>
+        </div>
+
+        <!-- ─ Step 1: Divisions ─────────────────────────────────────── -->
+        <div class="div-step-panel active" id="div-step-1">
+          <div class="div-controls">
+            <label>Divisions</label>
+            <input type="number" id="numDivisionsInput" min="1" max="8" value="2" class="input" style="width:68px;" />
+            <button class="btn btn-brand" id="randomizeDivsBtn">🎲 Randomize</button>
+            <button class="btn btn-ghost"  id="applyDivCountBtn">Apply Count</button>
+            <span style="font-size:.78rem;color:var(--muted);margin-left:.25rem;" id="divTeamCount"></span>
+          </div>
+          <div id="divisionsBoard"></div>
+          <p style="font-size:.77rem;color:var(--muted);margin-top:.85rem;">Drag teams between columns to reassign. Click a division name to rename it.</p>
+        </div>
+
+        <!-- ─ Step 2: Court Times ────────────────────────────────────── -->
+        <div class="div-step-panel" id="div-step-2">
+          <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem;">Add your court reservations. Each block generates 30-minute slots — 2 games can run simultaneously per slot.</p>
+          <div id="courtSlotsList"></div>
+          <button class="btn btn-ghost" id="addCourtSlotBtn" style="margin-top:.25rem;">+ Add Time Block</button>
+          <div style="margin-top:1rem;padding:.85rem;background:var(--bg);border-radius:8px;font-size:.82rem;color:var(--muted);line-height:1.7;" id="slotSummary">
+            No time blocks added yet.
+          </div>
+        </div>
+
+        <!-- ─ Step 3: Schedule ──────────────────────────────────────── -->
+        <div class="div-step-panel" id="div-step-3">
+          <div class="sched-toolbar">
+            <button class="btn btn-brand"    id="generateScheduleBtn">⚙️ Generate Schedule</button>
+            <button class="btn btn-success"  id="publishDivisionsBtn">🚀 Publish to Main Site</button>
+            <button class="btn btn-ghost"    id="clearScheduleBtn">🗑 Clear</button>
+            <span style="font-size:.8rem;color:var(--muted);" id="scheduleStatus"></span>
+          </div>
+          <p style="font-size:.77rem;color:var(--muted);margin-bottom:1rem;">Drag game tiles between cells to rearrange. Each cell holds up to 2 simultaneous games.</p>
+          <div id="divScheduleGrid"></div>
+          <div class="unscheduled-section" id="unscheduledSection" style="display:none;">
+            <h4>⚠️ Unscheduled Games (not enough court time)</h4>
+            <div id="unscheduledList"></div>
+          </div>
+        </div>
       </div>
 
       <!-- Admin Requests -->
@@ -758,6 +907,7 @@ function loadPanel(name) {
   if (name === 'teams')        loadTeams();
   if (name === 'schedule')     loadSchedule();
   if (name === 'bracket')      loadBracket();
+  if (name === 'divisions')    loadDivisions();
   if (name === 'applications') loadApplications();
   if (name === 'requests')     loadRequests();
 }
@@ -1437,6 +1587,470 @@ document.getElementById('cancelDel').addEventListener('click', () => {
 });
 document.getElementById('deleteModal').addEventListener('click', e => {
   if (e.target.id === 'deleteModal') document.getElementById('deleteModal').classList.remove('active');
+});
+
+// ══════════════════════════════════════════════════════════════════════
+// DIVISIONS & SCHEDULE MAKER
+// ══════════════════════════════════════════════════════════════════════
+
+let divState = {
+  divisions:  [],   // [{id, name, teamIds:[]}]
+  courtSlots: [],   // [{id, court, date, startTime, endTime}]
+  schedule:   []    // [{id, team1Id, team2Id, team1Name, team2Name, divisionId, divisionName, date, time, court, round}]
+};
+
+let divDragTeam = null; // {teamId, fromDivId}
+let divDragGame = null; // gameId string
+
+// ── Step tab navigation ──────────────────────────────────────────────
+document.querySelectorAll('[data-div-step]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-div-step]').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.div-step-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('div-step-' + btn.dataset.divStep).classList.add('active');
+  });
+});
+
+// ── Load divisions panel ─────────────────────────────────────────────
+async function loadDivisions() {
+  const board = document.getElementById('divisionsBoard');
+  board.innerHTML = '<p class="empty"><span>⏳</span>Loading…</p>';
+
+  // Populate teamsCache if needed
+  if (!teamsCache.length) {
+    try {
+      const q    = query(collection(db, 'teams'), where('tournament','==','spring-2026'), where('status','==','active'));
+      const snap = await getDocs(q);
+      teamsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch(e) {
+      board.innerHTML = '<p class="empty"><span>❌</span>Failed to load teams.</p>';
+      return;
+    }
+  }
+
+  // Load saved state from Firestore
+  try {
+    const saved = await getDoc(doc(db, 'tournament', 'divisions'));
+    if (saved.exists()) {
+      const d = saved.data();
+      if (d.divisions  && d.divisions.length)  divState.divisions  = d.divisions;
+      if (d.courtSlots && d.courtSlots.length) divState.courtSlots = d.courtSlots;
+      if (d.schedule   && d.schedule.length)   divState.schedule   = d.schedule;
+    }
+  } catch(e) {}
+
+  // Bootstrap divisions if none saved
+  if (!divState.divisions.length) {
+    divRandomize(parseInt(document.getElementById('numDivisionsInput').value) || 2, false);
+  }
+
+  renderDivisionsBoard();
+  renderCourtSlots();
+  renderScheduleGrid();
+  updateSlotSummary();
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────
+const DIV_NAMES = ['Division A','Division B','Division C','Division D','Division E','Division F','Division G','Division H'];
+
+function divShuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ── Randomize / apply count ──────────────────────────────────────────
+function divRandomize(n, animate = true) {
+  const shuffled = divShuffle(teamsCache.map(t => t.id));
+  divState.divisions = Array.from({ length: n }, (_, i) => ({
+    id: `div-${i+1}`, name: DIV_NAMES[i] || `Division ${i+1}`, teamIds: []
+  }));
+  shuffled.forEach((id, idx) => divState.divisions[idx % n].teamIds.push(id));
+  if (animate) { renderDivisionsBoard(); toast('Divisions randomized!'); }
+}
+
+function divApplyCount(n) {
+  const cur = divState.divisions;
+  if (n === cur.length) return;
+  if (n > cur.length) {
+    for (let i = cur.length; i < n; i++)
+      cur.push({ id: `div-${i+1}`, name: DIV_NAMES[i] || `Division ${i+1}`, teamIds: [] });
+  } else {
+    // Merge removed teams into first division
+    const extras = cur.splice(n).flatMap(d => d.teamIds);
+    cur[0].teamIds.push(...extras);
+  }
+  renderDivisionsBoard();
+}
+
+document.getElementById('randomizeDivsBtn').addEventListener('click', () => {
+  const n = parseInt(document.getElementById('numDivisionsInput').value) || 2;
+  divRandomize(n);
+});
+document.getElementById('applyDivCountBtn').addEventListener('click', () => {
+  const n = parseInt(document.getElementById('numDivisionsInput').value) || 2;
+  divApplyCount(n);
+});
+
+// ── Render divisions board ───────────────────────────────────────────
+function renderDivisionsBoard() {
+  const board = document.getElementById('divisionsBoard');
+  const total = teamsCache.length;
+  document.getElementById('divTeamCount').textContent = `${total} team${total!==1?'s':''} total`;
+
+  board.innerHTML = divState.divisions.map(div => `
+    <div class="div-column" id="div-col-${div.id}"
+         ondragover="event.preventDefault();this.classList.add('drag-over')"
+         ondragleave="this.classList.remove('drag-over')"
+         ondrop="window._divDropTeam(event,'${div.id}')">
+      <div class="div-col-header">
+        <input class="div-name-input" value="${escHtml(div.name)}"
+               onchange="window._divRename('${div.id}',this.value)" />
+        <span class="div-count">${div.teamIds.length}</span>
+      </div>
+      <div class="div-teams-list" id="div-teams-${div.id}">
+        ${div.teamIds.map(tid => {
+          const t = teamsCache.find(x => x.id === tid);
+          const name = t ? (t.teamName || t.name || tid) : tid;
+          return `<div class="team-chip" draggable="true"
+                       data-team-id="${tid}" data-from-div="${div.id}"
+                       ondragstart="window._divDragStart(event,'${tid}','${div.id}')"
+                       ondragend="window._divDragEnd(event)">${escHtml(name)}</div>`;
+        }).join('')}
+        ${div.teamIds.length === 0 ? '<div class="game-block-empty">Drop teams here</div>' : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+window._divDragStart = (e, teamId, fromDivId) => {
+  divDragTeam = { teamId, fromDivId };
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => e.target.classList.add('dragging'), 0);
+};
+window._divDragEnd = (e) => {
+  e.target.classList.remove('dragging');
+  document.querySelectorAll('.div-column').forEach(c => c.classList.remove('drag-over'));
+};
+window._divDropTeam = (e, toDivId) => {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if (!divDragTeam || divDragTeam.fromDivId === toDivId) { divDragTeam = null; return; }
+  const from = divState.divisions.find(d => d.id === divDragTeam.fromDivId);
+  const to   = divState.divisions.find(d => d.id === toDivId);
+  if (from) from.teamIds = from.teamIds.filter(id => id !== divDragTeam.teamId);
+  if (to)   to.teamIds.push(divDragTeam.teamId);
+  divDragTeam = null;
+  renderDivisionsBoard();
+};
+window._divRename = (divId, name) => {
+  const d = divState.divisions.find(x => x.id === divId);
+  if (d) d.name = name;
+};
+
+// ── Court Slots ──────────────────────────────────────────────────────
+document.getElementById('addCourtSlotBtn').addEventListener('click', () => {
+  divState.courtSlots.push({
+    id: 'slot-' + Date.now(),
+    court: 'Court A', date: '', startTime: '18:00', endTime: '21:00'
+  });
+  renderCourtSlots();
+});
+
+function renderCourtSlots() {
+  const list = document.getElementById('courtSlotsList');
+  if (!divState.courtSlots.length) {
+    list.innerHTML = '<p style="font-size:.83rem;color:var(--muted);margin-bottom:.5rem;">No time blocks yet.</p>';
+    updateSlotSummary();
+    return;
+  }
+  list.innerHTML = divState.courtSlots.map(s => `
+    <div class="court-slot-row">
+      <div class="form-grid" style="flex:1;min-width:280px;">
+        <div class="form-row">
+          <label>Court Name</label>
+          <input class="input" value="${escHtml(s.court)}" placeholder="Court A"
+                 onchange="window._slotUpdate('${s.id}','court',this.value)" />
+        </div>
+        <div class="form-row">
+          <label>Date</label>
+          <input class="input" type="date" value="${s.date}"
+                 onchange="window._slotUpdate('${s.id}','date',this.value)" />
+        </div>
+        <div class="form-row">
+          <label>Start Time</label>
+          <input class="input" type="time" value="${s.startTime}"
+                 onchange="window._slotUpdate('${s.id}','startTime',this.value)" />
+        </div>
+        <div class="form-row">
+          <label>End Time</label>
+          <input class="input" type="time" value="${s.endTime}"
+                 onchange="window._slotUpdate('${s.id}','endTime',this.value)" />
+        </div>
+      </div>
+      <button class="btn btn-danger" style="align-self:flex-end;flex-shrink:0;"
+              onclick="window._slotRemove('${s.id}')">✕</button>
+    </div>
+  `).join('');
+  updateSlotSummary();
+}
+
+window._slotUpdate = (id, field, value) => {
+  const s = divState.courtSlots.find(x => x.id === id);
+  if (s) { s[field] = value; updateSlotSummary(); }
+};
+window._slotRemove = (id) => {
+  divState.courtSlots = divState.courtSlots.filter(s => s.id !== id);
+  renderCourtSlots();
+};
+
+function slotsForBlock(s) {
+  if (!s.startTime || !s.endTime) return 0;
+  const [sh, sm] = s.startTime.split(':').map(Number);
+  const [eh, em] = s.endTime.split(':').map(Number);
+  const mins = (eh*60+em) - (sh*60+sm);
+  return mins > 0 ? Math.floor(mins / 30) : 0;
+}
+
+function updateSlotSummary() {
+  const el = document.getElementById('slotSummary');
+  if (!el) return;
+  if (!divState.courtSlots.length) { el.innerHTML = 'No time blocks added yet.'; return; }
+  let totalGames = 0;
+  const lines = divState.courtSlots.map(s => {
+    const slots = slotsForBlock(s);
+    const games = slots * 2;
+    totalGames += games;
+    const courtLabel = s.court || '(unnamed)';
+    const dateLabel  = s.date  || '(no date)';
+    return `${escHtml(courtLabel)} · ${dateLabel}: ${slots} slots × 2 = <strong>${games} game slots</strong>`;
+  });
+  el.innerHTML = `<strong>${totalGames} total game slots available</strong><br><span style="font-size:.77rem;">${lines.join('<br>')}</span>`;
+}
+
+// ── Format helpers ───────────────────────────────────────────────────
+function fmt12(h, m) {
+  const ap = h >= 12 ? 'PM' : 'AM';
+  return `${h%12||12}:${String(m).padStart(2,'0')} ${ap}`;
+}
+function parseTime12(str) {
+  const m = /(\d+):(\d+)\s*(AM|PM)/i.exec(str);
+  if (!m) return 0;
+  let h = parseInt(m[1]);
+  if (m[3].toUpperCase()==='PM' && h!==12) h+=12;
+  if (m[3].toUpperCase()==='AM' && h===12) h=0;
+  return h*60+parseInt(m[2]);
+}
+
+// ── Generate schedule ────────────────────────────────────────────────
+document.getElementById('generateScheduleBtn').addEventListener('click', () => {
+  // Build flat list of game slots
+  const slots = [];
+  divState.courtSlots.forEach(block => {
+    if (!block.court || !block.date || !block.startTime || !block.endTime) return;
+    const [sh, sm] = block.startTime.split(':').map(Number);
+    const [eh, em] = block.endTime.split(':').map(Number);
+    const endMins = eh*60+em;
+    for (let t = sh*60+sm; t < endMins; t += 30) {
+      const timeStr = fmt12(Math.floor(t/60), t%60);
+      slots.push({ court: block.court, date: block.date, time: timeStr });
+      slots.push({ court: block.court, date: block.date, time: timeStr }); // 2 per slot
+    }
+  });
+
+  // Build round-robin matchups per division
+  const matchups = [];
+  divState.divisions.forEach(div => {
+    const ids = div.teamIds;
+    for (let i = 0; i < ids.length; i++)
+      for (let j = i+1; j < ids.length; j++)
+        matchups.push({ team1: ids[i], team2: ids[j], divisionId: div.id, divisionName: div.name });
+  });
+
+  if (!slots.length)    { toast('Add court time blocks first (Step 2)', 'err'); return; }
+  if (!matchups.length) { toast('Assign teams to at least one division first (Step 1)', 'err'); return; }
+
+  const ts = Date.now();
+  divState.schedule = matchups.slice(0, slots.length).map((m, i) => {
+    const t1 = teamsCache.find(t => t.id === m.team1);
+    const t2 = teamsCache.find(t => t.id === m.team2);
+    return {
+      id: `g-${ts}-${i}`,
+      team1Id: m.team1, team2Id: m.team2,
+      team1Name: t1 ? (t1.teamName||t1.name) : m.team1,
+      team2Name: t2 ? (t2.teamName||t2.name) : m.team2,
+      divisionId: m.divisionId, divisionName: m.divisionName,
+      date: slots[i].date, time: slots[i].time, court: slots[i].court,
+      round: 'Division Play'
+    };
+  });
+
+  const leftover = matchups.slice(slots.length);
+  document.getElementById('unscheduledSection').style.display = leftover.length ? 'block' : 'none';
+  document.getElementById('unscheduledList').innerHTML = leftover.map(m => {
+    const t1 = teamsCache.find(t=>t.id===m.team1), t2 = teamsCache.find(t=>t.id===m.team2);
+    const n1 = t1?(t1.teamName||t1.name):m.team1, n2 = t2?(t2.teamName||t2.name):m.team2;
+    return `<span class="unscheduled-chip">${escHtml(n1)} vs ${escHtml(n2)} (${escHtml(m.divisionName)})</span>`;
+  }).join('');
+
+  const msg = leftover.length
+    ? `Generated ${divState.schedule.length} games. ${leftover.length} unscheduled — add more court time.`
+    : `Schedule generated: ${divState.schedule.length} games`;
+  toast(msg, leftover.length ? 'err' : 'ok');
+  renderScheduleGrid();
+
+  // Auto-switch to step 3
+  document.querySelectorAll('[data-div-step]').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.div-step-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('[data-div-step="3"]').classList.add('active');
+  document.getElementById('div-step-3').classList.add('active');
+});
+
+document.getElementById('clearScheduleBtn').addEventListener('click', () => {
+  if (!confirm('Clear the generated schedule?')) return;
+  divState.schedule = [];
+  renderScheduleGrid();
+  document.getElementById('unscheduledSection').style.display = 'none';
+  toast('Schedule cleared');
+});
+
+// ── Render schedule grid ─────────────────────────────────────────────
+function renderScheduleGrid() {
+  const container = document.getElementById('divScheduleGrid');
+  const statusEl  = document.getElementById('scheduleStatus');
+  if (!divState.schedule.length) {
+    container.innerHTML = '<p class="empty"><span>📅</span>No schedule yet. Set up divisions &amp; court times, then click Generate Schedule.</p>';
+    if (statusEl) statusEl.textContent = '';
+    return;
+  }
+  if (statusEl) statusEl.textContent = `${divState.schedule.length} game${divState.schedule.length!==1?'s':''} scheduled`;
+
+  // Collect all unique courts and dates
+  const courts = [...new Set(divState.schedule.map(g => g.court))].sort();
+
+  // Group: date → time → court → [games]
+  const byDate = {};
+  divState.schedule.forEach(g => {
+    if (!byDate[g.date]) byDate[g.date] = {};
+    if (!byDate[g.date][g.time]) byDate[g.date][g.time] = {};
+    if (!byDate[g.date][g.time][g.court]) byDate[g.date][g.time][g.court] = [];
+    byDate[g.date][g.time][g.court].push(g);
+  });
+
+  let html = '';
+  Object.keys(byDate).sort().forEach(date => {
+    const dl = new Date(date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'short',day:'numeric',year:'numeric'});
+    html += `<div class="sched-date-section">
+      <div class="sched-date-header">📅 ${dl}</div>
+      <div class="sched-grid-wrap">
+        <table class="sched-grid-table">
+          <thead><tr>
+            <th class="sched-time-col">Time</th>
+            ${courts.map(c=>`<th>${escHtml(c)}</th>`).join('')}
+          </tr></thead>
+          <tbody>`;
+
+    Object.keys(byDate[date]).sort((a,b)=>parseTime12(a)-parseTime12(b)).forEach(time => {
+      html += `<tr>
+        <td class="sched-time-label">${time}</td>
+        ${courts.map(court => {
+          const games = byDate[date][time][court] || [];
+          const cells = [games[0]||null, games[1]||null];
+          return `<td class="sched-cell"
+                      ondragover="event.preventDefault();this.classList.add('sched-drag-over')"
+                      ondragleave="this.classList.remove('sched-drag-over')"
+                      ondrop="window._gameDrop(event,'${date}','${escHtml(time)}','${escHtml(court)}')">
+            ${cells.map(g => g
+              ? `<div class="game-block" draggable="true" data-game-id="${g.id}"
+                     ondragstart="window._gameDragStart(event,'${g.id}')"
+                     ondragend="window._gameDragEnd(event)">
+                   <span class="game-block-div">${escHtml(g.divisionName)}</span>
+                   <span class="game-block-matchup">${escHtml(g.team1Name)} vs ${escHtml(g.team2Name)}</span>
+                 </div>`
+              : `<div class="game-block-empty">—</div>`
+            ).join('')}
+          </td>`;
+        }).join('')}
+      </tr>`;
+    });
+
+    html += '</tbody></table></div></div>';
+  });
+
+  container.innerHTML = html;
+}
+
+window._gameDragStart = (e, gameId) => {
+  divDragGame = gameId;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => e.target.classList.add('dragging'), 0);
+};
+window._gameDragEnd = (e) => {
+  e.target.classList.remove('dragging');
+  document.querySelectorAll('.sched-cell').forEach(c => c.classList.remove('sched-drag-over'));
+};
+window._gameDrop = (e, date, time, court) => {
+  e.preventDefault();
+  e.currentTarget.classList.remove('sched-drag-over');
+  if (!divDragGame) return;
+  const game = divState.schedule.find(g => g.id === divDragGame);
+  if (!game) { divDragGame = null; return; }
+  const targetGames = divState.schedule.filter(g => g.date===date && g.time===time && g.court===court && g.id!==divDragGame);
+  if (targetGames.length >= 2) { toast('That slot already has 2 games', 'err'); divDragGame=null; return; }
+  game.date = date; game.time = time; game.court = court;
+  divDragGame = null;
+  renderScheduleGrid();
+  toast('Game moved');
+};
+
+// ── Publish ──────────────────────────────────────────────────────────
+document.getElementById('publishDivisionsBtn').addEventListener('click', async () => {
+  if (!divState.divisions.length) { toast('No divisions configured', 'err'); return; }
+  if (!confirm(`Publish divisions and ${divState.schedule.length} scheduled games to the main site?\n\nThis will replace any existing Division Play games.`)) return;
+
+  const btn = document.getElementById('publishDivisionsBtn');
+  btn.disabled = true; btn.textContent = 'Publishing…';
+
+  try {
+    // Save divisions/state doc
+    await setDoc(doc(db, 'tournament', 'divisions'), {
+      divisions:  divState.divisions,
+      courtSlots: divState.courtSlots,
+      schedule:   divState.schedule,
+      updatedAt:  new Date().toISOString()
+    });
+
+    // Delete existing Division Play games
+    const oldQ    = query(collection(db, 'games'), where('round','==','Division Play'));
+    const oldSnap = await getDocs(oldQ);
+    await Promise.all(oldSnap.docs.map(d => deleteDoc(d.ref)));
+
+    // Add new games
+    await Promise.all(divState.schedule.map(g => {
+      const dayName = new Date(g.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long'});
+      return addDoc(collection(db, 'games'), {
+        matchup: `${g.team1Name} vs ${g.team2Name}`,
+        date: g.date, day: dayName, time: g.time, court: g.court,
+        round: g.round, status: 'Scheduled',
+        division: g.divisionId, divisionName: g.divisionName
+      });
+    }));
+
+    toast(`✅ Published! ${divState.schedule.length} games added to schedule.`);
+  } catch(e) {
+    toast('Error: ' + e.message, 'err');
+    console.error(e);
+  } finally {
+    btn.disabled = false; btn.textContent = '🚀 Publish to Main Site';
+  }
 });
 </script>
 </body>
