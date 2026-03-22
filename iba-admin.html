@@ -485,6 +485,7 @@
           <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
             <h2 style="margin:0;">Teams</h2>
             <span id="teamsTotalBadge" style="background:var(--brand);color:var(--dark);font-size:.75rem;font-weight:700;padding:.2rem .65rem;border-radius:99px;display:none;">0 teams</span>
+            <button class="btn btn-brand" id="addTeamBtn" style="margin-left:auto;">+ Add Team</button>
           </div>
           <p>View, edit, and manage all registered teams. Click <strong>Edit</strong> to update players, bio, and team info.</p>
         </div>
@@ -1083,8 +1084,24 @@ function renderTeams() {
   }).join('');
 }
 
-// Team edit modal
-let editingTeamId = null;
+// Team edit / add modal
+let editingTeamId = null; // null = add mode, string = edit mode
+
+document.getElementById('addTeamBtn').addEventListener('click', () => {
+  editingTeamId = null;
+  document.getElementById('teamEditTitle').textContent = 'Add Team';
+  document.getElementById('saveTeamEdit').textContent  = 'Stage Add';
+  document.getElementById('etName').value      = '';
+  document.getElementById('etCaptain').value   = '';
+  document.getElementById('etEmail').value     = '';
+  document.getElementById('etInstagram').value = '';
+  document.getElementById('etGroupme').value   = '';
+  document.getElementById('etReferredBy').value= '';
+  document.getElementById('etPayment').value   = 'unpaid';
+  document.getElementById('etPlayers').value   = '';
+  document.getElementById('etBio').value       = '';
+  document.getElementById('teamEditModal').classList.add('active');
+});
 
 window.openTeamEdit = (teamId) => {
   const t = teamsData.find(x => x.id === teamId);
@@ -1093,7 +1110,8 @@ window.openTeamEdit = (teamId) => {
   const d = staged ? { ...t, ...staged.data } : t;
 
   editingTeamId = teamId;
-  document.getElementById('teamEditTitle').textContent = `Edit: ${d.teamName || d.name}`;
+  document.getElementById('teamEditTitle').textContent  = `Edit: ${d.teamName || d.name}`;
+  document.getElementById('saveTeamEdit').textContent   = 'Stage Changes';
   document.getElementById('etName').value      = d.teamName      || d.name || '';
   document.getElementById('etCaptain').value   = d.captainName   || '';
   document.getElementById('etEmail').value     = d.captainEmail  || t.captainEmail || '';
@@ -1108,17 +1126,20 @@ window.openTeamEdit = (teamId) => {
 
 document.getElementById('cancelTeamEdit').addEventListener('click', () => {
   document.getElementById('teamEditModal').classList.remove('active');
+  document.getElementById('saveTeamEdit').textContent = 'Stage Changes';
 });
 document.getElementById('teamEditModal').addEventListener('click', e => {
   if (e.target.id === 'teamEditModal') document.getElementById('teamEditModal').classList.remove('active');
 });
 
 document.getElementById('saveTeamEdit').addEventListener('click', () => {
-  if (!editingTeamId) return;
   const players = document.getElementById('etPlayers').value
     .split('\n').map(p => p.trim()).filter(Boolean);
+  const teamName = document.getElementById('etName').value.trim();
+  if (!teamName) { toast('Team name is required', 'err'); return; }
+
   const data = {
-    teamName:      document.getElementById('etName').value.trim(),
+    teamName,
     captainName:   document.getElementById('etCaptain').value.trim(),
     captainEmail:  document.getElementById('etEmail').value.trim(),
     instagram:     document.getElementById('etInstagram').value.trim(),
@@ -1126,13 +1147,23 @@ document.getElementById('saveTeamEdit').addEventListener('click', () => {
     referredBy:    document.getElementById('etReferredBy').value.trim(),
     paymentStatus: document.getElementById('etPayment').value,
     players,
-    bio: document.getElementById('etBio').value.trim()
+    bio:           document.getElementById('etBio').value.trim()
   };
-  // Remove old staged edit for this team
-  pendingChanges = pendingChanges.filter(c => !(c.section === 'team-edit' && c.teamId === editingTeamId));
-  addPending({ type: 'update', ref: doc(db, 'teams', editingTeamId), data, label: `Edit team: ${data.teamName}`, section: 'team-edit', teamId: editingTeamId });
+
+  if (editingTeamId) {
+    // Edit existing team
+    pendingChanges = pendingChanges.filter(c => !(c.section === 'team-edit' && c.teamId === editingTeamId));
+    addPending({ type: 'update', ref: doc(db, 'teams', editingTeamId), data, label: `Edit team: ${data.teamName}`, section: 'team-edit', teamId: editingTeamId });
+    toast('Team edit staged (not saved yet)');
+  } else {
+    // Add new team
+    const newData = { ...data, tournament: 'spring-2026', status: 'active', createdAt: new Date().toISOString(), wins: 0, losses: 0 };
+    addPending({ type: 'add', collection: collection(db, 'teams'), data: newData, label: `Add team: ${data.teamName}`, section: 'team-add' });
+    toast('New team staged (not saved yet)');
+  }
+
   document.getElementById('teamEditModal').classList.remove('active');
-  toast('Team edit staged (not saved yet)');
+  document.getElementById('saveTeamEdit').textContent = 'Stage Changes';
   renderTeams();
 });
 
