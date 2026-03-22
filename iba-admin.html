@@ -1005,10 +1005,10 @@ function renderPayments() {
     const staged = payPending[t.id] !== undefined;
     return `<div class="card ${paid ? 'paid' : 'unpaid'} ${staged ? 'pending-change' : ''}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
-        <strong>${t.teamName || t.name}</strong>
+        <strong>${escHtml(t.teamName || t.name)}</strong>
         <span class="badge ${paid ? 'badge-paid' : 'badge-unpaid'}">${paid ? 'Paid' : 'Unpaid'}${staged ? ' *' : ''}</span>
       </div>
-      <p style="font-size:.8rem;color:var(--muted);margin-bottom:.8rem;">Captain: ${t.captainName || t.captainEmail || '—'}</p>
+      <p style="font-size:.8rem;color:var(--muted);margin-bottom:.8rem;">Captain: ${escHtml(t.captainName || t.captainEmail || '—')}</p>
       <button class="btn ${paid ? 'btn-danger' : 'btn-success'} btn-full"
         onclick="window.stagePayment('${t.id}','${paid ? 'unpaid' : 'paid'}')">
         Mark as ${paid ? 'Unpaid' : 'Paid'}
@@ -1106,23 +1106,24 @@ function renderTeams() {
     const bio       = disp.bio       || t.bio       || '';
     const joinedMs  = tsMillis(t);
     const joinedAt  = joinedMs ? new Date(joinedMs).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+    const safeGroupme = groupme && /^https?:\/\//i.test(groupme) ? escHtml(groupme) : '';
     return `<div class="card ${staged ? 'pending-change' : ''}" style="${isDeleted ? 'opacity:.4;' : ''}border-left:4px solid var(--brand);">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.5rem;margin-bottom:.4rem;">
-        <strong style="font-size:.95rem;">${disp.teamName || disp.name}${staged ? ' <span style="color:var(--warn);font-size:.7rem;">*</span>' : ''}</strong>
+        <strong style="font-size:.95rem;">${escHtml(disp.teamName || disp.name)}${staged ? ' <span style="color:var(--warn);font-size:.7rem;">*</span>' : ''}</strong>
         <span class="badge ${paid ? 'badge-paid' : 'badge-unpaid'}">${paid ? 'Paid' : 'Unpaid'}</span>
       </div>
-      <p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">👤 Captain: ${disp.captainName || '—'}</p>
-      <p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">✉️ ${t.captainEmail || '—'}</p>
-      <p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">🏀 Players (${players.length}): ${players.slice(0,3).join(', ')}${players.length > 3 ? ` +${players.length-3}` : ''}</p>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">👤 Captain: ${escHtml(disp.captainName || '—')}</p>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">✉️ ${escHtml(t.captainEmail || '—')}</p>
+      <p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">🏀 Players (${players.length}): ${players.slice(0,3).map(escHtml).join(', ')}${players.length > 3 ? ` +${players.length-3}` : ''}</p>
       <p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">📅 Joined: ${joinedAt}</p>
-      ${instagram ? `<p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">📷 ${instagram}</p>` : ''}
-      ${groupme   ? `<p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">💬 <a href="${groupme}" target="_blank" style="color:var(--brand);">GroupMe</a></p>` : ''}
-      ${bio       ? `<p style="font-size:.75rem;color:var(--muted);font-style:italic;margin-bottom:.2rem;">"${bio.slice(0,70)}${bio.length>70?'…':''}"</p>` : ''}
+      ${instagram ? `<p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">📷 ${escHtml(instagram)}</p>` : ''}
+      ${safeGroupme ? `<p style="font-size:.78rem;color:var(--muted);margin-bottom:.2rem;">💬 <a href="${safeGroupme}" target="_blank" rel="noopener noreferrer" style="color:var(--brand);">GroupMe</a></p>` : ''}
+      ${bio ? `<p style="font-size:.75rem;color:var(--muted);font-style:italic;margin-bottom:.2rem;">"${escHtml(bio.slice(0,70))}${bio.length>70?'…':''}"</p>` : ''}
       <div style="display:flex;gap:.5rem;margin-top:.85rem;">
         ${isDeleted
           ? `<button class="btn btn-ghost" style="flex:1;" onclick="window.unstageDeleteTeam('${t.id}')">Undo Delete</button>`
           : `<button class="btn btn-brand" style="flex:1;" onclick="window.openTeamEdit('${t.id}')">Edit</button>
-             <button class="btn btn-danger" style="flex:1;" onclick="window.stageDeleteTeam('${t.id}','${(t.teamName||t.name||'').replace(/'/g,"\\'")}')">Delete</button>`
+             <button class="btn btn-danger" style="flex:1;" onclick="window.stageDeleteTeam('${t.id}','${escHtml(t.teamName||t.name||'')}')">Delete</button>`
         }
       </div>
     </div>`;

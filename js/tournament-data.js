@@ -101,15 +101,31 @@ export function initializeTournamentData() {
     teams.forEach(team => {
       const card = document.createElement('div');
       card.className = 'team-card';
-      card.innerHTML = `
-        <div class="team-icon">${team.icon || '🏀'}</div>
-        <div class="team-name">${team.name || 'Unknown Team'}</div>
-        <div class="team-record">${team.wins || 0}-${team.losses || 0}</div>
-        <div class="admin-mode team-actions" style="display: none;">
-          <button class="icon-btn edit-team-btn" data-id="${team.id}" title="Edit team">✏️</button>
-          <button class="icon-btn delete-team-btn" data-id="${team.id}" title="Delete team">🗑️</button>
-        </div>
+      // Use textContent for user-controlled fields to prevent stored XSS
+      const iconEl   = document.createElement('div');
+      iconEl.className = 'team-icon';
+      iconEl.textContent = team.icon || '🏀';
+
+      const nameEl   = document.createElement('div');
+      nameEl.className = 'team-name';
+      nameEl.textContent = team.name || 'Unknown Team';
+
+      const recordEl = document.createElement('div');
+      recordEl.className = 'team-record';
+      recordEl.textContent = `${team.wins || 0}-${team.losses || 0}`;
+
+      const actionsEl = document.createElement('div');
+      actionsEl.className = 'admin-mode team-actions';
+      actionsEl.style.display = 'none';
+      actionsEl.innerHTML = `
+        <button class="icon-btn edit-team-btn" data-id="${team.id}" title="Edit team">✏️</button>
+        <button class="icon-btn delete-team-btn" data-id="${team.id}" title="Delete team">🗑️</button>
       `;
+
+      card.appendChild(iconEl);
+      card.appendChild(nameEl);
+      card.appendChild(recordEl);
+      card.appendChild(actionsEl);
       grid.appendChild(card);
     });
   }
