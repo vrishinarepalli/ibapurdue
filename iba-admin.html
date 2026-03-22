@@ -1675,7 +1675,7 @@ document.getElementById('deleteModal').addEventListener('click', e => {
 // ══════════════════════════════════════════════════════════════════════
 // GAMES PANEL
 // ══════════════════════════════════════════════════════════════════════
-let gamesCache    = [];
+let adminGamesCache    = [];
 let gameFilter    = 'all';
 let gameEdits     = {}; // {gameId: {status, team1Score, team2Score}}
 
@@ -1693,8 +1693,8 @@ async function loadAdminGames() {
   list.innerHTML = '<p class="empty"><span>⏳</span>Loading…</p>';
   try {
     const snap = await getDocs(collection(db, 'games'));
-    gamesCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    gamesCache.sort((a, b) => {
+    adminGamesCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    adminGamesCache.sort((a, b) => {
       const da = a.date || '9999', db2 = b.date || '9999';
       if (da !== db2) return da.localeCompare(db2);
       return (a.time || '').localeCompare(b.time || '');
@@ -1710,8 +1710,8 @@ async function loadAdminGames() {
 function renderAdminGames() {
   const list = document.getElementById('gamesAdminList');
   let games = gameFilter === 'all'
-    ? gamesCache
-    : gamesCache.filter(g => (g.status || 'Scheduled') === gameFilter);
+    ? adminGamesCache
+    : adminGamesCache.filter(g => (g.status || 'Scheduled') === gameFilter);
 
   if (!games.length) {
     list.innerHTML = '<p class="empty"><span>🎮</span>No games found.</p>';
@@ -1779,7 +1779,7 @@ window._gsave = async (id) => {
   const btn = document.querySelector(`#grc-${id} .grc-save`);
   if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
 
-  const game = gamesCache.find(g => g.id === id);
+  const game = adminGamesCache.find(g => g.id === id);
   if (!game) return;
 
   const ed = gameEdits[id] || {};
