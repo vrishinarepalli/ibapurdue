@@ -320,6 +320,13 @@
       flex-wrap: wrap;
     }
     .court-slot-row .form-grid { flex: 1; min-width: 280px; }
+    .slot-type-toggle { display: flex; border-radius: 8px; overflow: hidden; border: 1.5px solid var(--border); flex-shrink: 0; }
+    .slot-type-toggle button {
+      padding: .38rem .75rem; border: none; background: var(--surface); font-size: .78rem;
+      font-weight: 700; cursor: pointer; color: var(--muted); transition: all .15s; white-space: nowrap;
+    }
+    .slot-type-toggle button.active-reg    { background: #dbeafe; color: #1d4ed8; }
+    .slot-type-toggle button.active-playoff { background: #fef9c3; color: #92400e; }
 
     .sched-date-section { margin-bottom: 2rem; }
     .sched-date-header {
@@ -354,6 +361,7 @@
     .game-block-div { display: block; font-size: .65rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: .1rem; }
     .game-block-matchup { font-weight: 700; color: var(--dark); line-height: 1.3; }
     .game-block-empty { color: #d1d5db; font-size: .7rem; font-style: italic; text-align: center; padding: .5rem 0; }
+    .game-block-playoff { background: #fefce8; border-color: #fde68a; }
     .sched-toolbar { display: flex; gap: .65rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.1rem; }
     .unscheduled-section { margin-top: 1.5rem; }
     .unscheduled-section h4 { font-size: .82rem; font-weight: 700; color: var(--warn); margin-bottom: .6rem; }
@@ -1649,13 +1657,13 @@ async function loadDivisions() {
   if (!divState.courtSlots.length) {
     const ts = Date.now();
     divState.courtSlots = [
-      { id:`slot-${ts}-1`,  court:'Gold/Black Court 1',  date:'2026-03-23', startTime:'19:00', endTime:'22:30' },
-      { id:`slot-${ts}-2`,  court:'Gold/Black Court 2',  date:'2026-03-24', startTime:'19:00', endTime:'22:30' },
-      { id:`slot-${ts}-3`,  court:'Gold/Black Court 1',  date:'2026-03-25', startTime:'19:00', endTime:'22:30' },
-      { id:`slot-${ts}-4`,  court:'Upper Gym Court 2',   date:'2026-03-27', startTime:'19:00', endTime:'22:00' },
-      { id:`slot-${ts}-5`,  court:'Gold/Black Court 1',  date:'2026-04-07', startTime:'19:00', endTime:'22:00' },
-      { id:`slot-${ts}-6`,  court:'Gold/Black Court 1',  date:'2026-04-08', startTime:'20:00', endTime:'23:00' },
-      { id:`slot-${ts}-7`,  court:'Upper Gym Court 2',   date:'2026-04-10', startTime:'20:00', endTime:'22:00' },
+      { id:`slot-${ts}-1`,  court:'Gold/Black Court 1',  date:'2026-03-23', startTime:'19:00', endTime:'22:30', type:'regular' },
+      { id:`slot-${ts}-2`,  court:'Gold/Black Court 2',  date:'2026-03-24', startTime:'19:00', endTime:'22:30', type:'regular' },
+      { id:`slot-${ts}-3`,  court:'Gold/Black Court 1',  date:'2026-03-25', startTime:'19:00', endTime:'22:30', type:'regular' },
+      { id:`slot-${ts}-4`,  court:'Upper Gym Court 2',   date:'2026-03-27', startTime:'19:00', endTime:'22:00', type:'regular' },
+      { id:`slot-${ts}-5`,  court:'Gold/Black Court 1',  date:'2026-04-07', startTime:'19:00', endTime:'22:00', type:'regular' },
+      { id:`slot-${ts}-6`,  court:'Gold/Black Court 1',  date:'2026-04-08', startTime:'20:00', endTime:'23:00', type:'regular' },
+      { id:`slot-${ts}-7`,  court:'Upper Gym Court 2',   date:'2026-04-10', startTime:'20:00', endTime:'22:00', type:'regular' },
     ];
   }
 
@@ -1774,7 +1782,7 @@ window._divRename = (divId, name) => {
 document.getElementById('addCourtSlotBtn').addEventListener('click', () => {
   divState.courtSlots.push({
     id: 'slot-' + Date.now(),
-    court: 'Court A', date: '', startTime: '18:00', endTime: '21:00'
+    court: 'Court A', date: '', startTime: '18:00', endTime: '21:00', type: 'regular'
   });
   renderCourtSlots();
 });
@@ -1786,7 +1794,9 @@ function renderCourtSlots() {
     updateSlotSummary();
     return;
   }
-  list.innerHTML = divState.courtSlots.map(s => `
+  list.innerHTML = divState.courtSlots.map(s => {
+    const isPlayoff = s.type === 'playoff';
+    return `
     <div class="court-slot-row">
       <div class="form-grid" style="flex:1;min-width:280px;">
         <div class="form-row">
@@ -1810,16 +1820,29 @@ function renderCourtSlots() {
                  onchange="window._slotUpdate('${s.id}','endTime',this.value)" />
         </div>
       </div>
+      <div style="display:flex;flex-direction:column;gap:.4rem;align-self:flex-end;flex-shrink:0;">
+        <label style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;">Type</label>
+        <div class="slot-type-toggle">
+          <button class="${!isPlayoff ? 'active-reg' : ''}"
+                  onclick="window._slotSetType('${s.id}','regular')">Reg Season</button>
+          <button class="${isPlayoff ? 'active-playoff' : ''}"
+                  onclick="window._slotSetType('${s.id}','playoff')">Playoffs</button>
+        </div>
+      </div>
       <button class="btn btn-danger" style="align-self:flex-end;flex-shrink:0;"
               onclick="window._slotRemove('${s.id}')">✕</button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
   updateSlotSummary();
 }
 
 window._slotUpdate = (id, field, value) => {
   const s = divState.courtSlots.find(x => x.id === id);
   if (s) { s[field] = value; updateSlotSummary(); }
+};
+window._slotSetType = (id, type) => {
+  const s = divState.courtSlots.find(x => x.id === id);
+  if (s) { s.type = type; renderCourtSlots(); }
 };
 window._slotRemove = (id) => {
   divState.courtSlots = divState.courtSlots.filter(s => s.id !== id);
@@ -1875,8 +1898,8 @@ document.getElementById('generateScheduleBtn').addEventListener('click', () => {
     const endMins = eh*60+em;
     for (let t = sh*60+sm; t < endMins; t += 30) {
       const timeStr = fmt12(Math.floor(t/60), t%60);
-      slots.push({ court: block.court, date: block.date, time: timeStr });
-      slots.push({ court: block.court, date: block.date, time: timeStr }); // 2 per slot
+      slots.push({ court: block.court, date: block.date, time: timeStr, type: block.type || 'regular' });
+      slots.push({ court: block.court, date: block.date, time: timeStr, type: block.type || 'regular' }); // 2 per slot
     }
   });
 
@@ -1903,7 +1926,8 @@ document.getElementById('generateScheduleBtn').addEventListener('click', () => {
       team2Name: t2 ? (t2.teamName||t2.name) : m.team2,
       divisionId: m.divisionId, divisionName: m.divisionName,
       date: slots[i].date, time: slots[i].time, court: slots[i].court,
-      round: 'Division Play'
+      type: slots[i].type || 'regular',
+      round: slots[i].type === 'playoff' ? 'Playoffs' : 'Division Play'
     };
   });
 
@@ -1983,10 +2007,10 @@ function renderScheduleGrid() {
                       ondragleave="this.classList.remove('sched-drag-over')"
                       ondrop="window._gameDrop(event,'${date}','${escHtml(time)}','${escHtml(court)}')">
             ${cells.map(g => g
-              ? `<div class="game-block" draggable="true" data-game-id="${g.id}"
+              ? `<div class="game-block ${g.type==='playoff'?'game-block-playoff':''}" draggable="true" data-game-id="${g.id}"
                      ondragstart="window._gameDragStart(event,'${g.id}')"
                      ondragend="window._gameDragEnd(event)">
-                   <span class="game-block-div">${escHtml(g.divisionName)}</span>
+                   <span class="game-block-div">${escHtml(g.divisionName)} · <span style="color:${g.type==='playoff'?'#92400e':'#1d4ed8'}">${g.type==='playoff'?'Playoffs':'Reg Season'}</span></span>
                    <span class="game-block-matchup">${escHtml(g.team1Name)} vs ${escHtml(g.team2Name)}</span>
                  </div>`
               : `<div class="game-block-empty">—</div>`
