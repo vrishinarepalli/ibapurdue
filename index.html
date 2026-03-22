@@ -563,6 +563,14 @@
           </div>
 
         </div>
+
+        <!-- Division Standings -->
+        <div id="divisionRankings" style="margin-top:2rem;display:none;">
+          <h3 style="text-align:center;font-size:1.5rem;font-weight:800;margin-bottom:1.5rem;color:var(--text);">📊 Division Standings</h3>
+          <div id="divisionRankingsInner" style="display:grid;gap:1.5rem;"></div>
+        </div>
+
+        </div>
       </section>
 
       <section id="panel-schedule" class="tabpanel" role="tabpanel" aria-labelledby="tab-schedule">
@@ -4018,6 +4026,63 @@
       const db = window.db;
 
       // Load games from Firestore in real-time
+      function loadDivisionStandings() {
+        const { onSnapshot, doc, getFirestore } = window._fbModules || {};
+        // Use the globally available db and onSnapshot
+        try {
+          onSnapshot(doc(db, 'tournament', 'divisions'), (snap) => {
+            const container = document.getElementById('divisionRankings');
+            const inner     = document.getElementById('divisionRankingsInner');
+            if (!container || !inner) return;
+            if (!snap.exists()) { container.style.display = 'none'; return; }
+
+            const data = snap.data();
+            const divs = (data.divisions || []).filter(d => d.standings && Object.keys(d.standings).length > 0);
+            if (!divs.length) { container.style.display = 'none'; return; }
+
+            container.style.display = 'block';
+            inner.innerHTML = divs.map(div => {
+              const rows = Object.values(div.standings).sort((a, b) => {
+                if (b.wins !== a.wins) return b.wins - a.wins;
+                return (b.pointsFor - b.pointsAgainst) - (a.pointsFor - a.pointsAgainst);
+              });
+              const tableRows = rows.map((t, i) => `
+                <tr style="border-bottom:1px solid #e5e7eb;">
+                  <td style="padding:.6rem .85rem;font-weight:700;color:#6b7280;text-align:center;">${i+1}</td>
+                  <td style="padding:.6rem .85rem;font-weight:700;">${t.teamName}</td>
+                  <td style="padding:.6rem .85rem;text-align:center;color:#15803d;font-weight:700;">${t.wins}</td>
+                  <td style="padding:.6rem .85rem;text-align:center;color:#b91c1c;font-weight:700;">${t.losses}</td>
+                  <td style="padding:.6rem .85rem;text-align:center;">${t.pointsFor}</td>
+                  <td style="padding:.6rem .85rem;text-align:center;">${t.pointsAgainst}</td>
+                  <td style="padding:.6rem .85rem;text-align:center;font-weight:700;color:${(t.pointsFor-t.pointsAgainst)>=0?'#15803d':'#b91c1c'};">${t.pointsFor-t.pointsAgainst>0?'+':''}${t.pointsFor-t.pointsAgainst}</td>
+                </tr>`).join('');
+              return `<div style="background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);">
+                <div style="background:#0a1122;padding:.75rem 1.1rem;display:flex;align-items:center;gap:.65rem;">
+                  <span style="font-size:1rem;font-weight:800;color:#CFB991;">${div.name}</span>
+                  <span style="font-size:.72rem;color:rgba(255,255,255,.45);margin-left:auto;">${rows.length} team${rows.length!==1?'s':''}</span>
+                </div>
+                <div style="overflow-x:auto;">
+                  <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
+                    <thead>
+                      <tr style="background:#f4f1ec;">
+                        <th style="padding:.55rem .85rem;text-align:center;font-size:.7rem;color:#6b7280;font-weight:700;letter-spacing:.5px;">#</th>
+                        <th style="padding:.55rem .85rem;text-align:left;font-size:.7rem;color:#6b7280;font-weight:700;letter-spacing:.5px;">TEAM</th>
+                        <th style="padding:.55rem .85rem;text-align:center;font-size:.7rem;color:#6b7280;font-weight:700;letter-spacing:.5px;">W</th>
+                        <th style="padding:.55rem .85rem;text-align:center;font-size:.7rem;color:#6b7280;font-weight:700;letter-spacing:.5px;">L</th>
+                        <th style="padding:.55rem .85rem;text-align:center;font-size:.7rem;color:#6b7280;font-weight:700;letter-spacing:.5px;">PF</th>
+                        <th style="padding:.55rem .85rem;text-align:center;font-size:.7rem;color:#6b7280;font-weight:700;letter-spacing:.5px;">PA</th>
+                        <th style="padding:.55rem .85rem;text-align:center;font-size:.7rem;color:#6b7280;font-weight:700;letter-spacing:.5px;">DIFF</th>
+                      </tr>
+                    </thead>
+                    <tbody>${tableRows}</tbody>
+                  </table>
+                </div>
+              </div>`;
+            }).join('');
+          });
+        } catch(e) { console.warn('standings load failed', e); }
+      }
+
       function loadGames() {
         const gamesCollection = collection(db, 'games');
 
@@ -4097,6 +4162,7 @@
 
       // Start loading games
       loadGames();
+      loadDivisionStandings();
 
       // Auto-delete completed games older than 1 day
       async function cleanupOldGames() {

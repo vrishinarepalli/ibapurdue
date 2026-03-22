@@ -362,6 +362,28 @@
     .game-block-matchup { font-weight: 700; color: var(--dark); line-height: 1.3; }
     .game-block-empty { color: #d1d5db; font-size: .7rem; font-style: italic; text-align: center; padding: .5rem 0; }
     .game-block-playoff { background: #fefce8; border-color: #fde68a; }
+
+    /* ── Games Panel ──────────────────────────────────────────────────── */
+    .grc { background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 1.1rem 1.25rem; margin-bottom: .85rem; transition: border-color .15s; }
+    .grc:hover { border-color: rgba(207,185,145,.5); }
+    .grc-top { display: flex; align-items: center; gap: .45rem; flex-wrap: wrap; margin-bottom: .65rem; }
+    .grc-meta { font-size: .75rem; color: var(--muted); margin-left: auto; }
+    .grc-body { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: .85rem; }
+    .grc-team { display: flex; align-items: center; gap: .5rem; }
+    .grc-tname { font-weight: 700; font-size: .92rem; color: var(--dark); }
+    .grc-score-inp { width: 56px; text-align: center; font-size: 1rem; font-weight: 800; padding: .3rem .4rem; }
+    .grc-vs { font-size: .82rem; font-weight: 700; color: var(--muted); }
+    .grc-winner { font-size: .72rem; font-weight: 700; color: var(--success); background: #dcfce7; border-radius: 6px; padding: .15rem .5rem; }
+    .grc-actions { display: flex; gap: .45rem; flex-wrap: wrap; align-items: center; }
+    .status-chip { padding: .28rem .7rem; border-radius: 20px; border: 1.5px solid var(--border); background: var(--surface); font-size: .75rem; font-weight: 700; cursor: pointer; color: var(--muted); transition: all .15s; }
+    .status-chip.sel-scheduled { background: #dbeafe; border-color: #93c5fd; color: #1d4ed8; }
+    .status-chip.sel-completed { background: #dcfce7; border-color: #86efac; color: #15803d; }
+    .status-chip.sel-cancelled { background: #fee2e2; border-color: #fca5a5; color: #b91c1c; }
+    .grc-save { margin-left: auto; }
+    .badge-scheduled { background: #dbeafe; color: #1d4ed8; }
+    .badge-completed { background: #dcfce7; color: #15803d; }
+    .badge-cancelled { background: #fee2e2; color: #b91c1c; }
+    .badge-div { background: rgba(207,185,145,.2); color: #7a6030; }
     .sched-toolbar { display: flex; gap: .65rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.1rem; }
     .unscheduled-section { margin-top: 1.5rem; }
     .unscheduled-section h4 { font-size: .82rem; font-weight: 700; color: var(--warn); margin-bottom: .6rem; }
@@ -427,6 +449,9 @@
       <button class="nav-item" data-panel="divisions" data-drawer-nav>
         <span class="nav-icon">⚡</span> Divisions
       </button>
+      <button class="nav-item" data-panel="games" data-drawer-nav>
+        <span class="nav-icon">🎮</span> Games
+      </button>
       <button class="nav-item" data-panel="applications" data-drawer-nav>
         <span class="nav-icon">📋</span> Applications
       </button>
@@ -453,6 +478,9 @@
       </button>
       <button class="nav-item" data-panel="divisions">
         <span class="nav-icon">⚡</span> Divisions
+      </button>
+      <button class="nav-item" data-panel="games">
+        <span class="nav-icon">🎮</span> Games
       </button>
       <button class="nav-item" data-panel="applications">
         <span class="nav-icon">📋</span> Applications
@@ -605,6 +633,21 @@
             <div id="unscheduledList"></div>
           </div>
         </div>
+      </div>
+
+      <!-- Games -->
+      <div class="panel" id="panel-games">
+        <div class="panel-hdr">
+          <h2>Games</h2>
+          <p>Update scores and results. Changes save immediately and update division standings.</p>
+        </div>
+        <div class="filter-bar" id="gamesFilterBar">
+          <button class="filter-btn active" data-gf="all">All</button>
+          <button class="filter-btn" data-gf="Scheduled">Scheduled</button>
+          <button class="filter-btn" data-gf="Completed">Completed</button>
+          <button class="filter-btn" data-gf="Cancelled">Cancelled</button>
+        </div>
+        <div id="gamesAdminList"></div>
       </div>
 
       <!-- Admin Requests -->
@@ -917,6 +960,7 @@ function loadPanel(name) {
   if (name === 'schedule')     loadSchedule();
   if (name === 'bracket')      loadBracket();
   if (name === 'divisions')    loadDivisions();
+  if (name === 'games')        loadAdminGames();
   if (name === 'applications') loadApplications();
   if (name === 'requests')     loadRequests();
 }
@@ -1627,6 +1671,189 @@ document.getElementById('cancelDel').addEventListener('click', () => {
 document.getElementById('deleteModal').addEventListener('click', e => {
   if (e.target.id === 'deleteModal') document.getElementById('deleteModal').classList.remove('active');
 });
+
+// ══════════════════════════════════════════════════════════════════════
+// GAMES PANEL
+// ══════════════════════════════════════════════════════════════════════
+let gamesCache    = [];
+let gameFilter    = 'all';
+let gameEdits     = {}; // {gameId: {status, team1Score, team2Score}}
+
+document.querySelectorAll('[data-gf]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    gameFilter = btn.dataset.gf;
+    document.querySelectorAll('[data-gf]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderAdminGames();
+  });
+});
+
+async function loadAdminGames() {
+  const list = document.getElementById('gamesAdminList');
+  list.innerHTML = '<p class="empty"><span>⏳</span>Loading…</p>';
+  try {
+    const snap = await getDocs(collection(db, 'games'));
+    gamesCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    gamesCache.sort((a, b) => {
+      const da = a.date || '9999', db2 = b.date || '9999';
+      if (da !== db2) return da.localeCompare(db2);
+      return (a.time || '').localeCompare(b.time || '');
+    });
+    gameEdits = {};
+    renderAdminGames();
+  } catch(e) {
+    list.innerHTML = '<p class="empty"><span>❌</span>Failed to load.</p>';
+    console.error(e);
+  }
+}
+
+function renderAdminGames() {
+  const list = document.getElementById('gamesAdminList');
+  let games = gameFilter === 'all'
+    ? gamesCache
+    : gamesCache.filter(g => (g.status || 'Scheduled') === gameFilter);
+
+  if (!games.length) {
+    list.innerHTML = '<p class="empty"><span>🎮</span>No games found.</p>';
+    return;
+  }
+
+  list.innerHTML = games.map(g => {
+    const parts   = (g.matchup || '').split(' vs ');
+    const t1Name  = parts[0] || '?';
+    const t2Name  = parts[1] || '?';
+    const ed      = gameEdits[g.id] || {};
+    const status  = ed.status  ?? (g.status  || 'Scheduled');
+    const s1      = ed.team1Score !== undefined ? ed.team1Score : (g.team1Score !== undefined ? g.team1Score : '');
+    const s2      = ed.team2Score !== undefined ? ed.team2Score : (g.team2Score !== undefined ? g.team2Score : '');
+    const winner  = g.winner || '';
+    const divName = g.divisionName || '';
+    const round   = g.round || '';
+    const sc = status.toLowerCase();
+
+    return `<div class="grc" id="grc-${g.id}">
+      <div class="grc-top">
+        ${divName ? `<span class="badge badge-div">${escHtml(divName)}</span>` : ''}
+        ${round   ? `<span class="badge badge-pending">${escHtml(round)}</span>` : ''}
+        <span class="badge badge-${sc}">${status}</span>
+        ${winner && status==='Completed' ? `<span class="grc-winner">🏆 ${escHtml(winner)}</span>` : ''}
+        <span class="grc-meta">${g.date||'—'} · ${g.time||'—'} · ${escHtml(g.court||'—')}</span>
+      </div>
+      <div class="grc-body">
+        <div class="grc-team">
+          <span class="grc-tname">${escHtml(t1Name)}</span>
+          <input class="input grc-score-inp" id="s1-${g.id}" type="number" min="0" value="${s1}"
+                 oninput="window._gedit('${g.id}','team1Score',this.value)" placeholder="—" />
+        </div>
+        <span class="grc-vs">–</span>
+        <div class="grc-team">
+          <input class="input grc-score-inp" id="s2-${g.id}" type="number" min="0" value="${s2}"
+                 oninput="window._gedit('${g.id}','team2Score',this.value)" placeholder="—" />
+          <span class="grc-tname">${escHtml(t2Name)}</span>
+        </div>
+      </div>
+      <div class="grc-actions">
+        <button class="status-chip ${status==='Scheduled'?'sel-scheduled':''}"
+                onclick="window._gstatus('${g.id}','Scheduled')">Scheduled</button>
+        <button class="status-chip ${status==='Completed'?'sel-completed':''}"
+                onclick="window._gstatus('${g.id}','Completed')">Completed</button>
+        <button class="status-chip ${status==='Cancelled'?'sel-cancelled':''}"
+                onclick="window._gstatus('${g.id}','Cancelled')">Cancelled</button>
+        <button class="btn btn-brand grc-save" onclick="window._gsave('${g.id}')">💾 Save</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window._gedit = (id, field, value) => {
+  if (!gameEdits[id]) gameEdits[id] = {};
+  gameEdits[id][field] = field.includes('Score') ? parseInt(value) || 0 : value;
+};
+window._gstatus = (id, status) => {
+  if (!gameEdits[id]) gameEdits[id] = {};
+  gameEdits[id].status = status;
+  renderAdminGames();
+};
+
+window._gsave = async (id) => {
+  const btn = document.querySelector(`#grc-${id} .grc-save`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+
+  const game = gamesCache.find(g => g.id === id);
+  if (!game) return;
+
+  const ed = gameEdits[id] || {};
+  const status     = ed.status      ?? game.status      ?? 'Scheduled';
+  const team1Score = ed.team1Score  !== undefined ? ed.team1Score : (game.team1Score ?? null);
+  const team2Score = ed.team2Score  !== undefined ? ed.team2Score : (game.team2Score ?? null);
+  const parts  = (game.matchup || '').split(' vs ');
+  const t1Name = parts[0] || '';
+  const t2Name = parts[1] || '';
+
+  let winner = game.winner || '';
+  if (status === 'Completed' && team1Score !== null && team2Score !== null) {
+    if (team1Score > team2Score)      winner = t1Name;
+    else if (team2Score > team1Score) winner = t2Name;
+    else                              winner = 'Tie';
+  }
+
+  const update = { status, winner };
+  if (team1Score !== null) update.team1Score = team1Score;
+  if (team2Score !== null) update.team2Score = team2Score;
+  if (status === 'Completed') update.completedAt = new Date().toISOString();
+
+  try {
+    await updateDoc(doc(db, 'games', id), update);
+    // Reflect in local cache
+    Object.assign(game, update);
+    delete gameEdits[id];
+
+    // Recalculate division standings if game has a division
+    if (game.division) await recalcStandings(game.division);
+
+    toast(`Saved: ${game.matchup}`);
+    renderAdminGames();
+  } catch(e) {
+    toast('Error: ' + e.message, 'err');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Save'; }
+  }
+};
+
+async function recalcStandings(divisionId) {
+  try {
+    // Get all completed games in this division
+    const q    = query(collection(db, 'games'), where('division','==',divisionId), where('status','==','Completed'));
+    const snap = await getDocs(q);
+
+    const standings = {};
+    snap.docs.forEach(d => {
+      const g  = d.data();
+      const ps = (g.matchup || '').split(' vs ');
+      const t1 = ps[0] || '', t2 = ps[1] || '';
+      const s1 = parseInt(g.team1Score) || 0;
+      const s2 = parseInt(g.team2Score) || 0;
+      if (!standings[t1]) standings[t1] = { teamName: t1, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 };
+      if (!standings[t2]) standings[t2] = { teamName: t2, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 };
+      standings[t1].pointsFor     += s1; standings[t1].pointsAgainst += s2;
+      standings[t2].pointsFor     += s2; standings[t2].pointsAgainst += s1;
+      if      (s1 > s2) { standings[t1].wins++; standings[t2].losses++; }
+      else if (s2 > s1) { standings[t2].wins++; standings[t1].losses++; }
+    });
+
+    // Patch tournament/divisions doc
+    const divDocRef = doc(db, 'tournament', 'divisions');
+    const divDoc    = await getDoc(divDocRef);
+    if (!divDoc.exists()) return;
+    const data = divDoc.data();
+    const divs = (data.divisions || []).map(d =>
+      d.id === divisionId ? { ...d, standings } : d
+    );
+    await updateDoc(divDocRef, { divisions: divs });
+  } catch(e) {
+    console.error('standings recalc failed', e);
+  }
+}
 
 // ══════════════════════════════════════════════════════════════════════
 // DIVISIONS & SCHEDULE MAKER
