@@ -452,9 +452,9 @@
       <button class="nav-item" data-panel="games" data-drawer-nav>
         <span class="nav-icon">🎮</span> Games
       </button>
-      <button class="nav-item" data-panel="applications" data-drawer-nav>
+      <!-- <button class="nav-item" data-panel="applications" data-drawer-nav>
         <span class="nav-icon">📋</span> Applications
-      </button>
+      </button> -->
       <button class="nav-item" data-panel="requests" data-drawer-nav>
         <span class="nav-icon">🔑</span> Admin Requests
         <span id="reqBadgeMobile"></span>
@@ -482,9 +482,9 @@
       <button class="nav-item" data-panel="games">
         <span class="nav-icon">🎮</span> Games
       </button>
-      <button class="nav-item" data-panel="applications">
+      <!-- <button class="nav-item" data-panel="applications">
         <span class="nav-icon">📋</span> Applications
-      </button>
+      </button> -->
       <button class="nav-item" data-panel="requests">
         <span class="nav-icon">🔑</span> Admin Requests
         <span id="reqBadge"></span>
@@ -566,7 +566,7 @@
         </div>
       </div>
 
-      <!-- Applications -->
+      <!-- Applications (hidden)
       <div class="panel" id="panel-applications">
         <div class="panel-hdr">
           <h2>Applications</h2>
@@ -580,6 +580,7 @@
         </div>
         <div id="appsList" style="display:flex;flex-direction:column;gap:1rem;margin-top:1rem;"></div>
       </div>
+      -->
 
       <!-- Divisions & Schedule Maker -->
       <div class="panel" id="panel-divisions">
@@ -961,7 +962,7 @@ function loadPanel(name) {
   if (name === 'bracket')      loadBracket();
   if (name === 'divisions')    loadDivisions();
   if (name === 'games')        loadAdminGames();
-  if (name === 'applications') loadApplications();
+  // if (name === 'applications') loadApplications();
   if (name === 'requests')     loadRequests();
 }
 
@@ -1227,6 +1228,7 @@ window.unstageDeleteTeam = (teamId) => {
 // ══════════════════════════════════════════════════════════════════════
 // APPLICATIONS
 // ══════════════════════════════════════════════════════════════════════
+/* Applications tab hidden — uncomment to restore
 let appFilter = 'all';
 let appsData  = [];
 
@@ -1253,64 +1255,42 @@ async function loadApplications() {
 
 function renderApplications() {
   const list = document.getElementById('appsList');
-
-  // Build referral count map: teamName → count of teams that listed them
   const referralCount = {};
   appsData.forEach(a => {
-    if (a.referredBy) {
-      referralCount[a.referredBy] = (referralCount[a.referredBy] || 0) + 1;
-    }
+    if (a.referredBy) referralCount[a.referredBy] = (referralCount[a.referredBy] || 0) + 1;
   });
-
   let filtered = appsData;
   if (appFilter === 'pending')  filtered = appsData.filter(a => (a.status || 'pending') === 'pending');
   if (appFilter === 'approved') filtered = appsData.filter(a => a.status === 'approved');
   if (appFilter === 'referred') filtered = appsData.filter(a => a.referredBy);
-
-  if (!filtered.length) {
-    list.innerHTML = '<p class="empty"><span>📋</span>No applications.</p>';
-    return;
-  }
-
+  if (!filtered.length) { list.innerHTML = '<p class="empty"><span>📋</span>No applications.</p>'; return; }
   const statusColor = { pending: 'var(--warn)', approved: 'var(--success)', rejected: 'var(--danger)' };
-
   list.innerHTML = filtered.map(a => {
-    const status   = a.status || 'pending';
-    const players  = (a.playerNames || '').split('\n').filter(Boolean);
+    const status = a.status || 'pending';
+    const players = (a.playerNames || '').split('\n').filter(Boolean);
     const refCount = referralCount[a.teamName] || 0;
-    const date     = a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '—';
-
-    return `<div class="card" style="border-left:4px solid ${statusColor[status] || 'var(--border)'};padding:1.25rem 1.5rem;">
+    const date = a.createdAt ? new Date(a.createdAt).toLocaleDateString() : '—';
+    return `<div class="card" style="border-left:4px solid ${statusColor[status]||'var(--border)'};padding:1.25rem 1.5rem;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.75rem;flex-wrap:wrap;margin-bottom:.75rem;">
-        <strong style="font-size:1rem;">${a.teamName || '—'}</strong>
-        <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
-          <span class="badge" style="background:${statusColor[status] || 'var(--border)'};color:#fff;text-transform:capitalize;">${status}</span>
-          ${refCount > 0 ? `<span class="badge" style="background:#6366f1;color:#fff;">Referred ${refCount} team${refCount > 1 ? 's' : ''}</span>` : ''}
+        <strong>${a.teamName||'—'}</strong>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+          <span class="badge" style="background:${statusColor[status]||'var(--border)'};color:#fff;text-transform:capitalize;">${status}</span>
+          ${refCount>0?`<span class="badge" style="background:#6366f1;color:#fff;">Referred ${refCount} team${refCount>1?'s':''}</span>`:''}
         </div>
       </div>
-
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem .75rem;font-size:.82rem;color:var(--muted);margin-bottom:.75rem;">
-        <span><strong style="color:var(--text);">Captain:</strong> ${a.captainName || '—'}</span>
-        <span><strong style="color:var(--text);">Email:</strong> ${a.captainEmail || '—'}</span>
-        <span><strong style="color:var(--text);">Instagram:</strong> ${a.captainInstagram || '—'}</span>
+        <span><strong style="color:var(--text);">Captain:</strong> ${a.captainName||'—'}</span>
+        <span><strong style="color:var(--text);">Email:</strong> ${a.captainEmail||'—'}</span>
+        <span><strong style="color:var(--text);">Instagram:</strong> ${a.captainInstagram||'—'}</span>
         <span><strong style="color:var(--text);">Submitted:</strong> ${date}</span>
       </div>
-
-      ${players.length ? `<div style="font-size:.82rem;margin-bottom:.6rem;">
-        <strong style="color:var(--text);">Players:</strong>
-        <span style="color:var(--muted);"> ${players.join(', ')}</span>
-      </div>` : ''}
-
-      ${a.referredBy ? `<div style="font-size:.82rem;margin-bottom:.5rem;padding:.4rem .7rem;background:rgba(99,102,241,0.08);border-radius:6px;border-left:3px solid #6366f1;">
-        <strong style="color:#6366f1;">Referred by:</strong> <span style="color:var(--text);">${a.referredBy}</span>
-      </div>` : ''}
-
-      ${a.notes ? `<div style="font-size:.82rem;color:var(--muted);border-top:1px solid var(--border);padding-top:.6rem;margin-top:.6rem;">
-        <strong style="color:var(--text);">Notes:</strong> ${a.notes}
-      </div>` : ''}
+      ${players.length?`<div style="font-size:.82rem;margin-bottom:.6rem;"><strong style="color:var(--text);">Players:</strong> <span style="color:var(--muted);">${players.join(', ')}</span></div>`:''}
+      ${a.referredBy?`<div style="font-size:.82rem;margin-bottom:.5rem;padding:.4rem .7rem;background:rgba(99,102,241,0.08);border-radius:6px;border-left:3px solid #6366f1;"><strong style="color:#6366f1;">Referred by:</strong> ${a.referredBy}</div>`:''}
+      ${a.notes?`<div style="font-size:.82rem;color:var(--muted);border-top:1px solid var(--border);padding-top:.6rem;margin-top:.6rem;"><strong style="color:var(--text);">Notes:</strong> ${a.notes}</div>`:''}
     </div>`;
   }).join('');
 }
+*/
 
 // ══════════════════════════════════════════════════════════════════════
 // SCHEDULE
