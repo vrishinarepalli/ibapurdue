@@ -4027,8 +4027,7 @@
 
       // Load games from Firestore in real-time
       function loadDivisionStandings() {
-        const { onSnapshot, doc, getFirestore } = window._fbModules || {};
-        // Use the globally available db and onSnapshot
+        const { onSnapshot, doc } = window.firestoreImports;
         try {
           onSnapshot(doc(db, 'tournament', 'divisions'), (snap) => {
             const container = document.getElementById('divisionRankings');
