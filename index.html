@@ -314,13 +314,13 @@
                 <span>→</span>
                 All Teams
               </a>
-              <a href="#" class="nav-card-link" id="navCreateTeamLink" onclick="switchToTeamsTab('create'); return false;">
+              <a href="#" class="nav-card-link" onclick="switchToTeamsTab('standings'); return false;">
                 <span>→</span>
-                Create Team
+                Division Standings
               </a>
-              <a href="#" class="nav-card-link" onclick="switchToTeamsTab('freeagency'); return false;">
+              <a href="#" class="nav-card-link" id="navCreateTeamLink" onclick="switchToTeamsTab('create'); return false;" style="display:none;">
                 <span>→</span>
-                Free Agency
+                My Team
               </a>
             </div>
           </div>
@@ -2206,7 +2206,7 @@
             // Also update navigation dropdown link
             const navCreateLink = document.getElementById('navCreateTeamLink');
             if (navCreateLink) {
-              navCreateLink.innerHTML = '<span>→</span> My Team';
+              navCreateLink.style.display = '';
             }
             const teamData = teamDoc.data();
 
