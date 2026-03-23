@@ -4203,6 +4203,25 @@
               </td>
             `;
           });
+
+          // Populate date and court filter dropdowns from actual game data
+          const dayFilterEl   = document.getElementById('dayFilter');
+          const courtFilterEl = document.getElementById('courtFilter');
+          const savedDay   = dayFilterEl.value;
+          const savedCourt = courtFilterEl.value;
+
+          const uniqueDates  = [...new Set(games.map(g => g.data.date).filter(Boolean))].sort();
+          const uniqueCourts = [...new Set(games.map(g => g.data.court).filter(Boolean))].sort();
+
+          dayFilterEl.innerHTML = '<option value="">All dates</option>' +
+            uniqueDates.map(d => {
+              const label = new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+              return `<option value="${d}"${d === savedDay ? ' selected' : ''}>${label}</option>`;
+            }).join('');
+
+          courtFilterEl.innerHTML = '<option value="">All courts</option>' +
+            uniqueCourts.map(c => `<option value="${c}"${c === savedCourt ? ' selected' : ''}>${c}</option>`).join('');
+
         }, (error) => {
           console.error('❌ Error loading games:', error);
           alert('Error loading games from database: ' + error.message);
@@ -5475,8 +5494,8 @@
       allRows.forEach(tr => {
         const cells = tr.children;
         const matchesQuery = !q || tr.textContent.toLowerCase().includes(q);
-        const matchesDay = !day || cells[1].textContent === day;
-        const matchesCourt = !court || cells[4].textContent === court;
+        const matchesDay = !day || cells[0].textContent.trim() === day;
+        const matchesCourt = !court || cells[4].textContent.trim() === court;
         tr.style.display = (matchesQuery && matchesDay && matchesCourt) ? '' : 'none';
       });
     }
