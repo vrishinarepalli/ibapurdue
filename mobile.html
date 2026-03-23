@@ -4255,7 +4255,7 @@
               const tableRows = rows.map((t, i) => `
                 <tr style="border-bottom:1px solid #e5e7eb;">
                   <td style="padding:.6rem .5rem;font-weight:700;color:#6b7280;text-align:center;width:5%;">${i+1}</td>
-                  <td style="padding:.6rem .85rem;font-weight:700;width:37%;">${t.teamName}</td>
+                  <td style="padding:.6rem .85rem;font-weight:700;width:37%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:0;">${t.teamName}</td>
                   <td style="padding:.6rem .5rem;${colW}color:#15803d;font-weight:700;">${t.wins}</td>
                   <td style="padding:.6rem .5rem;${colW}color:#b91c1c;font-weight:700;">${t.losses}</td>
                   <td style="padding:.6rem .5rem;${colW}">${t.pointsFor}</td>
