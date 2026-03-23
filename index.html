@@ -4036,15 +4036,24 @@
             if (!snap.exists()) { container.style.display = 'none'; return; }
 
             const data = snap.data();
-            const divs = (data.divisions || []).filter(d => d.standings && Object.keys(d.standings).length > 0);
+            const divs = (data.divisions || []).filter(d =>
+              (d.standings && Object.keys(d.standings).length > 0) ||
+              (d.teamNames && d.teamNames.length > 0)
+            );
             if (!divs.length) { container.style.display = 'none'; return; }
 
             container.style.display = 'block';
             inner.innerHTML = divs.map(div => {
-              const rows = Object.values(div.standings).sort((a, b) => {
-                if (b.wins !== a.wins) return b.wins - a.wins;
-                return (b.pointsFor - b.pointsAgainst) - (a.pointsFor - a.pointsAgainst);
-              });
+              // Build rows: prefer live standings, fall back to teamNames with 0-0 records
+              let rows;
+              if (div.standings && Object.keys(div.standings).length > 0) {
+                rows = Object.values(div.standings).sort((a, b) => {
+                  if (b.wins !== a.wins) return b.wins - a.wins;
+                  return (b.pointsFor - b.pointsAgainst) - (a.pointsFor - a.pointsAgainst);
+                });
+              } else {
+                rows = (div.teamNames || []).map(n => ({ teamName: n, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 }));
+              }
               const tableRows = rows.map((t, i) => `
                 <tr style="border-bottom:1px solid #e5e7eb;">
                   <td style="padding:.6rem .85rem;font-weight:700;color:#6b7280;text-align:center;">${i+1}</td>

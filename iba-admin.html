@@ -2359,19 +2359,33 @@ document.getElementById('publishDivisionsBtn').addEventListener('click', async (
   btn.disabled = true; btn.textContent = 'Publishing…';
 
   try {
-    // Pre-populate 0-0 standings for every team in each division
-    // so the main site shows them immediately (standings are preserved if already exist)
+    // Build a teamId → teamName map from the schedule (most reliable source of resolved names)
+    const schedNames = {};
+    divState.schedule.forEach(g => {
+      if (g.team1Id) schedNames[g.team1Id] = g.team1Name;
+      if (g.team2Id) schedNames[g.team2Id] = g.team2Name;
+    });
+
+    // Pre-populate divisions with team names and 0-0 standings
     const divisionsWithStandings = divState.divisions.map(div => {
+      // Resolve team names: schedule first, then teamsCache, then raw ID
+      const teamNames = (div.teamIds || []).map(tid =>
+        schedNames[tid] ||
+        (teamsCache.find(t => t.id === tid) || {}).teamName ||
+        (teamsCache.find(t => t.id === tid) || {}).name ||
+        tid
+      );
+
+      // Build standings: preserve any existing game results, seed 0-0 for teams not yet there
       const existingStandings = div.standings || {};
       const standings = { ...existingStandings };
-      (div.teamIds || []).forEach(tid => {
-        const t = teamsCache.find(t => t.id === tid);
-        const name = t ? (t.teamName || t.name) : tid;
+      teamNames.forEach(name => {
         if (!standings[name]) {
           standings[name] = { teamName: name, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 };
         }
       });
-      return { ...div, standings };
+
+      return { ...div, teamNames, standings };
     });
 
     // Save divisions/state doc
