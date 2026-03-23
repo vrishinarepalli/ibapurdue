@@ -541,6 +541,20 @@
           <button class="btn btn-ghost" id="openGameForm">+ Full Form</button>
         </div>
         <p class="input-hint" style="margin-bottom:1.25rem;">Format: <code>KOS vs BBB,2026-03-10,Tuesday,800pm,Court A,Round of 16,Scheduled</code></p>
+        <!-- Day View -->
+        <div style="margin-bottom:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
+          <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+            <strong style="font-size:.95rem;">📅 Day View</strong>
+            <select id="dayViewSelect" class="input" style="max-width:200px;">
+              <option value="">— Pick a date —</option>
+            </select>
+          </div>
+          <div id="dayViewResults" style="display:none;">
+            <p id="dayViewSummary" style="font-size:.85rem;color:var(--muted);margin-bottom:.75rem;"></p>
+            <div id="dayViewTeams" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.75rem;"></div>
+          </div>
+        </div>
+
         <div class="table-wrap">
           <table>
             <thead><tr>
@@ -1306,10 +1320,84 @@ async function loadSchedule() {
     const snap = await getDocs(collection(db, 'games'));
     gamesCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderSchedule();
+    populateDayViewDates();
   } catch (e) {
     tbody.innerHTML = '<tr><td colspan="8" style="color:var(--danger);text-align:center;padding:1rem;">Failed to load games.</td></tr>';
   }
 }
+
+function populateDayViewDates() {
+  const sel = document.getElementById('dayViewSelect');
+  if (!sel) return;
+  const saved = sel.value;
+  const dates = [...new Set(gamesCache.map(g => g.date).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">— Pick a date —</option>' +
+    dates.map(d => {
+      const label = new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+      return `<option value="${d}"${d === saved ? ' selected' : ''}>${label}</option>`;
+    }).join('');
+}
+
+async function renderDayView(date) {
+  const resultsEl = document.getElementById('dayViewResults');
+  const summaryEl = document.getElementById('dayViewSummary');
+  const teamsEl   = document.getElementById('dayViewTeams');
+  if (!date) { resultsEl.style.display = 'none'; return; }
+
+  const dayGames = gamesCache.filter(g => g.date === date);
+  const teamNames = new Set();
+  dayGames.forEach(g => {
+    const parts = (g.matchup || '').split(' vs ');
+    if (parts[0]) teamNames.add(parts[0].trim());
+    if (parts[1]) teamNames.add(parts[1].trim());
+  });
+
+  summaryEl.textContent = `${dayGames.length} game${dayGames.length !== 1 ? 's' : ''} · ${teamNames.size} team${teamNames.size !== 1 ? 's' : ''} playing`;
+
+  // Fetch contact info for all playing teams
+  if (teamNames.size === 0) { teamsEl.innerHTML = '<p style="color:var(--muted);">No games on this date.</p>'; resultsEl.style.display = 'block'; return; }
+
+  teamsEl.innerHTML = '<p style="color:var(--muted);font-size:.85rem;">Loading contact info…</p>';
+  resultsEl.style.display = 'block';
+
+  try {
+    const snap = await getDocs(collection(db, 'teams'));
+    const allTeams = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const playingTeams = allTeams.filter(t => teamNames.has(t.teamName || t.name));
+
+    // For any team name not found in DB, show a placeholder
+    const foundNames = new Set(playingTeams.map(t => t.teamName || t.name));
+    const missing = [...teamNames].filter(n => !foundNames.has(n));
+
+    teamsEl.innerHTML = playingTeams.map(t => {
+      const name     = escHtml(t.teamName || t.name || '—');
+      const captain  = escHtml(t.captainName || '—');
+      const email    = escHtml(t.captainEmail || '—');
+      const ig       = t.instagram ? `<div style="font-size:.8rem;color:var(--muted);">📷 ${escHtml(t.instagram)}</div>` : '';
+      const gm       = t.groupMe   ? `<div style="font-size:.8rem;"><a href="${escHtml(t.groupMe)}" target="_blank" rel="noopener" style="color:var(--brand);">💬 GroupMe</a></div>` : '';
+      const myGames  = dayGames.filter(g => (g.matchup||'').includes(t.teamName||t.name));
+      const gameList = myGames.map(g => `<div style="font-size:.78rem;color:var(--muted);">${escHtml(g.time)} · ${escHtml(g.court)}</div>`).join('');
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem;">
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:.4rem;">${name}</div>
+        <div style="font-size:.82rem;margin-bottom:.25rem;">👤 ${captain}</div>
+        <div style="font-size:.82rem;margin-bottom:.25rem;">✉️ ${email}</div>
+        ${ig}${gm}
+        ${gameList ? `<div style="border-top:1px solid var(--border);margin-top:.5rem;padding-top:.5rem;">${gameList}</div>` : ''}
+      </div>`;
+    }).join('') + missing.map(n => `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.9rem;opacity:.6;">
+        <div style="font-weight:700;font-size:.95rem;">${escHtml(n)}</div>
+        <div style="font-size:.82rem;color:var(--muted);">No contact info found</div>
+      </div>`).join('');
+  } catch(e) {
+    teamsEl.innerHTML = `<p style="color:var(--danger);">Error loading teams: ${e.message}</p>`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const dayViewSelect = document.getElementById('dayViewSelect');
+  if (dayViewSelect) dayViewSelect.addEventListener('change', e => renderDayView(e.target.value));
+});
 
 function renderSchedule() {
   const tbody = document.getElementById('scheduleBody');
