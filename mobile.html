@@ -4235,7 +4235,8 @@
             const data = snap.data();
             const divs = (data.divisions || []).filter(d =>
               (d.standings && Object.keys(d.standings).length > 0) ||
-              (d.teamNames && d.teamNames.length > 0)
+              (d.teamNames && d.teamNames.length > 0) ||
+              (d.teamIds   && d.teamIds.length > 0)
             );
             if (!divs.length) { teamsInner.innerHTML = '<p style="text-align:center;color:#999;padding:3rem 0;">Divisions will appear here once they are published.</p>'; return; }
             teamsInner.innerHTML = divs.map(div => {
@@ -4245,8 +4246,10 @@
                   if (b.wins !== a.wins) return b.wins - a.wins;
                   return (b.pointsFor - b.pointsAgainst) - (a.pointsFor - a.pointsAgainst);
                 });
+              } else if (div.teamNames && div.teamNames.length > 0) {
+                rows = div.teamNames.map(n => ({ teamName: n, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 }));
               } else {
-                rows = (div.teamNames || []).map(n => ({ teamName: n, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 }));
+                rows = (div.teamIds || []).map(id => ({ teamName: id, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 }));
               }
               const tableRows = rows.map((t, i) => `
                 <tr style="border-bottom:1px solid #e5e7eb;">
