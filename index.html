@@ -622,11 +622,12 @@
           <button id="teams-subtab-all" class="teams-subtab active" onclick="switchTeamsTab('all')" style="padding: 0.75rem 1.5rem; border: none; background: none; font-size: 1rem; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">
             All Teams
           </button>
-          <button id="teams-subtab-create" class="teams-subtab" onclick="switchTeamsTab('create')" style="padding: 0.75rem 1.5rem; border: none; background: none; font-size: 1rem; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">
-            Create Team
+          <button id="teams-subtab-standings" class="teams-subtab" onclick="switchTeamsTab('standings')" style="padding: 0.75rem 1.5rem; border: none; background: none; font-size: 1rem; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">
+            Division Standings
           </button>
-          <button id="teams-subtab-freeagency" class="teams-subtab" onclick="switchTeamsTab('freeagency')" style="padding: 0.75rem 1.5rem; border: none; background: none; font-size: 1rem; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">
-            Free Agency
+          <!-- Hidden until user has a team (becomes "My Team") -->
+          <button id="teams-subtab-create" class="teams-subtab" onclick="switchTeamsTab('create')" style="display:none; padding: 0.75rem 1.5rem; border: none; background: none; font-size: 1rem; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; transition: all 0.2s;">
+            My Team
           </button>
         </div>
 
@@ -821,6 +822,13 @@
                 <p style="font-size: 1.1rem; margin: 0;">No players in free agency yet. Be the first!</p>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Division Standings Panel -->
+        <div id="teams-panel-standings" class="teams-subpanel" style="display: none;">
+          <div id="teams-divRankingsInner" style="display:grid;gap:1.5rem;">
+            <p style="text-align:center;color:#999;padding:3rem 0;">Divisions will appear here once they are published.</p>
           </div>
         </div>
       </section>
@@ -2188,10 +2196,11 @@
           const teamDoc = await getDoc(teamDocRef);
 
           if (teamDoc.exists()) {
-            // Team exists - change "Create Team" to "My Team"
+            // Team exists - show and label the My Team button
             const createBtn = document.getElementById('teams-subtab-create');
             if (createBtn) {
               createBtn.textContent = 'My Team';
+              createBtn.style.display = '';
             }
 
             // Also update navigation dropdown link
@@ -4043,7 +4052,8 @@
             if (!divs.length) { container.style.display = 'none'; return; }
 
             container.style.display = 'block';
-            inner.innerHTML = divs.map(div => {
+            const teamsInner = document.getElementById('teams-divRankingsInner');
+            const renderHtml = divs.map(div => {
               // Build rows: prefer live standings, fall back to teamNames with 0-0 records
               let rows;
               if (div.standings && Object.keys(div.standings).length > 0) {
@@ -4087,6 +4097,8 @@
                 </div>
               </div>`;
             }).join('');
+            inner.innerHTML = renderHtml;
+            if (teamsInner) teamsInner.innerHTML = renderHtml;
           });
         } catch(e) { console.warn('standings load failed', e); }
       }
