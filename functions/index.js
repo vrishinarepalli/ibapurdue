@@ -1,6 +1,7 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const Anthropic = require('@anthropic-ai/sdk');
 const {
   generateRegistrationOptions,
@@ -577,4 +578,64 @@ exports.scheduledFirestoreExport = functions.https.onRequest(async (req, res) =>
       error: error.message
     });
   }
+});
+
+// ─── Send Game Day Emails ────────────────────────────────────────────────────
+// Callable function: admin picks a date, writes subject/body, sends to all
+// captain emails for teams playing that day.
+// Requires Gmail app password set via:
+//   firebase functions:secrets:set GMAIL_APP_PASSWORD
+exports.sendGameDayEmails = functions.https.onCall(async (data, context) => {
+  // Admin check
+  if (!context.auth) throw new functions.https.HttpsError('unauthenticated', 'Must be signed in.');
+  const adminCheck = await isAdmin(context.auth.uid);
+  if (!adminCheck) throw new functions.https.HttpsError('permission-denied', 'Admins only.');
+
+  const { date, subject, body, recipients } = data;
+  if (!date || !subject || !body || !Array.isArray(recipients) || recipients.length === 0) {
+    throw new functions.https.HttpsError('invalid-argument', 'Missing date, subject, body, or recipients.');
+  }
+
+  const gmailPassword = functions.config().gmail && functions.config().gmail.app_password;
+  if (!gmailPassword) {
+    throw new functions.https.HttpsError('failed-precondition', 'Gmail app password not configured. Run: firebase functions:config:set gmail.app_password="YOUR_APP_PASSWORD"');
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: 'ibapurdue@gmail.com',
+      pass: gmailPassword,
+    },
+  });
+
+  const results = { sent: [], failed: [] };
+
+  for (const email of recipients) {
+    try {
+      await transporter.sendMail({
+        from: '"IBA Purdue" <ibapurdue@gmail.com>',
+        to: email,
+        subject,
+        text: body,
+        html: body.replace(/\n/g, '<br>'),
+      });
+      results.sent.push(email);
+    } catch (err) {
+      console.error(`Failed to send to ${email}:`, err.message);
+      results.failed.push(email);
+    }
+  }
+
+  // Log to Firestore for record keeping
+  await db.collection('email_logs').add({
+    date,
+    subject,
+    sentTo: results.sent,
+    failedTo: results.failed,
+    sentAt: admin.firestore.FieldValue.serverTimestamp(),
+    sentBy: context.auth.uid,
+  });
+
+  return results;
 });

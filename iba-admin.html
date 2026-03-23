@@ -551,7 +551,20 @@
           </div>
           <div id="dayViewResults" style="display:none;">
             <p id="dayViewSummary" style="font-size:.85rem;color:var(--muted);margin-bottom:.75rem;"></p>
-            <div id="dayViewTeams" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.75rem;"></div>
+            <div id="dayViewTeams" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.75rem;margin-bottom:1rem;"></div>
+
+            <!-- Email compose -->
+            <div id="dayViewCompose" style="border-top:1px solid var(--border);padding-top:1rem;">
+              <strong style="font-size:.9rem;display:block;margin-bottom:.6rem;">📧 Email All Teams Playing This Day</strong>
+              <div style="display:flex;flex-direction:column;gap:.6rem;">
+                <input id="dayEmailSubject" class="input" placeholder="Subject" />
+                <textarea id="dayEmailBody" class="input" rows="5" placeholder="Message body…" style="resize:vertical;font-family:inherit;"></textarea>
+                <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+                  <button id="dayEmailSendBtn" class="btn btn-brand">Send Emails</button>
+                  <span id="dayEmailStatus" style="font-size:.82rem;color:var(--muted);"></span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1397,6 +1410,59 @@ async function renderDayView(date) {
 document.addEventListener('DOMContentLoaded', () => {
   const dayViewSelect = document.getElementById('dayViewSelect');
   if (dayViewSelect) dayViewSelect.addEventListener('change', e => renderDayView(e.target.value));
+
+  const sendBtn = document.getElementById('dayEmailSendBtn');
+  if (sendBtn) {
+    sendBtn.addEventListener('click', async () => {
+      const date    = document.getElementById('dayViewSelect').value;
+      const subject = document.getElementById('dayEmailSubject').value.trim();
+      const body    = document.getElementById('dayEmailBody').value.trim();
+      const statusEl = document.getElementById('dayEmailStatus');
+
+      if (!date)    { toast('Pick a date first', 'err'); return; }
+      if (!subject) { toast('Enter a subject', 'err'); return; }
+      if (!body)    { toast('Enter a message body', 'err'); return; }
+
+      // Collect all captain emails from teams playing that day
+      const dayGames = gamesCache.filter(g => g.date === date);
+      const teamNames = new Set();
+      dayGames.forEach(g => {
+        (g.matchup || '').split(' vs ').forEach(t => { if (t.trim()) teamNames.add(t.trim()); });
+      });
+
+      const snap = await getDocs(collection(db, 'teams'));
+      const recipients = snap.docs
+        .map(d => d.data())
+        .filter(t => teamNames.has(t.teamName || t.name) && t.captainEmail)
+        .map(t => t.captainEmail);
+
+      if (recipients.length === 0) { toast('No email addresses found for these teams', 'err'); return; }
+
+      if (!confirm(`Send email to ${recipients.length} captain${recipients.length !== 1 ? 's' : ''}?\n\n${recipients.join('\n')}`)) return;
+
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending…';
+      statusEl.textContent = '';
+
+      try {
+        const { getFunctions, httpsCallable } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-functions.js');
+        const fns  = getFunctions(window.firebaseApp);
+        const call = httpsCallable(fns, 'sendGameDayEmails');
+        const result = await call({ date, subject, body, recipients });
+        const { sent, failed } = result.data;
+        statusEl.style.color = failed.length ? 'var(--warn)' : '#16a34a';
+        statusEl.textContent = `✅ Sent to ${sent.length}${failed.length ? ` · ❌ Failed: ${failed.join(', ')}` : ''}`;
+        toast(`Emails sent to ${sent.length} captain${sent.length !== 1 ? 's' : ''}`, 'ok');
+      } catch (err) {
+        statusEl.style.color = 'var(--danger)';
+        statusEl.textContent = `Error: ${err.message}`;
+        toast('Send failed: ' + err.message, 'err');
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send Emails';
+      }
+    });
+  }
 });
 
 function renderSchedule() {
