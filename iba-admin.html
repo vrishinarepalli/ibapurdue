@@ -2376,13 +2376,12 @@ document.getElementById('publishDivisionsBtn').addEventListener('click', async (
         tid
       );
 
-      // Build standings: preserve any existing game results, seed 0-0 for teams not yet there
+      // Build standings only from current teams — preserves stats for teams still here,
+      // and drops any teams that were moved out of this division
       const existingStandings = div.standings || {};
-      const standings = { ...existingStandings };
+      const standings = {};
       teamNames.forEach(name => {
-        if (!standings[name]) {
-          standings[name] = { teamName: name, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 };
-        }
+        standings[name] = existingStandings[name] || { teamName: name, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 };
       });
 
       return { ...div, teamNames, standings };
