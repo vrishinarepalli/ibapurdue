@@ -5105,12 +5105,21 @@
       }
 
       try {
-        const { doc, updateDoc, getDoc } = window.firestoreImports;
+        const { doc, updateDoc, getDoc, collection, query, where, getDocs } = window.firestoreImports;
         const gameRef = doc(db, 'games', currentCompleteGameData.docId);
 
-        // Update game status to completed and add completion timestamp
+        // Fetch the current game doc to get division (if any)
+        const gameSnap = await getDoc(gameRef);
+        const gameDivision = gameSnap.exists() ? (gameSnap.data().division || null) : null;
+
+        // Update game status, scores, winner, and completion timestamp
         await updateDoc(gameRef, {
           status: 'Completed',
+          team1Score: score1,
+          team2Score: score2,
+          winner: selectedWinner === 1
+            ? currentCompleteGameData.matchup.split(' vs ')[0].trim()
+            : currentCompleteGameData.matchup.split(' vs ')[1].trim(),
           completedAt: new Date().toISOString()
         });
 
@@ -5192,6 +5201,38 @@
               completedGames: team2CompletedGames
             });
 
+          }
+        }
+
+        // Recalculate division standings if game belongs to a division
+        if (gameDivision) {
+          try {
+            const q = query(collection(db, 'games'), where('division', '==', gameDivision), where('status', '==', 'Completed'));
+            const snap = await getDocs(q);
+            const standings = {};
+            snap.docs.forEach(d => {
+              const g = d.data();
+              const ps = (g.matchup || '').split(' vs ');
+              const t1 = (ps[0] || '').trim(), t2 = (ps[1] || '').trim();
+              const s1 = parseInt(g.team1Score) || 0;
+              const s2 = parseInt(g.team2Score) || 0;
+              if (!standings[t1]) standings[t1] = { teamName: t1, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 };
+              if (!standings[t2]) standings[t2] = { teamName: t2, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 };
+              standings[t1].pointsFor += s1; standings[t1].pointsAgainst += s2;
+              standings[t2].pointsFor += s2; standings[t2].pointsAgainst += s1;
+              if (s1 > s2) { standings[t1].wins++; standings[t2].losses++; }
+              else if (s2 > s1) { standings[t2].wins++; standings[t1].losses++; }
+            });
+            const divDocRef = doc(db, 'tournament', 'divisions');
+            const divDoc = await getDoc(divDocRef);
+            if (divDoc.exists()) {
+              const divs = (divDoc.data().divisions || []).map(d =>
+                d.id === gameDivision ? { ...d, standings } : d
+              );
+              await updateDoc(divDocRef, { divisions: divs });
+            }
+          } catch (standingsErr) {
+            console.error('Error recalculating standings:', standingsErr);
           }
         }
 

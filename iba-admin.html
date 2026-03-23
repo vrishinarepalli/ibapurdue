@@ -2154,23 +2154,85 @@ document.getElementById('generateScheduleBtn').addEventListener('click', () => {
   if (!slots.length)    { toast('Add court time blocks first (Step 2)', 'err'); return; }
   if (!matchups.length) { toast('Assign teams to at least one division first (Step 1)', 'err'); return; }
 
-  const ts = Date.now();
-  divState.schedule = matchups.slice(0, slots.length).map((m, i) => {
-    const t1 = teamsCache.find(t => t.id === m.team1);
-    const t2 = teamsCache.find(t => t.id === m.team2);
-    return {
-      id: `g-${ts}-${i}`,
-      team1Id: m.team1, team2Id: m.team2,
-      team1Name: t1 ? (t1.teamName||t1.name) : m.team1,
-      team2Name: t2 ? (t2.teamName||t2.name) : m.team2,
-      divisionId: m.divisionId, divisionName: m.divisionName,
-      date: slots[i].date, time: slots[i].time, court: slots[i].court,
-      type: slots[i].type || 'regular',
-      round: slots[i].type === 'playoff' ? 'Playoffs' : 'Division Play'
-    };
+  // Sort slots chronologically so constraint checking works in time order
+  slots.sort((a, b) => {
+    if (a.date !== b.date) return a.date.localeCompare(b.date);
+    return parseTime12(a.time) - parseTime12(b.time);
   });
 
-  const leftover = matchups.slice(slots.length);
+  // Shuffle matchups for random interleaving across divisions
+  for (let i = matchups.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [matchups[i], matchups[j]] = [matchups[j], matchups[i]];
+  }
+
+  // Constraint-based assignment:
+  //   - No team plays two games at the same time
+  //   - Min 60 min between a team's game start times (30 min game + 30 min break)
+  //   - Max 90 min between a team's game start times (30 min game + 60 min break)
+  const teamLastMins = {}; // teamId+'|'+date → last game start in mins
+  const busyAtSlot   = {}; // date+'|'+time   → Set of teamIds playing that slot
+
+  const remaining = [...matchups];
+  const ts = Date.now();
+  divState.schedule = [];
+
+  for (let si = 0; si < slots.length; si++) {
+    const slot     = slots[si];
+    // Reserve playoff slots — skip them during division play generation
+    if (slot.type === 'playoff') continue;
+    const slotMins = parseTime12(slot.time);
+    const bk       = slot.date + '|' + slot.time;
+    if (!busyAtSlot[bk]) busyAtSlot[bk] = new Set();
+    const busy = busyAtSlot[bk];
+
+    // Three passes: strict → relax max-break → relax both break limits (only no-conflict)
+    let pickedIdx = -1;
+    for (let pass = 1; pass <= 3 && pickedIdx === -1; pass++) {
+      for (let i = 0; i < remaining.length; i++) {
+        const m    = remaining[i];
+        if (busy.has(m.team1) || busy.has(m.team2)) continue;
+        const t1k  = m.team1 + '|' + slot.date;
+        const t2k  = m.team2 + '|' + slot.date;
+        const t1lm = teamLastMins[t1k] ?? null;
+        const t2lm = teamLastMins[t2k] ?? null;
+        // Min 60 min gap (passes 1 & 2)
+        if (pass <= 2) {
+          if (t1lm !== null && slotMins - t1lm < 60) continue;
+          if (t2lm !== null && slotMins - t2lm < 60) continue;
+        }
+        // Max 90 min gap (pass 1 only)
+        if (pass === 1) {
+          if (t1lm !== null && slotMins - t1lm > 90) continue;
+          if (t2lm !== null && slotMins - t2lm > 90) continue;
+        }
+        pickedIdx = i;
+        break;
+      }
+    }
+
+    if (pickedIdx !== -1) {
+      const m  = remaining.splice(pickedIdx, 1)[0];
+      const t1 = teamsCache.find(t => t.id === m.team1);
+      const t2 = teamsCache.find(t => t.id === m.team2);
+      divState.schedule.push({
+        id: `g-${ts}-${si}`,
+        team1Id: m.team1, team2Id: m.team2,
+        team1Name: t1 ? (t1.teamName || t1.name) : m.team1,
+        team2Name: t2 ? (t2.teamName || t2.name) : m.team2,
+        divisionId: m.divisionId, divisionName: m.divisionName,
+        date: slot.date, time: slot.time, court: slot.court,
+        type: slot.type || 'regular',
+        round: slot.type === 'playoff' ? 'Playoffs' : 'Division Play'
+      });
+      busy.add(m.team1);
+      busy.add(m.team2);
+      teamLastMins[m.team1 + '|' + slot.date] = slotMins;
+      teamLastMins[m.team2 + '|' + slot.date] = slotMins;
+    }
+  }
+
+  const leftover = remaining;
   document.getElementById('unscheduledSection').style.display = leftover.length ? 'block' : 'none';
   document.getElementById('unscheduledList').innerHTML = leftover.map(m => {
     const t1 = teamsCache.find(t=>t.id===m.team1), t2 = teamsCache.find(t=>t.id===m.team2);
