@@ -465,104 +465,38 @@
       <section id="panel-current" class="tabpanel active" role="tabpanel" aria-labelledby="tab-current">
         <div style="max-width: 900px; margin: 0 auto; padding: 2rem 1rem;">
 
-          <!-- Hero Header -->
-          <div class="reveal-up" style="background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%); padding: 2.5rem 2rem; border-radius: 20px; text-align: center; margin-bottom: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.2), 0 0 0 1px rgba(207,185,145,0.15); position: relative; overflow: hidden;">
+          <!-- Games Today Header -->
+          <div class="reveal-up" style="background: linear-gradient(135deg, #111111 0%, #1a1a1a 100%); padding: 2rem 2rem 1.5rem; border-radius: 20px; text-align: center; margin-bottom: 2rem; box-shadow: 0 8px 32px rgba(0,0,0,0.2), 0 0 0 1px rgba(207,185,145,0.15); position: relative; overflow: hidden;">
             <div style="position: absolute; inset: 0; background: radial-gradient(ellipse at 70% 50%, rgba(207,185,145,0.12) 0%, transparent 65%); pointer-events: none;"></div>
             <div style="position: relative; z-index: 1;">
-              <h2 style="font-size: 2.4rem; font-weight: 900; color: #fff; margin-bottom: 0.4rem; letter-spacing: -1px;">Spring 2026 Tournament</h2>
-              <p style="font-size: 1rem; color: rgba(255,255,255,0.55); font-weight: 500; margin: 0;">Starts March 2026 — After Spring Break</p>
+              <div style="font-size: 0.8rem; font-weight: 600; letter-spacing: 2px; color: #CFB991; text-transform: uppercase; margin-bottom: 0.4rem;" id="todayDateLabel"></div>
+              <h2 style="font-size: 2.2rem; font-weight: 900; color: #fff; margin-bottom: 0; letter-spacing: -1px;">🏀 Games Today</h2>
             </div>
           </div>
 
-          <!-- Tournament Info Images -->
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-bottom: 2rem; max-width: 700px; margin-left: auto; margin-right: auto;">
-            <div style="border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); height: 400px;">
-              <img src="images/32teamsplayoffs.png" alt="32 Teams Playoffs" style="width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block;" />
-            </div>
-            <div style="border-radius: 16px; overflow: hidden; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); height: 400px;">
-              <img src="images/3regseasongames.png" alt="3 Regular Season Games" style="width: 100%; height: 100%; object-fit: cover; object-position: center 20%; display: block;" />
-            </div>
-          </div>
-
-          <!-- Prize Pool -->
-          <div style="margin-bottom: 2rem;">
-            <h3 style="text-align: center; font-size: 1.8rem; margin-bottom: 1.5rem; color: var(--text);">💰 Prize Pool</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-              <!-- Black Division -->
-              <div style="background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%); border-radius: 16px; padding: 2rem; text-align: center; position: relative; overflow: hidden; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);">
-                <div style="position: absolute; top: -20px; right: -20px; font-size: 8rem; opacity: 0.1;">⚫</div>
-                <div style="position: relative; z-index: 1;">
-                  <div style="font-size: 1.3rem; color: white; font-weight: 600; margin-bottom: 0.5rem;">Black Division</div>
-                  <div style="font-size: 0.9rem; color: #999; margin-bottom: 1rem;">16 Teams Competing</div>
-                  <div style="font-size: 3rem; font-weight: 700; color: #CFB991;">$150</div>
-                  <div style="font-size: 0.85rem; color: #999; margin-top: 0.5rem;">Grand Prize</div>
+          <!-- Team of the Day -->
+          <div id="teamOfDayCard" style="display:none; margin-bottom: 2rem;">
+            <div style="background: linear-gradient(135deg, #CFB991 0%, #A89968 100%); border-radius: 16px; padding: 1.5rem 2rem; box-shadow: 0 8px 24px rgba(207,185,145,0.35); position: relative; overflow: hidden;">
+              <div style="position: absolute; top: -10px; right: -10px; font-size: 7rem; opacity: 0.12; line-height: 1;">🏆</div>
+              <div style="position: relative; z-index: 1; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+                <div>
+                  <div style="font-size: 0.75rem; font-weight: 700; letter-spacing: 2px; color: rgba(0,0,0,0.55); text-transform: uppercase; margin-bottom: 0.25rem;">Team of the Day</div>
+                  <div id="totdName" style="font-size: 1.6rem; font-weight: 900; color: #000; margin-bottom: 0.3rem;"></div>
+                  <div id="totdStats" style="font-size: 0.85rem; color: rgba(0,0,0,0.65); font-weight: 600;"></div>
                 </div>
-              </div>
-              <!-- Gold Division -->
-              <div style="background: linear-gradient(135deg, #CFB991 0%, #A89968 100%); border-radius: 16px; padding: 2rem; text-align: center; position: relative; overflow: hidden; box-shadow: 0 8px 24px rgba(207, 185, 145, 0.4);">
-                <div style="position: relative; z-index: 1;">
-                  <div style="font-size: 1.3rem; color: #000; font-weight: 600; margin-bottom: 0.5rem;">Gold Division</div>
-                  <div style="font-size: 0.9rem; color: #3a3a3a; margin-bottom: 1rem;">16 Teams Competing</div>
-                  <div style="font-size: 3rem; font-weight: 700; color: #000;">$150</div>
-                  <div style="font-size: 0.85rem; color: #3a3a3a; margin-top: 0.5rem;">Grand Prize</div>
+                <div id="totdDiff" style="margin-left: auto; text-align: right;">
+                  <div style="font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; color: rgba(0,0,0,0.55); text-transform: uppercase;">Point Diff</div>
+                  <div style="font-size: 2.8rem; font-weight: 900; color: #000; line-height: 1;"></div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Format Explanation with Images -->
-          <div style="background: linear-gradient(to right, #f8f9fa, #ffffff); border-left: 4px solid #CFB991; border-radius: 12px; padding: 2rem; margin-bottom: 1.5rem;">
-            <h4 style="font-size: 1.5rem; margin-bottom: 1.5rem; color: var(--text); font-weight: 700; text-align: center;">How It Works</h4>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 1.5rem;">
-              <!-- 32 Teams Info -->
-              <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
-                <div style="width: 120px; height: 120px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 1rem;">
-                  <img src="images/32teamsplayoffs.png" alt="32 Teams" style="width: 100%; height: 100%; object-fit: cover; object-position: center 20%;" />
-                </div>
-                <h5 style="font-size: 1.1rem; font-weight: 600; color: var(--brand); margin-bottom: 0.5rem;">32 Teams Compete</h5>
-                <p style="font-size: 0.9rem; color: var(--text); line-height: 1.5; margin: 0;">Every team makes the playoffs! No one is left out of championship contention.</p>
-              </div>
-
-              <!-- 3 Regular Season Games -->
-              <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
-                <div style="width: 120px; height: 120px; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 1rem;">
-                  <img src="images/3regseasongames.png" alt="3 Regular Season Games" style="width: 100%; height: 100%; object-fit: cover; object-position: center 20%;" />
-                </div>
-                <h5 style="font-size: 1.1rem; font-weight: 600; color: var(--brand); margin-bottom: 0.5rem;">3-Game Regular Season</h5>
-                <p style="font-size: 0.9rem; color: var(--text); line-height: 1.5; margin: 0;">Teams compete in 3 games to determine playoff division placement.</p>
-              </div>
-            </div>
-
-            <!-- Tournament Format Text -->
-            <div style="background: white; border-radius: 8px; padding: 1.25rem; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
-              <p style="line-height: 1.8; color: var(--text); margin-bottom: 1rem;">
-                After the regular season, the <strong>top 16 teams</strong> advance to the <strong>Black Division</strong> playoffs,
-                while the <strong>lower 16 teams</strong> compete in the <strong style="color: #CFB991;">Gold Division</strong> playoffs.
-              </p>
-              <p style="line-height: 1.8; color: var(--text); margin: 0;">
-                Both divisions crown a champion with a <strong style="color: #CFB991; font-size: 1.1rem;">$150 prize</strong>!
-                Every team has a shot at the championship. 🏆
-              </p>
-            </div>
-          </div>
-
-          <!-- Important Notices -->
-          <div style="display: grid; gap: 1rem;">
-            <div style="background: #fff9e6; border-left: 4px solid #ffc107; border-radius: 8px; padding: 1rem 1.25rem;">
-              <div style="font-weight: 600; color: #856404; margin-bottom: 0.25rem;">⚠️ Payment Required</div>
-              <div style="font-size: 0.9rem; color: #856404;">All teams must complete payment before participating in tournament games.</div>
-            </div>
-            <div style="background: #e8f4f8; border-left: 4px solid #17a2b8; border-radius: 8px; padding: 1rem 1.25rem;">
-              <div style="font-weight: 600; color: #0c5460; margin-bottom: 0.5rem;">🤝 Fair Play Commitment</div>
-              <div style="font-size: 0.9rem; color: #0c5460; line-height: 1.6;">
-                IBA is committed to maintaining fair and competitive play throughout the tournament. To ensure balanced competition:
-                <ul style="margin: 0.5rem 0 0 1.25rem; padding: 0;">
-                  <li style="margin-bottom: 0.25rem;">IBA may ask teams to split up if their skill level is significantly higher than other teams.</li>
-                  <li style="margin-bottom: 0.25rem;">Teams should refrain from having multiple players who have played basketball at any level higher than high school.</li>
-                  <li>Any team found to be purposefully losing games in order to be placed into the Gold Division bracket will be immediately disqualified from the tournament.</li>
-                </ul>
-              </div>
+          <!-- Today's Games List -->
+          <div id="gamesTodayList">
+            <div style="text-align:center; padding: 3rem 1rem; color: #999;">
+              <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">📅</div>
+              <div style="font-size: 1rem; font-weight: 600;">Loading today's games…</div>
             </div>
           </div>
 
@@ -4208,9 +4142,90 @@
         return `${hours.toString().padStart(2, '0')}:${minutes}`;
       }
 
+      // ── Games Today ──────────────────────────────────────────────
+      function loadGamesToday() {
+        const { onSnapshot, collection, doc } = window.firestoreImports;
+        const todayStr = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+
+        // Set header date label
+        const label = document.getElementById('todayDateLabel');
+        if (label) {
+          label.textContent = new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+        }
+
+        onSnapshot(collection(db, 'games'), (snap) => {
+          const todayGames = [];
+          snap.forEach(d => {
+            const g = d.data();
+            if (g.date === todayStr) todayGames.push({ id: d.id, ...g });
+          });
+          todayGames.sort((a, b) => convertTo24Hour(a.time||'').localeCompare(convertTo24Hour(b.time||'')));
+
+          const list = document.getElementById('gamesTodayList');
+          if (!list) return;
+
+          if (!todayGames.length) {
+            list.innerHTML = `<div style="text-align:center;padding:3rem 1rem;color:#999;">
+              <div style="font-size:2.5rem;margin-bottom:.75rem;">📅</div>
+              <div style="font-size:1rem;font-weight:600;">No games scheduled for today</div>
+            </div>`;
+            return;
+          }
+
+          const cards = todayGames.map(g => {
+            const isCompleted = g.status === 'Completed';
+            const scoreHtml = isCompleted
+              ? `<div style="font-size:.9rem;font-weight:700;color:#15803d;margin-top:.35rem;">${g.matchup.split(' vs ')[0]} ${g.team1Score||0} – ${g.team2Score||0} ${g.matchup.split(' vs ')[1]}</div>`
+              : '';
+            const winnerHtml = isCompleted && g.winner
+              ? `<span style="font-size:.72rem;background:#dcfce7;color:#166534;padding:.2rem .55rem;border-radius:20px;font-weight:700;">W: ${g.winner}</span>`
+              : '';
+            const statusColor = isCompleted ? '#15803d' : g.status === 'In Progress' ? '#b45309' : '#6b7280';
+            const statusBg   = isCompleted ? '#dcfce7'  : g.status === 'In Progress' ? '#fef3c7'  : '#f3f4f6';
+            return `<div style="background:#fff;border-radius:14px;padding:1.1rem 1.25rem;box-shadow:0 2px 10px rgba(0,0,0,.07);border:1px solid #f0f0f0;display:flex;flex-wrap:wrap;gap:.5rem;align-items:flex-start;">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:1.05rem;font-weight:800;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${g.matchup||'—'}</div>
+                ${scoreHtml}
+                <div style="font-size:.8rem;color:#888;margin-top:.3rem;">⏰ ${g.time||'—'} &nbsp;|&nbsp; 🏟 ${g.court||'—'} &nbsp;|&nbsp; ${g.division||g.round||''}</div>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.3rem;">
+                <span style="font-size:.72rem;background:${statusBg};color:${statusColor};padding:.2rem .55rem;border-radius:20px;font-weight:700;">${g.status||'Scheduled'}</span>
+                ${winnerHtml}
+              </div>
+            </div>`;
+          }).join('');
+
+          list.innerHTML = `<div style="display:grid;gap:.85rem;">${cards}</div>`;
+        });
+
+        // Team of the Day: highest cumulative point diff from standings
+        onSnapshot(doc(db, 'tournament', 'divisions'), (snap) => {
+          if (!snap.exists()) return;
+          const divs = snap.data().divisions || [];
+          let best = null;
+          divs.forEach(div => {
+            const st = div.standings || {};
+            Object.values(st).forEach(t => {
+              const diff = (t.pointsFor||0) - (t.pointsAgainst||0);
+              if (!best || diff > best.diff) {
+                best = { name: t.teamName, wins: t.wins||0, losses: t.losses||0, pf: t.pointsFor||0, pa: t.pointsAgainst||0, diff, division: div.name };
+              }
+            });
+          });
+          const card = document.getElementById('teamOfDayCard');
+          if (!card || !best || (best.wins === 0 && best.losses === 0)) return;
+          document.getElementById('totdName').textContent = best.name;
+          document.getElementById('totdStats').textContent = `${best.wins}W – ${best.losses}L  ·  ${best.pf} PS  /  ${best.pa} PA  ·  ${best.division}`;
+          const diffEl = document.querySelector('#totdDiff div:last-child');
+          if (diffEl) diffEl.textContent = (best.diff > 0 ? '+' : '') + best.diff;
+          card.style.display = 'block';
+        });
+      }
+
       // Start loading games
       loadGames();
       loadDivisionStandings();
+      loadGamesToday();
 
       // Auto-delete completed games older than 1 day
       async function cleanupOldGames() {

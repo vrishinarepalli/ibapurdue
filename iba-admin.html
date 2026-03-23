@@ -539,6 +539,16 @@
           <input class="input" id="quickInput" placeholder="Team1 vs Team2,Date,Day,Time,Court,Round,Status" />
           <button class="btn btn-brand" id="quickAddBtn">Quick Add</button>
           <button class="btn btn-ghost" id="openGameForm">+ Full Form</button>
+          <button class="btn btn-ghost" id="checkScheduleBtn" style="background:#fef3c7;border-color:#f59e0b;color:#92400e;">🔍 Check Schedule</button>
+        </div>
+
+        <!-- Schedule Check Results -->
+        <div id="scheduleCheckPanel" style="display:none;margin-bottom:1.5rem;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.25rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <strong style="font-size:.95rem;">🔍 Schedule Check Results</strong>
+            <button onclick="document.getElementById('scheduleCheckPanel').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--muted);">✕</button>
+          </div>
+          <div id="scheduleCheckResults"></div>
         </div>
         <p class="input-hint" style="margin-bottom:1.25rem;">Format: <code>KOS vs BBB,2026-03-10,Tuesday,800pm,Court A,Round of 16,Scheduled</code></p>
         <!-- Day View -->
@@ -1407,9 +1417,149 @@ async function renderDayView(date) {
   }
 }
 
+function runScheduleCheck() {
+  const panel    = document.getElementById('scheduleCheckPanel');
+  const resultsEl = document.getElementById('scheduleCheckResults');
+  panel.style.display = 'block';
+
+  const games = gamesCache;
+  if (!games.length) {
+    resultsEl.innerHTML = '<p style="color:var(--muted);">No games loaded yet.</p>';
+    return;
+  }
+
+  const issues = [];   // { severity: 'error'|'warn', msg }
+  const VALID_TIME_RE = /^\d{1,2}:\d{2}\s*(AM|PM)$/i;
+  const DAY_NAMES     = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const MIN_BREAK     = 60;  // minutes between game starts
+  const GAMES_PER_TEAM = 4;
+
+  // Build team → games map
+  const teamGames = {};
+  games.forEach(g => {
+    const teams = (g.matchup || '').split(' vs ').map(t => t.trim()).filter(Boolean);
+    teams.forEach(t => {
+      if (!teamGames[t]) teamGames[t] = [];
+      teamGames[t].push(g);
+    });
+  });
+
+  // Helper: parse "2026-03-29" to JS Date
+  function parseDate(dateStr) {
+    return dateStr ? new Date(dateStr + 'T12:00:00') : null;
+  }
+  // Helper: parse time "8:00 PM" → minutes since midnight
+  function timeMins(t) {
+    if (!t) return null;
+    const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!m) return null;
+    let h = parseInt(m[1]), mn = parseInt(m[2]);
+    if (m[3].toUpperCase() === 'PM' && h !== 12) h += 12;
+    if (m[3].toUpperCase() === 'AM' && h === 12) h = 0;
+    return h * 60 + mn;
+  }
+
+  games.forEach(g => {
+    const id = `${g.matchup} (${g.date} ${g.time})`;
+
+    // 1. Date vs day-of-week mismatch
+    if (g.date && g.day) {
+      const d = parseDate(g.date);
+      if (d) {
+        const expected = DAY_NAMES[d.getDay()];
+        if (expected.toLowerCase() !== (g.day || '').toLowerCase()) {
+          issues.push({ severity:'error', msg:`Day mismatch: "${g.matchup}" on ${g.date} is a ${expected}, not ${g.day}` });
+        }
+      }
+    }
+
+    // 2. Invalid time format
+    if (!g.time || !VALID_TIME_RE.test(g.time)) {
+      issues.push({ severity:'error', msg:`Invalid time "${g.time || '(blank)'}" — ${id}` });
+    } else {
+      const mins = timeMins(g.time);
+      if (mins !== null && (mins < 6*60 || mins > 23*60)) {
+        issues.push({ severity:'warn', msg:`Unusual time ${g.time} — ${id}` });
+      }
+    }
+
+    // 3. Missing/blank court
+    if (!g.court || !g.court.trim()) {
+      issues.push({ severity:'error', msg:`Missing court — ${id}` });
+    }
+
+    // 4. Missing matchup teams
+    const parts = (g.matchup || '').split(' vs ');
+    if (parts.length !== 2 || !parts[0].trim() || !parts[1].trim()) {
+      issues.push({ severity:'error', msg:`Invalid matchup format: "${g.matchup}"` });
+    }
+  });
+
+  // 5. Same team playing two games at the same time
+  Object.entries(teamGames).forEach(([team, tGames]) => {
+    const bySlot = {};
+    tGames.forEach(g => {
+      const key = `${g.date}|${g.time}`;
+      if (!bySlot[key]) bySlot[key] = [];
+      bySlot[key].push(g);
+    });
+    Object.entries(bySlot).forEach(([slot, clashes]) => {
+      if (clashes.length > 1) {
+        issues.push({ severity:'error', msg:`Double-booked: "${team}" has ${clashes.length} games at ${slot.replace('|',' ')}` });
+      }
+    });
+  });
+
+  // 6. Not enough break time between games (same team, same day)
+  Object.entries(teamGames).forEach(([team, tGames]) => {
+    const byDate = {};
+    tGames.forEach(g => {
+      if (!byDate[g.date]) byDate[g.date] = [];
+      byDate[g.date].push(g);
+    });
+    Object.entries(byDate).forEach(([date, dayGames]) => {
+      const sorted = dayGames.slice().sort((a,b) => (timeMins(a.time)||0) - (timeMins(b.time)||0));
+      for (let i = 1; i < sorted.length; i++) {
+        const gap = (timeMins(sorted[i].time)||0) - (timeMins(sorted[i-1].time)||0);
+        if (gap > 0 && gap < MIN_BREAK) {
+          issues.push({ severity:'error', msg:`Break too short: "${team}" on ${date} has only ${gap} min between ${sorted[i-1].time} and ${sorted[i].time} (min ${MIN_BREAK} min required)` });
+        }
+      }
+    });
+  });
+
+  // 7. Team game count check
+  Object.entries(teamGames).forEach(([team, tGames]) => {
+    if (tGames.length !== GAMES_PER_TEAM) {
+      const sev = tGames.length > GAMES_PER_TEAM ? 'warn' : 'warn';
+      issues.push({ severity: sev, msg:`Game count: "${team}" has ${tGames.length} game${tGames.length!==1?'s':''} (expected ${GAMES_PER_TEAM})` });
+    }
+  });
+
+  // Render results
+  if (!issues.length) {
+    resultsEl.innerHTML = '<div style="color:#16a34a;font-weight:700;font-size:.95rem;">✅ No issues found — schedule looks good!</div>';
+    return;
+  }
+
+  const errors = issues.filter(i => i.severity === 'error');
+  const warns  = issues.filter(i => i.severity === 'warn');
+
+  resultsEl.innerHTML = `
+    <div style="margin-bottom:.5rem;font-size:.85rem;color:var(--muted);">${errors.length} error${errors.length!==1?'s':''} · ${warns.length} warning${warns.length!==1?'s':''}</div>
+    ${errors.map(i => `<div style="display:flex;align-items:flex-start;gap:.5rem;padding:.5rem .75rem;margin-bottom:.4rem;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:.83rem;">
+      <span style="color:#dc2626;flex-shrink:0;">✗</span><span>${i.msg}</span></div>`).join('')}
+    ${warns.map(i => `<div style="display:flex;align-items:flex-start;gap:.5rem;padding:.5rem .75rem;margin-bottom:.4rem;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;font-size:.83rem;">
+      <span style="color:#d97706;flex-shrink:0;">⚠</span><span>${i.msg}</span></div>`).join('')}
+  `;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   const dayViewSelect = document.getElementById('dayViewSelect');
   if (dayViewSelect) dayViewSelect.addEventListener('change', e => renderDayView(e.target.value));
+
+  const checkBtn = document.getElementById('checkScheduleBtn');
+  if (checkBtn) checkBtn.addEventListener('click', runScheduleCheck);
 
   const sendBtn = document.getElementById('dayEmailSendBtn');
   if (sendBtn) {
