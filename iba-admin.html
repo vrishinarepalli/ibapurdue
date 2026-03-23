@@ -2359,9 +2359,24 @@ document.getElementById('publishDivisionsBtn').addEventListener('click', async (
   btn.disabled = true; btn.textContent = 'Publishing…';
 
   try {
+    // Pre-populate 0-0 standings for every team in each division
+    // so the main site shows them immediately (standings are preserved if already exist)
+    const divisionsWithStandings = divState.divisions.map(div => {
+      const existingStandings = div.standings || {};
+      const standings = { ...existingStandings };
+      (div.teamIds || []).forEach(tid => {
+        const t = teamsCache.find(t => t.id === tid);
+        const name = t ? (t.teamName || t.name) : tid;
+        if (!standings[name]) {
+          standings[name] = { teamName: name, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 };
+        }
+      });
+      return { ...div, standings };
+    });
+
     // Save divisions/state doc
     await setDoc(doc(db, 'tournament', 'divisions'), {
-      divisions:  divState.divisions,
+      divisions:  divisionsWithStandings,
       courtSlots: divState.courtSlots,
       schedule:   divState.schedule,
       updatedAt:  new Date().toISOString()
