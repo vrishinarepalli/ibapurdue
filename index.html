@@ -2220,7 +2220,6 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                       <div style="flex: 1;">
                         <h3 id="displayTeamName" style="margin: 0 0 0.25rem 0; color: #000; font-weight: 700; font-size: 1.5rem;">${teamData.teamName}</h3>
-                        <p style="margin: 0; font-size: 0.85rem; font-weight: 700; color: ${teamData.paymentStatus === 'paid' ? '#16a34a' : '#dc2626'};">Payment: ${teamData.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}</p>
                         <div id="editTeamNameForm" style="display: none;">
                           <input type="text" id="editTeamNameInput" value="${teamData.teamName}" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 1.1rem; font-weight: 700;" />
                           <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
@@ -2753,7 +2752,6 @@
                 <div style="flex: 1;">
                   <h4 style="margin: 0 0 0.25rem 0; color: #000; font-weight: 700; font-size: 1.1rem;">${team.teamName}</h4>
                   <p style="margin: 0 0 0.2rem 0; color: #666; font-size: 0.85rem;">Captain: ${team.captainName || team.captainEmail}</p>
-                  <p style="margin: 0; font-size: 0.8rem; font-weight: 700; color: ${team.paymentStatus === 'paid' ? '#16a34a' : '#dc2626'};">${team.paymentStatus === 'paid' ? 'Paid' : 'Unpaid'}</p>
                 </div>
               </div>
               <div style="padding-top: 1rem; border-top: 1px solid #e5e7eb;">
