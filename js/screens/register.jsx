@@ -9,6 +9,7 @@ const Register = ({ user, onNav }) => {
   const [team, setTeam] = React.useState({
     name: "", short: "",
     captain: user ? (user.displayName || "") : "",
+    captainPhone: "",
   });
   const [roster, setRoster] = React.useState([{ name: "", email: "" }]);
 
@@ -21,7 +22,8 @@ const Register = ({ user, onNav }) => {
       return;
     }
     if (!team.name.trim()) { setError("Team name is required."); return; }
-    if (!team.captainEmail.trim()) { setError("Captain email is required."); return; }
+    if (!user?.email) { setError("You must be signed in to register."); return; }
+    if (!team.captainPhone.trim()) { setError("Phone number is required for reschedule notifications."); return; }
 
     const filledPlayers = roster.filter(r => r.name.trim());
     if (filledPlayers.length < 1) { setError("Add at least 1 player."); return; }
@@ -33,10 +35,13 @@ const Register = ({ user, onNav }) => {
       const { collection, addDoc } = window.firestoreImports;
       const captainEmail = user ? user.email : "";
       await addDoc(collection(window.db, "teams"), {
+        teamName: team.name.trim(),
         name: team.name.trim(),
         short: team.short.trim() || team.name.trim().slice(0, 3).toUpperCase(),
+        captainName: team.captain.trim(),
         captain: team.captain.trim(),
         captainEmail,
+        captainPhone: team.captainPhone.trim(),
         captainUid: user ? user.uid : null,
         roster: filledPlayers,
         wins: 0,
@@ -73,7 +78,7 @@ const Register = ({ user, onNav }) => {
               Check your email at <strong>{team.captainEmail}</strong> for next steps.
             </p>
             <div className="row" style={{ gap: 10, justifyContent: "center" }}>
-              <button className="btn" onClick={() => { setStep(1); setSuccess(false); setTeam({ name: "", short: "", captain: user ? (user.displayName || "") : "" }); setRoster([{ name: "", email: "" }]); }}>
+              <button className="btn" onClick={() => { setStep(1); setSuccess(false); setTeam({ name: "", short: "", captain: user ? (user.displayName || "") : "", captainPhone: "" }); setRoster([{ name: "", email: "" }]); }}>
                 Register another team
               </button>
               <button className="btn btn-gold" onClick={() => onNav && onNav("teams")}>
@@ -157,6 +162,18 @@ const Register = ({ user, onNav }) => {
                     <label>Email</label>
                     <input value={user ? user.email : ""} readOnly style={{ opacity: 0.6, cursor: "not-allowed" }} placeholder="Sign in to auto-fill" type="email" />
                   </div>
+                </div>
+                <div className="field">
+                  <label>Phone number</label>
+                  <input
+                    value={team.captainPhone}
+                    onChange={e => setTeam({ ...team, captainPhone: e.target.value })}
+                    placeholder="+1 (765) 555-0100"
+                    type="tel"
+                  />
+                  <span style={{ fontSize: 11, color: "var(--fg-3)", marginTop: 4, display: "block" }}>
+                    Used to add you to reschedule group chats. Non-GroupMe users get an SMS invite automatically.
+                  </span>
                 </div>
               </div>
             )}

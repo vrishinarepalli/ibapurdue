@@ -74,7 +74,7 @@ const App = () => {
   const screens = {
     home:      s(Home,      { onNav: setActive }),
     bracket:   s(Bracket,   { style: bracketStyle }),
-    schedule:  s(Schedule,  {}),
+    schedule:  s(Schedule,  { user }),
     standings: s(Standings, {}),
     teams:     s(Teams,     {}),
     register:  s(Register,  { user, onNav: setActive }),
@@ -92,6 +92,40 @@ const App = () => {
         openMobile={() => {}}
       />
       <main>{screens[active] || screens.home}</main>
+
+      <footer style={{
+        borderTop: "1px solid var(--border)",
+        padding: "40px var(--pad-5)",
+        display: "flex", flexWrap: "wrap",
+        justifyContent: "space-between", alignItems: "center",
+        gap: 24, color: "var(--fg-3)", fontSize: 13,
+      }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <img src="images/iba-logo.png" alt="IBA Purdue" style={{ height: 52, width: "auto", objectFit: "contain" }} />
+          <span style={{ fontSize: 12 }}>Indian Basketball Association @ Purdue University</span>
+        </div>
+        <div style={{ display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
+          <a href="mailto:ibapurdue@gmail.com" style={{ color: "var(--fg-3)", textDecoration: "none", fontSize: 13 }}
+            onMouseOver={e => e.target.style.color = "var(--fg)"}
+            onMouseOut={e => e.target.style.color = "var(--fg-3)"}>
+            ibapurdue@gmail.com
+          </a>
+          <a href="https://www.instagram.com/iba.purdue/" target="_blank" rel="noopener noreferrer"
+            style={{ color: "var(--fg-3)", textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}
+            onMouseOver={e => e.currentTarget.style.color = "var(--fg)"}
+            onMouseOut={e => e.currentTarget.style.color = "var(--fg-3)"}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="5" />
+              <circle cx="12" cy="12" r="4" />
+              <circle cx="17.5" cy="6.5" r="0.7" fill="currentColor" />
+            </svg>
+            @iba.purdue
+          </a>
+        </div>
+        <div style={{ fontSize: 11, color: "var(--fg-3)", opacity: 0.6 }}>
+          © {new Date().getFullYear()} IBA Purdue
+        </div>
+      </footer>
 
       {/* Toast container */}
       <div id="iba-toast"></div>

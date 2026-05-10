@@ -12,15 +12,10 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    // Helper function to check if user is main admin
-    function isMainAdmin() {
-      return request.auth != null && request.auth.uid == 'seZ01FolJbSajEKTIsljwGtYHGD3';
-    }
-
-    // Helper function to check if user is admin
+    // Helper function to check if user is admin.
+    // Admin membership is managed via the approved_admins collection (doc ID = UID).
     function isAdmin() {
       return isSignedIn() && (
-        isMainAdmin() ||
         exists(/databases/$(database)/documents/approved_admins/$(request.auth.uid)) ||
         (exists(/databases/$(database)/documents/admin_requests/$(request.auth.uid)) &&
          get(/databases/$(database)/documents/admin_requests/$(request.auth.uid)).data.status == 'approved')
@@ -231,6 +226,21 @@ service cloud.firestore {
         resource.data.captainUid == request.auth.uid ||
         isAdmin()
       );
+    }
+
+    // Reschedule requests — captains create for their own games, admins update status
+    match /rescheduleRequests/{requestId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.requestingCaptainUid == request.auth.uid;
+      allow update: if isAdmin() ||
+        (isSignedIn() && resource.data.requestingCaptainUid == request.auth.uid &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['proposedDate', 'proposedTime']));
+      allow delete: if isAdmin();
+    }
+
+    // GroupMe chat metadata — Cloud Functions service account only
+    match /groupMeChats/{chatId} {
+      allow read, write: if false;
     }
 
     // Contact messages - anyone can create (rate limited recommended), only admins can read

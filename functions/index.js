@@ -25,34 +25,61 @@ const origin = ['https://ibapurdue.online', 'https://iba-website-63cb3.web.app']
  */
 async function isAdmin(uid) {
   try {
-    // Get user's email from their UID
+    // Server-side env fallback — prevents lockout if approved_admins is empty
+    if (process.env.MAIN_ADMIN_UID && uid === process.env.MAIN_ADMIN_UID) {
+      return true;
+    }
+
+    // Check approved_admins by UID (doc ID)
+    const adminDocByUid = await db.collection('approved_admins').doc(uid).get();
+    if (adminDocByUid.exists) {
+      return true;
+    }
+
+    // Also check by email field (legacy entries)
     const userRecord = await admin.auth().getUser(uid);
     const userEmail = userRecord.email;
-
-    // Check if user's email is in the approved_admins collection
     const approvedAdminsSnapshot = await db.collection('approved_admins')
       .where('email', '==', userEmail)
       .get();
 
     if (!approvedAdminsSnapshot.empty) {
-      console.log('✅ User is approved admin (from approved_admins):', userEmail);
       return true;
     }
 
     // Also check admin_requests collection for approved requests
     const requestDoc = await db.collection('admin_requests').doc(uid).get();
     if (requestDoc.exists && requestDoc.data().status === 'approved') {
-      console.log('✅ User is approved admin (from admin_requests):', userEmail);
       return true;
     }
 
-    console.log('❌ User is not an approved admin:', userEmail);
     return false;
   } catch (error) {
     console.error('Error checking admin status:', error);
     return false;
   }
 }
+
+/**
+ * One-time bootstrap: seeds the main admin's approved_admins doc from env var.
+ * Safe to run repeatedly — idempotent. Callable only by the env-configured admin.
+ */
+exports.ensureMainAdmin = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Sign in required');
+  }
+  const envUid = process.env.MAIN_ADMIN_UID;
+  if (!envUid || context.auth.uid !== envUid) {
+    throw new functions.https.HttpsError('permission-denied', 'Not authorized');
+  }
+  const userRecord = await admin.auth().getUser(context.auth.uid);
+  await db.collection('approved_admins').doc(context.auth.uid).set({
+    email: userRecord.email,
+    addedAt: admin.firestore.FieldValue.serverTimestamp(),
+    bootstrapped: true,
+  }, { merge: true });
+  return { success: true };
+});
 
 /**
  * Generate registration options for new admin credential setup
@@ -77,11 +104,6 @@ exports.generateRegistrationOptions = functions.https.onCall(async (data, contex
 
   try {
     const currentUserUid = context.auth.uid;
-    console.log('Registration request received:', {
-      uid: currentUserUid,
-      hasCredential: !!data.credential,
-      credentialId: data.credential?.id?.substring(0, 20),
-    });
 
     // Check if this admin already has credentials registered
     const adminDoc = await db.collection('admin').doc('biometric').get();
@@ -638,4 +660,262 @@ exports.sendGameDayEmails = functions.https.onCall(async (data, context) => {
   });
 
   return results;
+});
+
+// ─── GroupMe Reschedule Automation ───────────────────────────────────────────
+
+const GROUPME_API = "https://api.groupme.com/v3";
+
+async function gmPost(path, body) {
+  const token = process.env.GROUPME_ACCESS_TOKEN;
+  if (!token) throw new Error("GROUPME_ACCESS_TOKEN not set");
+  const res = await fetch(`${GROUPME_API}${path}?token=${token}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json();
+  if (res.status < 200 || res.status >= 300) throw new Error(`GroupMe ${path} error: ${JSON.stringify(json)}`);
+  return json.response;
+}
+
+async function gmGet(path) {
+  const token = process.env.GROUPME_ACCESS_TOKEN;
+  if (!token) throw new Error("GROUPME_ACCESS_TOKEN not set");
+  const res = await fetch(`${GROUPME_API}${path}?token=${token}`);
+  const json = await res.json();
+  if (res.status < 200 || res.status >= 300) throw new Error(`GroupMe GET ${path} error: ${JSON.stringify(json)}`);
+  return json.response;
+}
+
+async function sendFallbackEmail(to, subject, body) {
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+  if (!gmailUser || !gmailPass) {
+    console.warn("Email fallback skipped — GMAIL_USER/GMAIL_APP_PASSWORD not set");
+    return;
+  }
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: gmailUser, pass: gmailPass },
+  });
+  await transporter.sendMail({ from: gmailUser, to, subject, text: body, html: body.replace(/\n/g, "<br>") });
+}
+
+/**
+ * Firestore trigger: when a rescheduleRequest is created, build the GroupMe group.
+ * Runs automatically — no need to call this from the frontend.
+ */
+exports.onRescheduleRequestCreated = functions.firestore
+  .document("rescheduleRequests/{requestId}")
+  .onCreate(async (snap, context) => {
+    const requestId = context.params.requestId;
+    const req = snap.data();
+
+    // Bail if already processed (shouldn't happen on onCreate, but safety check)
+    if (req.status !== "pending") return;
+
+    try {
+      // 1. Get the game
+      const gameDoc = await db.collection("games").doc(req.gameId).get();
+      if (!gameDoc.exists) throw new Error(`Game ${req.gameId} not found`);
+      const game = gameDoc.data();
+
+      // 2. Parse team names from matchup (e.g. "Team A vs Team B")
+      const parts = (game.matchup || `${req.matchup || ""}`).split(/\s+vs\.?\s+/i);
+      const team1Name = (parts[0] || "").trim();
+      const team2Name = (parts[1] || "").trim();
+
+      // 3. Look up both teams
+      const teamsSnap = await db.collection("teams").get();
+      let team1Doc = null, team2Doc = null;
+      teamsSnap.forEach(d => {
+        const data = d.data();
+        const name = data.teamName || data.name || "";
+        if (name.toLowerCase() === team1Name.toLowerCase()) team1Doc = { id: d.id, ...data };
+        if (name.toLowerCase() === team2Name.toLowerCase()) team2Doc = { id: d.id, ...data };
+      });
+
+      if (!team1Doc || !team2Doc) throw new Error(`Could not find both teams: "${team1Name}", "${team2Name}"`);
+
+      const cap1Phone = team1Doc.captainPhone || "";
+      const cap2Phone = team2Doc.captainPhone || "";
+      const cap1Email = team1Doc.captainEmail || "";
+      const cap2Email = team2Doc.captainEmail || "";
+      const cap1Name = team1Doc.captainName || team1Doc.captain || "Captain";
+      const cap2Name = team2Doc.captainName || team2Doc.captain || "Captain";
+
+      // 4. Create GroupMe group
+      const groupName = `IBA Reschedule: ${team1Name} vs ${team2Name}`;
+      const group = await gmPost("/groups", {
+        name: groupName,
+        description: `Reschedule coordination for IBA game. Original: ${req.originalDate} at ${req.originalTime}, ${req.originalCourt}.`,
+        share: true,
+      });
+      const groupId = group.id;
+      const shareUrl = group.share_url || null;
+
+      // 5. Add both captains by phone number (GroupMe SMS-invites non-members automatically)
+      const membersToAdd = [];
+      if (cap1Phone) membersToAdd.push({ nickname: `${cap1Name} (${team1Name})`, phone_number: cap1Phone });
+      if (cap2Phone) membersToAdd.push({ nickname: `${cap2Name} (${team2Name})`, phone_number: cap2Phone });
+
+      let membersAdded = [];
+      let inviteFallbackUsed = false;
+
+      if (membersToAdd.length > 0) {
+        try {
+          await gmPost(`/groups/${groupId}/members/add`, { members: membersToAdd });
+          membersAdded = membersToAdd.map(m => m.phone_number);
+        } catch (err) {
+          console.warn("Members add failed, falling back to invite link:", err.message);
+          inviteFallbackUsed = true;
+        }
+      } else {
+        inviteFallbackUsed = true;
+      }
+
+      // 6. Create a bot for the IBA admin
+      const bot = await gmPost("/bots", {
+        bot: {
+          name: "IBA Admin",
+          group_id: groupId,
+          avatar_url: "https://ibapurdue.online/images/iba-logo.png",
+        },
+      });
+      const botId = bot.bot_id;
+
+      // 7. Bot posts opening message
+      const openingMsg = [
+        `🏀 IBA RESCHEDULE REQUEST`,
+        ``,
+        `Game: ${team1Name} vs ${team2Name}`,
+        `Original date: ${req.originalDate}`,
+        `Original time: ${req.originalTime}`,
+        `Court: ${req.originalCourt}`,
+        ``,
+        `Reason: ${req.reason}`,
+        ``,
+        `Both captains: please agree on a new date and time in this chat. Reply with your proposed time and an admin will confirm.`,
+        ``,
+        `⚠️ Admin approval is required before any reschedule is official.`,
+      ].join("\n");
+
+      await fetch(`${GROUPME_API}/bots/post`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bot_id: botId, text: openingMsg }),
+      });
+
+      // 8. If fallback needed — send invite link via email
+      if (inviteFallbackUsed && shareUrl) {
+        const fallbackBody = [
+          `Hi,`,
+          ``,
+          `A reschedule has been requested for your IBA game: ${team1Name} vs ${team2Name}.`,
+          `Original time: ${req.originalDate} at ${req.originalTime}, ${req.originalCourt}.`,
+          ``,
+          `Join the GroupMe coordination chat here: ${shareUrl}`,
+          ``,
+          `Both captains need to agree on a new time. Admin approval is required.`,
+          ``,
+          `— IBA Admin`,
+        ].join("\n");
+
+        const emailTargets = [cap1Email, cap2Email].filter(Boolean);
+        for (const email of emailTargets) {
+          try {
+            await sendFallbackEmail(email, `IBA Reschedule: ${team1Name} vs ${team2Name}`, fallbackBody);
+          } catch (err) {
+            console.warn(`Email to ${email} failed:`, err.message);
+          }
+        }
+      }
+
+      // 9. Write groupMeChats doc
+      await db.collection("groupMeChats").add({
+        requestId,
+        gameId: req.gameId,
+        groupMeGroupId: groupId,
+        groupMeBotId: botId,
+        shareUrl,
+        membersAdded,
+        inviteFallbackUsed,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        status: "active",
+      });
+
+      // 10. Update the request doc
+      await db.collection("rescheduleRequests").doc(requestId).update({
+        status: "chat_created",
+        groupMeChatId: groupId,
+        groupMeShareUrl: shareUrl,
+        groupMeBotId: botId,
+      });
+
+      console.log(`Reschedule group created: ${groupId} for request ${requestId}`);
+
+    } catch (err) {
+      console.error("onRescheduleRequestCreated failed:", err.message);
+      // Mark as failed so admin can see it
+      await db.collection("rescheduleRequests").doc(requestId).update({
+        status: "chat_failed",
+        chatError: err.message,
+      }).catch(() => {});
+    }
+  });
+
+/**
+ * HTTP endpoint for GroupMe bot callbacks.
+ * GroupMe posts here whenever someone sends a message in the reschedule group.
+ * Parses "NEW TIME: <date> <time>" from captain messages and saves proposed time.
+ */
+exports.groupMeWebhook = functions.https.onRequest(async (req, res) => {
+  if (req.method !== "POST") { res.status(405).send("Method Not Allowed"); return; }
+
+  try {
+    const { group_id, sender_type, text } = req.body;
+    // Ignore bot's own messages
+    if (sender_type === "bot") { res.status(200).send("ok"); return; }
+    if (!text || !group_id) { res.status(200).send("ok"); return; }
+
+    // Look for "NEW TIME: ..." in the message
+    const match = text.match(/new\s+time[:\s]+(.+)/i);
+    if (!match) { res.status(200).send("ok"); return; }
+
+    const proposedText = match[1].trim();
+
+    // Find the active reschedule request for this GroupMe group
+    const snap = await db.collection("rescheduleRequests")
+      .where("groupMeChatId", "==", group_id)
+      .where("status", "in", ["chat_created", "proposed"])
+      .limit(1)
+      .get();
+
+    if (snap.empty) { res.status(200).send("ok"); return; }
+
+    const reqDoc = snap.docs[0];
+    await reqDoc.ref.update({
+      status: "proposed",
+      proposedTimeRaw: proposedText,
+    });
+
+    // Bot acknowledges
+    const botId = reqDoc.data().groupMeBotId;
+    if (botId) {
+      await fetch(`${GROUPME_API}/bots/post`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bot_id: botId,
+          text: `✅ Proposed time recorded: "${proposedText}"\nAn IBA admin will review and confirm shortly.`,
+        }),
+      });
+    }
+
+    res.status(200).send("ok");
+  } catch (err) {
+    console.error("groupMeWebhook error:", err);
+    res.status(200).send("ok"); // Always 200 to GroupMe to prevent retries
+  }
 });

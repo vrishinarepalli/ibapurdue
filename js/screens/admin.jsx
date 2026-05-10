@@ -7,7 +7,22 @@ const Admin = ({ user, isAdmin }) => {
   const [editGame, setEditGame] = React.useState(null);
   const [scoreInput, setScoreInput] = React.useState({ score1: "", score2: "" });
   const [saving, setSaving] = React.useState(false);
-  const [pendingRequests, setPendingRequests] = React.useState([]);
+  const [rescheduleRequests, setRescheduleRequests] = React.useState([]);
+  const [approveModal, setApproveModal] = React.useState(null);
+  const [newDate, setNewDate] = React.useState("");
+  const [newTime, setNewTime] = React.useState("");
+  const [newCourt, setNewCourt] = React.useState("");
+  const [approving, setApproving] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!window.db || !window.firestoreImports) return;
+    const { collection, onSnapshot, query, orderBy } = window.firestoreImports;
+    const q = query(collection(window.db, "rescheduleRequests"), orderBy("createdAt", "desc"));
+    const unsub = onSnapshot(q, snap => {
+      setRescheduleRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, err => console.error("reschedule listener:", err));
+    return () => unsub();
+  }, []);
 
   if (!isAdmin) {
     return (
@@ -103,6 +118,54 @@ const Admin = ({ user, isAdmin }) => {
     }
   };
 
+  const denyReschedule = async (req) => {
+    if (!window.db || !window.firestoreImports) return;
+    const { doc, updateDoc } = window.firestoreImports;
+    try {
+      await updateDoc(doc(window.db, "rescheduleRequests", req.id), {
+        status: "denied",
+        resolvedAt: new Date().toISOString(),
+      });
+      if (window.showToast) window.showToast("Request denied.", "ok");
+    } catch (err) {
+      console.error(err);
+      if (window.showToast) window.showToast("Failed to deny request.", "err");
+    }
+  };
+
+  const approveReschedule = async () => {
+    if (!approveModal || !window.db || !window.firestoreImports) return;
+    if (!newDate.trim() || !newTime.trim()) {
+      if (window.showToast) window.showToast("New date and time are required.", "err");
+      return;
+    }
+    setApproving(true);
+    const { doc, updateDoc } = window.firestoreImports;
+    try {
+      await updateDoc(doc(window.db, "games", approveModal.gameId), {
+        date: newDate.trim(),
+        time: newTime.trim(),
+        court: newCourt.trim() || approveModal.originalCourt,
+        status: "Scheduled",
+        rescheduleRequestId: approveModal.id,
+      });
+      await updateDoc(doc(window.db, "rescheduleRequests", approveModal.id), {
+        status: "approved",
+        proposedDate: newDate.trim(),
+        proposedTime: newTime.trim(),
+        resolvedAt: new Date().toISOString(),
+      });
+      if (window.showToast) window.showToast("Reschedule approved. Game updated.", "ok");
+      setApproveModal(null);
+      setNewDate(""); setNewTime(""); setNewCourt("");
+    } catch (err) {
+      console.error(err);
+      if (window.showToast) window.showToast("Failed to approve reschedule.", "err");
+    } finally {
+      setApproving(false);
+    }
+  };
+
   return (
     <>
       <PageHeader
@@ -128,9 +191,10 @@ const Admin = ({ user, isAdmin }) => {
         {/* Tab bar */}
         <div className="row" style={{ gap: 4, marginBottom: 24, borderBottom: "1px solid var(--border)" }}>
           {[
-            { id: "payments", label: "Payments" },
-            { id: "schedule", label: "Schedule" },
-            { id: "bracket",  label: "Scores" },
+            { id: "payments",   label: "Payments" },
+            { id: "schedule",   label: "Schedule" },
+            { id: "bracket",    label: "Scores" },
+            { id: "reschedule", label: `Reschedule${rescheduleRequests.filter(r => r.status === "pending" || r.status === "chat_created" || r.status === "proposed").length > 0 ? ` (${rescheduleRequests.filter(r => r.status === "pending" || r.status === "chat_created" || r.status === "proposed").length})` : ""}` },
           ].map(t => (
             <button
               key={t.id}
@@ -310,7 +374,104 @@ const Admin = ({ user, isAdmin }) => {
             )}
           </div>
         )}
+        {/* RESCHEDULE TAB */}
+        {tab === "reschedule" && (
+          <div>
+            {rescheduleRequests.length === 0 ? (
+              <div style={{ textAlign: "center", color: "var(--fg-3)", padding: "60px 0", fontFamily: "var(--font-display)", letterSpacing: "0.2em" }}>
+                NO RESCHEDULE REQUESTS
+              </div>
+            ) : (
+              <div className="col" style={{ gap: 16 }}>
+                {rescheduleRequests.map(req => {
+                  const statusColor = { pending: "var(--gold)", chat_created: "var(--gold)", proposed: "#a78bfa", approved: "var(--green)", denied: "var(--fg-3)" };
+                  const isPending = ["pending", "chat_created", "proposed"].includes(req.status);
+                  return (
+                    <div key={req.id} className="card" style={{ padding: 20, opacity: req.status === "denied" ? 0.5 : 1 }}>
+                      <div className="row between" style={{ marginBottom: 12 }}>
+                        <div>
+                          <Eyebrow>{req.matchup || "Unknown matchup"}</Eyebrow>
+                          <h3 className="h3" style={{ margin: "2px 0" }}>{req.requestingTeamName || "—"} requested reschedule</h3>
+                        </div>
+                        <span style={{ fontSize: 11, fontFamily: "var(--font-mono)", letterSpacing: "0.1em", padding: "3px 8px", borderRadius: 4, border: `1px solid ${statusColor[req.status] || "var(--border)"}`, color: statusColor[req.status] || "var(--fg-3)" }}>
+                          {req.status.toUpperCase().replace("_", " ")}
+                        </span>
+                      </div>
+                      <div className="grid-2" style={{ marginBottom: 12, gap: 8 }}>
+                        {[
+                          ["Original Date", req.originalDate],
+                          ["Original Time", req.originalTime],
+                          ["Court", req.originalCourt],
+                          ["Reason", req.reason],
+                          ["Requested by", req.requestingCaptainEmail],
+                          ["Submitted", req.createdAt ? req.createdAt.slice(0, 10) : "—"],
+                        ].map(([k, v]) => (
+                          <div key={k} style={{ fontSize: 12 }}>
+                            <span className="mono" style={{ fontSize: 10, color: "var(--fg-3)", textTransform: "uppercase", letterSpacing: "0.1em", display: "block" }}>{k}</span>
+                            <span>{v || "—"}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {req.groupMeChatId && (
+                        <div style={{ fontSize: 12, color: "var(--fg-3)", marginBottom: 12 }}>
+                          GroupMe Group ID: <span className="mono">{req.groupMeChatId}</span>
+                          {req.groupMeShareUrl && (
+                            <a href={req.groupMeShareUrl} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 8, color: "var(--gold)" }}>Open chat →</a>
+                          )}
+                        </div>
+                      )}
+                      {req.status === "chat_failed" && (
+                        <div style={{ fontSize: 12, color: "var(--red)", marginBottom: 12, padding: "8px 12px", border: "1px solid var(--red)", borderRadius: "var(--radius)" }}>
+                          GroupMe chat creation failed. Captains were notified via email fallback.
+                        </div>
+                      )}
+                      {isPending && (
+                        <div className="row" style={{ gap: 8 }}>
+                          <button className="btn btn-sm btn-gold" onClick={() => { setApproveModal(req); setNewDate(req.proposedDate || ""); setNewTime(req.proposedTime || ""); setNewCourt(req.originalCourt || ""); }}>
+                            Approve & Set New Time
+                          </button>
+                          <button className="btn btn-sm" onClick={() => denyReschedule(req)}>Deny</button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Approve Reschedule Modal */}
+      {approveModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 24 }}
+          onClick={e => { if (e.target === e.currentTarget) setApproveModal(null); }}>
+          <div className="card" style={{ maxWidth: 440, width: "100%", padding: 32 }}>
+            <Eyebrow>Approve Reschedule</Eyebrow>
+            <h3 className="h3" style={{ margin: "4px 0 20px" }}>{approveModal.matchup}</h3>
+            <div className="col" style={{ gap: 14, marginBottom: 24 }}>
+              <div className="field">
+                <label>New date</label>
+                <input value={newDate} onChange={e => setNewDate(e.target.value)} placeholder="e.g. 2026-05-15" />
+              </div>
+              <div className="field">
+                <label>New time</label>
+                <input value={newTime} onChange={e => setNewTime(e.target.value)} placeholder="e.g. 3:00 PM" />
+              </div>
+              <div className="field">
+                <label>Court (leave blank to keep original)</label>
+                <input value={newCourt} onChange={e => setNewCourt(e.target.value)} placeholder={approveModal.originalCourt || "Court"} />
+              </div>
+            </div>
+            <div className="row" style={{ gap: 8 }}>
+              <button className="btn btn-gold" onClick={approveReschedule} disabled={approving} style={{ opacity: approving ? 0.6 : 1 }}>
+                {approving ? "Saving…" : "Confirm & Update Game"}
+              </button>
+              <button className="btn" onClick={() => setApproveModal(null)}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
